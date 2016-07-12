@@ -956,9 +956,14 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
                 if (delayedInit != null)
                     return;
 
-                getStorage().update();
+                Storage s = getStorage();
 
-                updateHeader(getStorage());
+                if (s == null) { // sholud never happens, expect if onResume called after shutdown()
+                    return;
+                }
+
+                s.update();
+                updateHeader(s);
 
                 torrents.update();
 
