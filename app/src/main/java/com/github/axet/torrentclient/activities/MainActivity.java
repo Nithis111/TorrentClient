@@ -111,6 +111,7 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
     NavigationView navigationView;
     DrawerLayout drawer;
 
+    Thread infoThread;
     List<String> infoOld;
     boolean infoPort;
     long infoTime; // last time checked
@@ -1109,7 +1110,7 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
             str += ip + "\n";
         }
         str = str.trim();
-        TextView textView = (TextView)navigationView.findViewById(R.id.torrent_ip);
+        TextView textView = (TextView) navigationView.findViewById(R.id.torrent_ip);
         textView.setText(str);
 
         View portButton = navigationView.findViewById(R.id.torrent_port_button);
@@ -1135,8 +1136,11 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
 
         if (infoOld == null || !Arrays.equals(info.toArray(), infoOld.toArray())) {
             if (drawer.isDrawerOpen(GravityCompat.START)) { // only probe port when drawer is open
+                if (infoThread != null) {
+                    return;
+                }
                 infoOld = info;
-                Thread t = new Thread(new Runnable() {
+                infoThread = new Thread(new Runnable() {
                     @Override
                     public void run() {
                         final boolean b = Libtorrent.PortCheck();
@@ -1144,11 +1148,12 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
                             @Override
                             public void run() {
                                 infoPort = b;
+                                infoThread = null;
                             }
                         });
                     }
                 });
-                t.start();
+                infoThread.start();
                 infoPort = false;
                 portIcon.setImageResource(R.drawable.port_no);
                 port.setText("Port checking...");
