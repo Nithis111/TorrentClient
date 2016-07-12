@@ -692,7 +692,7 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
             public void onReceive(Context context, Intent intent) {
                 if (intent.getAction().equals(Intent.ACTION_SCREEN_OFF)) {
                     Log.d(TAG, "Screen OFF");
-                    onBackPressed();
+                    moveTaskToBack(true);
                 }
             }
         };
