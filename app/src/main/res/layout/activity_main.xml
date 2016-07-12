@@ -46,19 +46,21 @@
                     android:orientation="vertical"
                     android:padding="5dp">
 
-                    <TextView
-                        android:id="@+id/torrent_ip"
-                        android:layout_width="wrap_content"
+                    <LinearLayout
+                        android:id="@+id/torrent_interfaces"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="122.112.11.11:3434"
-                        android:textColor="?android:attr/textColorPrimary" />
+                        android:orientation="vertical"
+                        android:padding="5dp">
 
-                    <TextView
-                        android:id="@+id/torrent_ip2"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="122.112.11.11:3434"
-                        android:textColor="?android:attr/textColorPrimary" />
+                        <TextView
+                            android:id="@+id/torrent_ip"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="122.112.11.11:3434\n122.112.11.11:3434"
+                            android:textColor="?android:attr/textColorSecondary" />
+
+                    </LinearLayout>
 
                     <LinearLayout
                         android:id="@+id/torrent_port_button"
