@@ -958,7 +958,7 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
 
                 Storage s = getStorage();
 
-                if (s == null) { // sholud never happens, expect if onResume called after shutdown()
+                if (s == null) { // sholud never happens, unless if onResume called after shutdown()
                     return;
                 }
 
