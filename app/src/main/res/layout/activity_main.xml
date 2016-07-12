@@ -58,7 +58,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="122.112.11.11:3434\n122.112.11.11:3434"
-                            android:textColor="?android:attr/textColorPrimary" />
+                            android:textColor="?android:attr/textColorSecondary" />
 
                     </LinearLayout>
 
