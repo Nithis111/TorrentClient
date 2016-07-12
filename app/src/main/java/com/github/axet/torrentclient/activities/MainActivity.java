@@ -9,6 +9,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
+import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.graphics.Color;
@@ -561,6 +562,15 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
 
         navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
+
+        TextView ver = (TextView) navigationView.findViewById(R.id.nav_version);
+        try {
+            PackageInfo pInfo = getPackageManager().getPackageInfo(getPackageName(), 0);
+            String version = pInfo.versionName;
+            ver.setText(version);
+        } catch (PackageManager.NameNotFoundException e) {
+            ver.setVisibility(View.GONE);
+        }
 
         handler = new Handler();
 
