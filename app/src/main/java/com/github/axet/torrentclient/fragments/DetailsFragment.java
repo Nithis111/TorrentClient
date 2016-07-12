@@ -138,6 +138,7 @@ public class DetailsFragment extends Fragment implements MainActivity.TorrentFra
                         break;
                     case Libtorrent.StatusDownloading:
                     case Libtorrent.StatusQueued:
+                    case Libtorrent.StatusSeeding:
                         check.setImageDrawable(ContextCompat.getDrawable(getContext(), R.drawable.ic_done_all_black_24dp));
                         check.setColorFilter(Color.GRAY);
                         check.setEnabled(false);
