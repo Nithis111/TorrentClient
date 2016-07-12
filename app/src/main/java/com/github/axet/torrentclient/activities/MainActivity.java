@@ -41,6 +41,7 @@ import android.view.WindowManager;
 import android.widget.AbsListView;
 import android.widget.BaseAdapter;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
@@ -67,6 +68,8 @@ import com.google.android.gms.common.api.GoogleApiClient;
 import org.apache.commons.io.FileUtils;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import go.libtorrent.Libtorrent;
@@ -108,7 +111,7 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
     NavigationView navigationView;
     DrawerLayout drawer;
 
-    Libtorrent.InfoClient infoOld;
+    List<String> infoOld;
     boolean infoPort;
     long infoTime; // last time checked
 
@@ -1095,14 +1098,19 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
         TextView text = (TextView) findViewById(R.id.space_left);
         text.setText(s.formatHeader());
 
-        Libtorrent.InfoClient info = Libtorrent.ClientInfo();
+        ArrayList<String> info = new ArrayList<>();
+        long c = Libtorrent.PortCount();
+        for (long i = 0; i < c; i++) {
+            info.add(Libtorrent.Port(i));
+        }
 
-        TextView localip = (TextView) navigationView.findViewById(R.id.torrent_ip);
-        localip.setText(info.getClientAddr());
-
-        TextView externalip = (TextView) navigationView.findViewById(R.id.torrent_ip2);
-        externalip.setVisibility(info.getExternal().isEmpty() ? View.GONE : View.VISIBLE);
-        externalip.setText(info.getExternal());
+        String str = "";
+        for (String ip : info) {
+            str += ip + "\n";
+        }
+        str = str.trim();
+        TextView textView = (TextView)navigationView.findViewById(R.id.torrent_ip);
+        textView.setText(str);
 
         View portButton = navigationView.findViewById(R.id.torrent_port_button);
         ImageView portIcon = (ImageView) navigationView.findViewById(R.id.torrent_port_icon);
@@ -1125,7 +1133,7 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
             infoOld = null;
         }
 
-        if (infoOld == null || !infoOld.getClientAddr().equals(info.getClientAddr()) || !infoOld.getExternal().equals(info.getExternal())) {
+        if (infoOld == null || !Arrays.equals(info.toArray(), infoOld.toArray())) {
             if (drawer.isDrawerOpen(GravityCompat.START)) { // only probe port when drawer is open
                 infoOld = info;
                 Thread t = new Thread(new Runnable() {
