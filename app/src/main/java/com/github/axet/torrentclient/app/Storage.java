@@ -385,8 +385,18 @@ public class Storage {
 
         refresh();
 
-        if (active())
+        if (active()) {
             saveUpdate();
+
+            if (wifi) {
+                if (isConnectedWifi()) {
+                    resume();
+                    return;
+                }
+            } else {
+                resume();
+            }
+        }
     }
 
     void refresh() {
