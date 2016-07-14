@@ -502,9 +502,9 @@ public class Storage {
     public void remove(Torrent t) {
         torrents.remove(t);
 
-        save();
-
         Libtorrent.RemoveTorrent(t.t);
+
+        save();
     }
 
     public String path(long t) {
