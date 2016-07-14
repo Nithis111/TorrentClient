@@ -6,6 +6,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
+import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
@@ -18,7 +19,9 @@ import android.preference.PreferenceManager;
 import android.support.v4.content.ContextCompat;
 import android.util.Base64;
 import android.util.Log;
+import android.view.View;
 
+import com.github.axet.torrentclient.R;
 import com.github.axet.torrentclient.services.TorrentService;
 
 import org.apache.commons.io.FileUtils;
@@ -306,6 +309,13 @@ public class Storage {
 
     public void create() {
         TorrentService.startService(context, formatHeader());
+
+        try {
+            PackageInfo pInfo = context.getPackageManager().getPackageInfo(context.getPackageName(), 0);
+            String version = pInfo.versionName;
+            Libtorrent.SetClientVersion(context.getString(R.string.app_name) + " " + version);
+        } catch (PackageManager.NameNotFoundException e) {
+        }
 
         if (!Libtorrent.Create()) {
             throw new RuntimeException(Libtorrent.Error());
