@@ -161,6 +161,8 @@ public class TrackersFragment extends Fragment implements MainActivity.TorrentFr
 
         TextView pex = (TextView) v.findViewById(R.id.torrent_trackers_pex);
 
+        TextView lpd = (TextView) v.findViewById(R.id.torrent_trackers_lpd);
+
         ff.clear();
         long l = Libtorrent.TorrentTrackersCount(t);
         for (long i = 0; i < l; i++) {
@@ -168,6 +170,10 @@ public class TrackersFragment extends Fragment implements MainActivity.TorrentFr
             String url = tt.getAddr();
             if (url.equals("PEX")) {
                 MainApplication.setText(pex, Libtorrent.TorrentActive(t) ? tt.getPeers() + "" : "");
+                continue;
+            }
+            if (url.equals("LPD")) {
+                MainApplication.setText(lpd, Libtorrent.TorrentActive(t) ? tt.getPeers() + "" : "");
                 continue;
             }
             if (url.equals("DHT")) {

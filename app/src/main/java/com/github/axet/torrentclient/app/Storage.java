@@ -16,14 +16,12 @@ import android.os.Handler;
 import android.os.StatFs;
 import android.preference.PreferenceManager;
 import android.support.v4.content.ContextCompat;
-import android.text.TextUtils;
 import android.util.Base64;
 import android.util.Log;
 
 import com.github.axet.torrentclient.services.TorrentService;
 
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.HexDump;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -35,12 +33,15 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
+import java.net.DatagramPacket;
+import java.net.InetAddress;
+import java.net.MulticastSocket;
+import java.net.SocketException;
 import java.net.URLEncoder;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.List;
 
 import go.libtorrent.Libtorrent;
@@ -67,6 +68,9 @@ public class Storage {
     Runnable save;
 
     BroadcastReceiver wifiReciver;
+
+    WifiManager.MulticastLock mcastLock;
+    private static MulticastSocket socket;
 
     public static class Torrent {
         public long t;
@@ -385,8 +389,18 @@ public class Storage {
 
         refresh();
 
-        if (active())
+        if (active()) {
             saveUpdate();
+
+            if (wifi) {
+                if (isConnectedWifi()) {
+                    resume();
+                    return;
+                }
+            } else {
+                resume();
+            }
+        }
     }
 
     void refresh() {
@@ -437,6 +451,11 @@ public class Storage {
         torrents.clear();
 
         Libtorrent.Close();
+
+        if (mcastLock != null) {
+            mcastLock.release();
+            mcastLock = null;
+        }
 
         if (refresh != null) {
             handler.removeCallbacks(refresh);
@@ -721,11 +740,26 @@ public class Storage {
 
     public void pause() {
         Log.d(TAG, "pause()");
+
+        if (mcastLock != null) {
+            mcastLock.release();
+            mcastLock = null;
+        }
+
         Libtorrent.Pause();
     }
 
     public void resume() {
         Log.d(TAG, "resume()");
+
+        if (mcastLock == null) {
+            WifiManager wm = (WifiManager) context.getSystemService(Context.WIFI_SERVICE);
+            if (wm != null) {
+                mcastLock = wm.createMulticastLock(TAG);
+                mcastLock.acquire();
+            }
+        }
+
         Libtorrent.Resume();
     }
 
