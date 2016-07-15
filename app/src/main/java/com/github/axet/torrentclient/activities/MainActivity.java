@@ -3,6 +3,7 @@ package com.github.axet.torrentclient.activities;
 import android.Manifest;
 import android.app.AlertDialog;
 import android.app.KeyguardManager;
+import android.app.ProgressDialog;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -42,7 +43,6 @@ import android.view.WindowManager;
 import android.widget.AbsListView;
 import android.widget.BaseAdapter;
 import android.widget.ImageView;
-import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
@@ -598,18 +598,68 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
 
                         shared.edit().putString(MainApplication.PREFERENCE_LAST_PATH, p.getParent()).commit();
 
-                        File pp = p.getParentFile();
-                        long t = Libtorrent.CreateTorrent(p.getPath());
-                        if (t == -1) {
-                            Error(Libtorrent.Error());
-                            return;
-                        }
-                        if (shared.getBoolean(MainApplication.PREFERENCE_DIALOG, false)) {
-                            createTorrentDialog(t, pp.getPath());
-                        } else {
-                            getStorage().add(new Storage.Torrent(t, pp.getPath()));
-                            torrents.notifyDataSetChanged();
-                        }
+                        final ProgressDialog progress = new ProgressDialog(MainActivity.this);
+                        progress.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
+
+                        String path = p.getPath();
+                        final String pp = new File(p.getPath()).getParentFile().getPath();
+                        final long pieces = Libtorrent.CreateMetaInfo(path);
+                        progress.setMax((int) pieces);
+
+                        final Thread t = new Thread(new Runnable() {
+                            @Override
+                            public void run() {
+                                final MainActivity activity = MainActivity.this;
+
+                                for (long i = 0; i < pieces; i++) {
+                                    Thread.yield();
+                                    if (Thread.currentThread().isInterrupted()) {
+                                        Libtorrent.CloseMetaInfo();
+                                        return;
+                                    }
+                                    final long p = i;
+                                    handler.post(new Runnable() {
+                                        @Override
+                                        public void run() {
+                                            progress.setProgress((int) p);
+                                        }
+                                    });
+                                    if (!Libtorrent.HashMetaInfo(i)) {
+                                        handler.post(new Runnable() {
+                                            @Override
+                                            public void run() {
+                                                activity.Error(Libtorrent.Error());
+                                            }
+                                        });
+                                        Libtorrent.CloseMetaInfo();
+                                        return;
+                                    }
+                                }
+
+                                handler.post(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        activity.createTorrentFromMetaInfo(pp);
+                                        Libtorrent.CloseMetaInfo();
+                                        progress.dismiss();
+                                    }
+                                });
+                            }
+                        });
+
+                        progress.setOnDismissListener(new DialogInterface.OnDismissListener() {
+                            @Override
+                            public void onDismiss(DialogInterface dialog) {
+                                t.interrupt();
+                            }
+                        });
+                        progress.setOnShowListener(new DialogInterface.OnShowListener() {
+                            @Override
+                            public void onShow(DialogInterface dialog) {
+                                t.start();
+                            }
+                        });
+                        progress.show();
                     }
                 });
                 f.show();
@@ -1302,12 +1352,25 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
         fragment.show(getSupportFragmentManager(), "");
     }
 
+    public void createTorrentFromMetaInfo(String pp) {
+        final SharedPreferences shared = PreferenceManager.getDefaultSharedPreferences(MainActivity.this);
+        final long t = Libtorrent.CreateTorrentFromMetaInfo();
+        if (t == -1) {
+            Error(Libtorrent.Error());
+            return;
+        }
+        if (shared.getBoolean(MainApplication.PREFERENCE_DIALOG, false)) {
+            createTorrentDialog(t, pp);
+        } else {
+            getStorage().add(new Storage.Torrent(t, pp));
+            torrents.notifyDataSetChanged();
+        }
+    }
+
     @SuppressWarnings("StatementWithEmptyBody")
     @Override
     public boolean onNavigationItemSelected(MenuItem item) {
-        // Handle navigation view item clicks here.
         int id = item.getItemId();
-
         drawer.closeDrawer(GravityCompat.START);
         return true;
     }
