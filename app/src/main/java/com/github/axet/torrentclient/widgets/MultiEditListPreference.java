@@ -22,6 +22,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
 import android.widget.BaseAdapter;
+import android.widget.Button;
 import android.widget.ListView;
 import android.widget.TextView;
 
@@ -131,10 +132,38 @@ public class MultiEditListPreference extends DialogPreference {
 
         list.setAdapter(files);
 
-        View add = view.findViewById(R.id.add);
-        add.setOnClickListener(new View.OnClickListener() {
+        final AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
+
+        builder.setView(view);
+        builder.setTitle(getTitle());
+        builder.setOnDismissListener(new DialogInterface.OnDismissListener() {
             @Override
-            public void onClick(View v) {
+            public void onDismiss(DialogInterface dialog) {
+                String v = TextUtils.join("\n", trackers.toArray()).trim();
+                if (callChangeListener(v)) {
+                    setText(v);
+                }
+            }
+        });
+        builder.setPositiveButton("CLOSE", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.dismiss();
+            }
+        });
+        builder.setNeutralButton("ADD", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+            }
+        });
+
+        AlertDialog dialog = builder.create();
+        dialog.show();
+
+        Button b = dialog.getButton(AlertDialog.BUTTON_NEUTRAL);
+        b.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
                 final OpenFileDialog.EditTextDialog d = new OpenFileDialog.EditTextDialog(getContext());
                 d.setTitle("Add Tracker");
                 d.setPositiveButton(new DialogInterface.OnClickListener() {
@@ -146,30 +175,6 @@ public class MultiEditListPreference extends DialogPreference {
                 d.show();
             }
         });
-
-        final AppCompatDialog dialog = new AppCompatDialog(getContext());
-
-        View close = view.findViewById(R.id.close);
-        close.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                dialog.dismiss();
-            }
-        });
-
-        dialog.setContentView(view);
-        dialog.setTitle(getTitle());
-        dialog.setOnDismissListener(new DialogInterface.OnDismissListener() {
-            @Override
-            public void onDismiss(DialogInterface dialog) {
-                String v = TextUtils.join("\n", trackers.toArray()).trim();
-                if (callChangeListener(v)) {
-                    setText(v);
-                }
-            }
-        });
-        dialog.show();
-
     }
 
     void setText(String s) {
