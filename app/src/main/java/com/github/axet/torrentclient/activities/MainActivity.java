@@ -72,6 +72,8 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 
 import go.libtorrent.Libtorrent;
 
@@ -566,7 +568,7 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
         TextView ver = (TextView) navigationView.findViewById(R.id.nav_version);
         try {
             PackageInfo pInfo = getPackageManager().getPackageInfo(getPackageName(), 0);
-            String version = pInfo.versionName;
+            String version = "v" + pInfo.versionName;
             ver.setText(version);
         } catch (PackageManager.NameNotFoundException e) {
             ver.setVisibility(View.GONE);
@@ -604,27 +606,25 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
                         String path = p.getPath();
                         final String pp = new File(p.getPath()).getParentFile().getPath();
                         final long pieces = Libtorrent.CreateMetaInfo(path);
+                        final AtomicLong i = new AtomicLong(0);
                         progress.setMax((int) pieces);
+
+                        MainActivity.this.dialog = new TorrentFragmentInterface() {
+                            @Override
+                            public void update() {
+                                progress.setProgress((int) i.get());
+                            }
+                        };
 
                         final Thread t = new Thread(new Runnable() {
                             @Override
                             public void run() {
                                 final MainActivity activity = MainActivity.this;
 
-                                for (long i = 0; i < pieces; i++) {
+                                for (i.set(0); i.get() < pieces; i.incrementAndGet()) {
                                     Thread.yield();
-                                    if (Thread.currentThread().isInterrupted()) {
-                                        Libtorrent.CloseMetaInfo();
-                                        return;
-                                    }
-                                    final long p = i;
-                                    handler.post(new Runnable() {
-                                        @Override
-                                        public void run() {
-                                            progress.setProgress((int) p);
-                                        }
-                                    });
-                                    if (!Libtorrent.HashMetaInfo(i)) {
+                                    
+                                    if (!Libtorrent.HashMetaInfo(i.get())) {
                                         handler.post(new Runnable() {
                                             @Override
                                             public void run() {
@@ -632,6 +632,7 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
                                             }
                                         });
                                         Libtorrent.CloseMetaInfo();
+                                        progress.dismiss();
                                         return;
                                     }
                                 }
@@ -639,6 +640,7 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
                                 handler.post(new Runnable() {
                                     @Override
                                     public void run() {
+                                        MainActivity.this.dialog = null;
                                         activity.createTorrentFromMetaInfo(pp);
                                         Libtorrent.CloseMetaInfo();
                                         progress.dismiss();
