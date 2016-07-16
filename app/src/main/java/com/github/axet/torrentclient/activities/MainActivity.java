@@ -566,7 +566,7 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
         TextView ver = (TextView) navigationView.findViewById(R.id.nav_version);
         try {
             PackageInfo pInfo = getPackageManager().getPackageInfo(getPackageName(), 0);
-            String version = pInfo.versionName;
+            String version = "v" + pInfo.versionName;
             ver.setText(version);
         } catch (PackageManager.NameNotFoundException e) {
             ver.setVisibility(View.GONE);
