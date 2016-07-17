@@ -625,6 +625,9 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
 
                                 for (i.set(0); i.get() < pieces.get(); i.incrementAndGet()) {
                                     Thread.yield();
+
+                                    if(Thread.currentThread().isInterrupted())
+                                        return;
                                     
                                     if (!Libtorrent.HashMetaInfo(i.get())) {
                                         handler.post(new Runnable() {
