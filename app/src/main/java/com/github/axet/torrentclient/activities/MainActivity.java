@@ -468,7 +468,9 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
             convertView.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
-                    showDetails(t.t);
+                    if(dialog == null) { // prevent double dialogs
+                        showDetails(t.t);
+                    }
                 }
             });
 
@@ -605,9 +607,9 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
 
                         String path = p.getPath();
                         final String pp = new File(p.getPath()).getParentFile().getPath();
-                        final long pieces = Libtorrent.CreateMetaInfo(path);
+                        final AtomicLong pieces = new AtomicLong(Libtorrent.CreateMetaInfo(path));
                         final AtomicLong i = new AtomicLong(0);
-                        progress.setMax((int) pieces);
+                        progress.setMax((int) pieces.get());
 
                         MainActivity.this.dialog = new TorrentFragmentInterface() {
                             @Override
@@ -621,8 +623,11 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
                             public void run() {
                                 final MainActivity activity = MainActivity.this;
 
-                                for (i.set(0); i.get() < pieces; i.incrementAndGet()) {
+                                for (i.set(0); i.get() < pieces.get(); i.incrementAndGet()) {
                                     Thread.yield();
+
+                                    if(Thread.currentThread().isInterrupted())
+                                        return;
                                     
                                     if (!Libtorrent.HashMetaInfo(i.get())) {
                                         handler.post(new Runnable() {
