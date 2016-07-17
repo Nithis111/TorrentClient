@@ -468,7 +468,9 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
             convertView.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
-                    showDetails(t.t);
+                    if(dialog == null) { // prevent double dialogs
+                        showDetails(t.t);
+                    }
                 }
             });
 
