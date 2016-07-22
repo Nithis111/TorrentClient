@@ -154,7 +154,7 @@ public class TorrentService extends Service {
 
         NotificationCompat.Builder builder = new NotificationCompat.Builder(this)
                 .setOngoing(true)
-                .setContentTitle("Torrent Client")
+                .setContentTitle(getString(R.string.app_name))
                 .setSmallIcon(R.drawable.ic_application_icon)
                 .setContent(view);
 

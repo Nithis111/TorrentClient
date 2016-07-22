@@ -135,7 +135,7 @@ public class AddDialogFragment extends DialogFragment implements MainActivity.To
             MainApplication.setText(percent, (f.file.getBytesCompleted() * 100 / f.file.getLength()) + "%");
 
             TextView size = (TextView) view.findViewById(R.id.torrent_files_size);
-            size.setText("Size: " + MainApplication.formatSize(f.file.getLength()));
+            size.setText(getContext().getString(R.string.size) + MainApplication.formatSize(getContext(), f.file.getLength()));
 
             TextView folder = (TextView) view.findViewById(R.id.torrent_files_folder);
             TextView file = (TextView) view.findViewById(R.id.torrent_files_name);
@@ -233,7 +233,7 @@ public class AddDialogFragment extends DialogFragment implements MainActivity.To
                                 long t = getArguments().getLong("torrent");
                                 String path = getArguments().getString("path");
                                 getArguments().putLong("torrent", -1);
-                                getApp().getStorage().add(new Storage.Torrent(t, path));
+                                getApp().getStorage().add(new Storage.Torrent(getContext(), t, path));
                                 dialog.dismiss();
                                 onDismiss(dialog);
                             }
@@ -372,10 +372,10 @@ public class AddDialogFragment extends DialogFragment implements MainActivity.To
         info.setVisibility(Libtorrent.MetaTorrent(t) ? View.VISIBLE : View.GONE);
 
         TextView size = (TextView) header.findViewById(R.id.torrent_size);
-        MainApplication.setText(size, !Libtorrent.MetaTorrent(t) ? "" : MainApplication.formatSize(Libtorrent.TorrentBytesLength(t)));
+        MainApplication.setText(size, !Libtorrent.MetaTorrent(t) ? "" : MainApplication.formatSize(getContext(), Libtorrent.TorrentBytesLength(t)));
 
         TextView pieces = (TextView) header.findViewById(R.id.torrent_pieces);
-        MainApplication.setText(pieces, !Libtorrent.MetaTorrent(t) ? "" : Libtorrent.TorrentPiecesCount(t) + " / " + MainApplication.formatSize(Libtorrent.TorrentPieceLength(t)));
+        MainApplication.setText(pieces, !Libtorrent.MetaTorrent(t) ? "" : Libtorrent.TorrentPiecesCount(t) + " / " + MainApplication.formatSize(getContext(), Libtorrent.TorrentPieceLength(t)));
 
         TextView path = (TextView) header.findViewById(R.id.torrent_add_path);
         path.setText(getArguments().getString("path"));
@@ -388,13 +388,13 @@ public class AddDialogFragment extends DialogFragment implements MainActivity.To
 
                 if (Libtorrent.TorrentStatus(t) == Libtorrent.StatusChecking) {
                     Libtorrent.StopTorrent(t);
-                    Toast.makeText(getContext(), "Stop Checking", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(getContext(), R.string.stop_checking, Toast.LENGTH_SHORT).show();
                     update();
                     return;
                 }
 
                 Libtorrent.CheckTorrent(t);
-                Toast.makeText(getContext(), "Start Checking", Toast.LENGTH_SHORT).show();
+                Toast.makeText(getContext(), R.string.start_checking, Toast.LENGTH_SHORT).show();
                 update();
             }
         });

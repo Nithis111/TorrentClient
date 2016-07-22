@@ -78,11 +78,13 @@ public class Storage {
     public static class Torrent {
         public long t;
         public String path;
+        Context context;
 
         SpeedInfo downloaded = new SpeedInfo();
         SpeedInfo uploaded = new SpeedInfo();
 
-        public Torrent(long t, String path) {
+        public Torrent(Context context, long t, String path) {
+            this.context = context;
             this.t = t;
             this.path = path;
         }
@@ -118,7 +120,7 @@ public class Storage {
         }
 
         // "Left: 5m 30s · ↓ 1.5Mb/s · ↑ 0.6Mb/s"
-        public String status(Context context) {
+        public String status() {
             String str = "";
 
             switch (Libtorrent.TorrentStatus(t)) {
@@ -127,10 +129,10 @@ public class Storage {
                 case Libtorrent.StatusPaused:
                 case Libtorrent.StatusSeeding:
                     if (Libtorrent.MetaTorrent(t))
-                        str += MainApplication.formatSize(Libtorrent.TorrentBytesLength(t)) + " · ";
+                        str += MainApplication.formatSize(context, Libtorrent.TorrentBytesLength(t)) + " · ";
 
-                    str += "↓ " + MainApplication.formatSize(downloaded.getCurrentSpeed()) + "/s";
-                    str += " · ↑ " + MainApplication.formatSize(uploaded.getCurrentSpeed()) + "/s";
+                    str += "↓ " + MainApplication.formatSize(context, downloaded.getCurrentSpeed()) + context.getString(R.string.per_second);
+                    str += " · ↑ " + MainApplication.formatSize(context, uploaded.getCurrentSpeed()) + context.getString(R.string.per_second);
                     break;
                 case Libtorrent.StatusDownloading:
                     long c = 0;
@@ -139,12 +141,12 @@ public class Storage {
                     int a = downloaded.getAverageSpeed();
                     if (c > 0 && a > 0) {
                         long diff = c * 1000 / a;
-                        str += "" + ((MainApplication) context.getApplicationContext()).formatDuration(diff) + "";
+                        str += "" + ((MainApplication) context.getApplicationContext()).formatDuration(context, diff) + "";
                     } else {
                         str += "∞";
                     }
-                    str += " · ↓ " + MainApplication.formatSize(downloaded.getCurrentSpeed()) + "/s";
-                    str += " · ↑ " + MainApplication.formatSize(uploaded.getCurrentSpeed()) + "/s";
+                    str += " · ↓ " + MainApplication.formatSize(context, downloaded.getCurrentSpeed()) + context.getString(R.string.per_second);
+                    str += " · ↑ " + MainApplication.formatSize(context, uploaded.getCurrentSpeed()) + context.getString(R.string.per_second);
                     break;
             }
 
@@ -155,7 +157,7 @@ public class Storage {
             String str = name();
 
             if (Libtorrent.MetaTorrent(t))
-                str += " · " + MainApplication.formatSize(Libtorrent.TorrentBytesLength(t));
+                str += " · " + MainApplication.formatSize(context, Libtorrent.TorrentBytesLength(t));
 
             str += " · (" + getProgress() + "%)";
 
@@ -266,7 +268,7 @@ public class Storage {
                 Log.d(TAG, Libtorrent.Error());
                 continue;
             }
-            Torrent tt = new Torrent(t, path);
+            Torrent tt = new Torrent(context, t, path);
             torrents.add(tt);
 
             if (status != Libtorrent.StatusPaused) {
@@ -728,7 +730,7 @@ public class Storage {
         File parent = to.getParentFile();
         parent.mkdirs();
         if (!parent.exists()) {
-            throw new RuntimeException("No permission: " + parent);
+            throw new RuntimeException("No permissions: " + parent);
         }
 
         try {
@@ -776,7 +778,7 @@ public class Storage {
     public String formatHeader() {
         File f = getStoragePath();
         long free = getFree(f);
-        return getApp().formatFree(free, downloaded.getCurrentSpeed(), uploaded.getCurrentSpeed());
+        return getApp().formatFree(context, free, downloaded.getCurrentSpeed(), uploaded.getCurrentSpeed());
     }
 
     public List<String> splitMagnets(String ff) {
@@ -836,7 +838,7 @@ public class Storage {
         if (t == -1) {
             throw new RuntimeException(Libtorrent.Error());
         }
-        add(new Storage.Torrent(t, p));
+        add(new Storage.Torrent(context, t, p));
     }
 
     public void addTorrentFromBytes(byte[] buf) {
@@ -845,7 +847,7 @@ public class Storage {
         if (t == -1) {
             throw new RuntimeException(Libtorrent.Error());
         }
-        add(new Storage.Torrent(t, s));
+        add(new Storage.Torrent(context, t, s));
     }
 
     public void addTorrentFromURL(String p) {
@@ -854,7 +856,7 @@ public class Storage {
         if (t == -1) {
             throw new RuntimeException(Libtorrent.Error());
         }
-        add(new Storage.Torrent(t, s));
+        add(new Storage.Torrent(context, t, s));
     }
 
     public boolean isConnectedWifi() {

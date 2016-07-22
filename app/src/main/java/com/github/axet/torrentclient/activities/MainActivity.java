@@ -90,8 +90,6 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
 
     static final long INFO_AUTO_REFRESH = 5 * 60 * 1000;
 
-    public final static String HIDE = "hide";
-
     /**
      * ATTENTION: This was auto-generated to implement the App Indexing API.
      * See https://g.co/AppIndexing/AndroidStudio for more information.
@@ -241,7 +239,7 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
             title.setText(t.name());
 
             TextView time = (TextView) convertView.findViewById(R.id.torrent_status);
-            time.setText(t.status(getContext()));
+            time.setText(t.status());
 
             final View playerBase = convertView.findViewById(R.id.recording_player);
             // cover area, prevent click over to convertView
@@ -256,13 +254,13 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
                 @Override
                 public void run() {
                     AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
-                    builder.setTitle("Delete Torrent");
+                    builder.setTitle(R.string.delete_torrent);
 
                     String name = Libtorrent.MetaTorrent(t.t) ? ".../" + t.name() : t.name();
 
-                    builder.setMessage(name + "\n\n" + "Are you sure ? ");
+                    builder.setMessage(name + "\n\n" + getString(R.string.are_you_sure));
                     if (Libtorrent.MetaTorrent(t.t)) {
-                        builder.setNeutralButton("Delete With Data", new DialogInterface.OnClickListener() {
+                        builder.setNeutralButton(R.string.delete_with_data, new DialogInterface.OnClickListener() {
                             @Override
                             public void onClick(DialogInterface dialog, int which) {
                                 dialog.cancel();
@@ -280,7 +278,7 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
                             }
                         });
                     }
-                    builder.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+                    builder.setPositiveButton(R.string.yes, new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
                             dialog.cancel();
@@ -295,7 +293,7 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
                             });
                         }
                     });
-                    builder.setNegativeButton("No", new DialogInterface.OnClickListener() {
+                    builder.setNegativeButton(R.string.no, new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
                             dialog.cancel();
@@ -468,7 +466,7 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
             convertView.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
-                    if(dialog == null) { // prevent double dialogs
+                    if (dialog == null) { // prevent double dialogs
                         showDetails(t.t);
                     }
                 }
@@ -516,7 +514,7 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
 
     void renameDialog(final Long f) {
         final OpenFileDialog.EditTextDialog e = new OpenFileDialog.EditTextDialog(this);
-        e.setTitle("Rename Torrent");
+        e.setTitle(getString(R.string.rename_torrent));
         e.setText(Libtorrent.TorrentName(f));
         e.setPositiveButton(new DialogInterface.OnClickListener() {
             @Override
@@ -626,12 +624,12 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
                                 for (i.set(0); i.get() < pieces.get(); i.incrementAndGet()) {
                                     Thread.yield();
 
-                                    if(Thread.currentThread().isInterrupted()) {
+                                    if (Thread.currentThread().isInterrupted()) {
                                         Libtorrent.CloseMetaInfo();
                                         progress.dismiss();
                                         return;
                                     }
-                                    
+
                                     if (!Libtorrent.HashMetaInfo(i.get())) {
                                         handler.post(new Runnable() {
                                             @Override
@@ -719,7 +717,7 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
             @Override
             public void onClick(View view) {
                 final OpenFileDialog.EditTextDialog f = new OpenFileDialog.EditTextDialog(MainActivity.this);
-                f.setTitle("Add Magnet");
+                f.setTitle(getString(R.string.add_magnet));
                 f.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
@@ -909,7 +907,7 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
         Log.e(TAG, Libtorrent.Error());
 
         new AlertDialog.Builder(MainActivity.this)
-                .setTitle("Error")
+                .setTitle(R.string.error)
                 .setMessage(err)
                 .setNeutralButton(android.R.string.ok, new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int which) {
@@ -923,7 +921,7 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
         Log.e(TAG, Libtorrent.Error());
 
         new AlertDialog.Builder(this)
-                .setTitle("Fatal")
+                .setTitle(R.string.fatal)
                 .setMessage(err)
                 .setNeutralButton(android.R.string.ok, new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int which) {
@@ -972,7 +970,7 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
         if (intent.resolveActivityInfo(getPackageManager(), 0) != null) {
             startActivity(intent);
         } else {
-            Toast.makeText(this, "No folder view application installed", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, R.string.no_folder_app, Toast.LENGTH_SHORT).show();
         }
     }
 
@@ -1059,7 +1057,7 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
                     create.setVisibility(View.VISIBLE);
                     add.setVisibility(View.VISIBLE);
                 } else {
-                    Toast.makeText(this, "Not permitted", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this, R.string.not_permitted, Toast.LENGTH_SHORT).show();
                 }
         }
     }
@@ -1234,18 +1232,18 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
                 infoThread.start();
                 infoPort = false;
                 portIcon.setImageResource(R.drawable.port_no);
-                port.setText("Port checking...");
+                port.setText(R.string.port_checking);
             } else {
                 portIcon.setImageResource(R.drawable.port_no);
-                port.setText("Port Closed");
+                port.setText(R.string.port_closed);
             }
         } else {
             if (infoPort) {
                 portIcon.setImageResource(R.drawable.port_ok);
-                port.setText("Port Open");
+                port.setText(R.string.port_open);
             } else {
                 portIcon.setImageResource(R.drawable.port_no);
-                port.setText("Port Closed");
+                port.setText(R.string.port_closed);
             }
         }
     }
@@ -1372,7 +1370,7 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
         if (shared.getBoolean(MainApplication.PREFERENCE_DIALOG, false)) {
             createTorrentDialog(t, pp);
         } else {
-            getStorage().add(new Storage.Torrent(t, pp));
+            getStorage().add(new Storage.Torrent(this, t, pp));
             torrents.notifyDataSetChanged();
         }
     }
