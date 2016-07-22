@@ -34,7 +34,7 @@
         android:layout_centerHorizontal="true"
         android:layout_gravity="center"
         android:padding="5dp"
-        android:text="Torrents List is Empty\n\nClick 'Add' to add new Torrent"
+        android:text="@string/torrent_list_empty"
         android:textAlignment="center" />
 
     <ProgressBar

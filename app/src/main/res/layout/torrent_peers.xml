@@ -10,7 +10,7 @@
         android:layout_height="wrap_content"
         android:layout_gravity="center_horizontal"
         android:padding="10dp"
-        android:text="No Peers" />
+        android:text="@string/no_peers" />
 
     <ListView
         android:id="@+id/list"

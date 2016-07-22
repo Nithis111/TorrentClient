@@ -11,7 +11,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_centerHorizontal="true"
-        android:text="Download Metadata" />
+        android:text="@string/download_metadata" />
 
     <LinearLayout
         android:id="@+id/torrent_files_toolbar"
@@ -26,7 +26,7 @@
             android:layout_height="wrap_content"
             android:layout_centerHorizontal="true"
             android:layout_marginRight="10dp"
-            android:text="Select All"
+            android:text="@string/select_all"
             android:textAllCaps="true"
             android:textColor="?attr/colorAccent"
             android:textStyle="bold" />
@@ -37,7 +37,7 @@
             android:layout_height="wrap_content"
             android:layout_centerHorizontal="true"
             android:layout_marginLeft="10dp"
-            android:text="Select None"
+            android:text="@string/select_none"
             android:textAllCaps="true"
             android:textColor="?attr/colorAccent"
             android:textStyle="bold" />
@@ -48,6 +48,7 @@
         android:id="@+id/list"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_below="@id/torrent_files_toolbar"></ListView>
+        android:layout_below="@id/torrent_files_toolbar"
+        tools:listitem="@layout/torrent_files_item"></ListView>
 
 </RelativeLayout>

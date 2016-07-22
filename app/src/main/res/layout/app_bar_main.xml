@@ -43,7 +43,7 @@
             android:tint="@android:color/white"
             fab:fab_colorNormal="?secondBackground"
             fab:fab_colorPressed="@android:color/white"
-            fab:fab_title="Create Torrent" />
+            fab:fab_title="@string/create_torrent" />
 
         <com.getbase.floatingactionbutton.FloatingActionButton
             android:id="@+id/torrent_add_button"
@@ -54,7 +54,7 @@
             fab:fab_colorNormal="?secondBackground"
             fab:fab_colorPressed="@android:color/white"
             fab:fab_size="mini"
-            fab:fab_title="Add Torrent" />
+            fab:fab_title="@string/add_torrent" />
 
         <com.getbase.floatingactionbutton.FloatingActionButton
             android:id="@+id/torrent_magnet_button"
@@ -65,7 +65,7 @@
             fab:fab_colorNormal="?secondBackground"
             fab:fab_colorPressed="@android:color/white"
             fab:fab_size="mini"
-            fab:fab_title="Add Magnet" />
+            fab:fab_title="@string/add_magnet" />
     </com.getbase.floatingactionbutton.FloatingActionsMenu>
 
 </android.support.design.widget.CoordinatorLayout>

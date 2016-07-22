@@ -66,13 +66,14 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center"
-                android:text="Peers: " />
+                android:text="@string/peers_tab" />
 
             <TextView
                 android:id="@+id/torrent_trackers_pex"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center"
+                android:layout_marginLeft="10dp"
                 android:text="64" />
 
         </LinearLayout>
@@ -99,13 +100,14 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center"
-                android:text="Peers: " />
+                android:text="@string/peers_tab" />
 
             <TextView
                 android:id="@+id/torrent_trackers_lpd"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center"
+                android:layout_marginLeft="10dp"
                 android:text="64" />
 
         </LinearLayout>
@@ -135,7 +137,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
-            android:text="Trackers"
+            android:text="@string/trackers"
             android:textStyle="bold" />
 
     </LinearLayout>
@@ -145,7 +147,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
-        android:text="No Trackers" />
+        android:text="@string/no_trackers" />
 
     <ListView
         android:id="@+id/torrent_trackers_list"
