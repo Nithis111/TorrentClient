@@ -8,7 +8,7 @@ Torrent Client simple UI.
 
 Manual install
 
-    ./libtorrent/release.sh && gradle installDebug
+    ./libtorrent/debug.sh && gradle installDebug
 
 # Screenshots
 
