@@ -130,7 +130,7 @@ public class TorrentDialogFragment extends DialogFragment implements MainActivit
     @Override
     public Dialog onCreateDialog(Bundle savedInstanceState) {
         return new AlertDialog.Builder(getActivity())
-                .setNeutralButton("Close",
+                .setNeutralButton(getContext().getString(R.string.close),
                         new DialogInterface.OnClickListener() {
                             public void onClick(DialogInterface dialog, int whichButton) {
                                 dialog.dismiss();

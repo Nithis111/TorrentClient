@@ -76,9 +76,9 @@ public class MultiEditListPreference extends DialogPreference {
                 @Override
                 public void onClick(View v) {
                     android.app.AlertDialog.Builder builder = new android.app.AlertDialog.Builder(getContext());
-                    builder.setTitle("Delete Tracker");
-                    builder.setMessage(f + "\n\n" + "Are you sure ? ");
-                    builder.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+                    builder.setTitle(R.string.delete_tracker);
+                    builder.setMessage(f + "\n\n" + getContext().getString(R.string.are_you_sure));
+                    builder.setPositiveButton(R.string.yes, new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
                             dialog.cancel();
@@ -86,7 +86,7 @@ public class MultiEditListPreference extends DialogPreference {
                             notifyDataSetChanged();
                         }
                     });
-                    builder.setNegativeButton("No", new DialogInterface.OnClickListener() {
+                    builder.setNegativeButton(R.string.no, new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
                             dialog.cancel();
@@ -145,13 +145,13 @@ public class MultiEditListPreference extends DialogPreference {
                 }
             }
         });
-        builder.setPositiveButton("CLOSE", new DialogInterface.OnClickListener() {
+        builder.setPositiveButton(R.string.close, new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
                 dialog.dismiss();
             }
         });
-        builder.setNeutralButton("ADD", new DialogInterface.OnClickListener() {
+        builder.setNeutralButton(getContext().getString(R.string.add), new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
             }
@@ -165,7 +165,7 @@ public class MultiEditListPreference extends DialogPreference {
             @Override
             public void onClick(View view) {
                 final OpenFileDialog.EditTextDialog d = new OpenFileDialog.EditTextDialog(getContext());
-                d.setTitle("Add Tracker");
+                d.setTitle(R.string.add_tracker);
                 d.setPositiveButton(new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {

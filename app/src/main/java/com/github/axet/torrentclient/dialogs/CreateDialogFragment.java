@@ -52,7 +52,7 @@ public class CreateDialogFragment extends AddDialogFragment {
     }
 
     void builder(AlertDialog.Builder b) {
-        b.setTitle("Create Torrent");
+        b.setTitle(getContext().getString(R.string.create_torrent));
     }
 
     @Override

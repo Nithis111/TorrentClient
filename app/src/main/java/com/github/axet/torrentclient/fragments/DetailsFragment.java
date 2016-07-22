@@ -90,7 +90,7 @@ public class DetailsFragment extends Fragment implements MainActivity.TorrentFra
                 ClipboardManager clipboard = (ClipboardManager) getContext().getSystemService(Context.CLIPBOARD_SERVICE);
                 ClipData clip = ClipData.newPlainText("hash", h);
                 clipboard.setPrimaryClip(clip);
-                Toast.makeText(getContext(), "Hash copied!", Toast.LENGTH_SHORT).show();
+                Toast.makeText(getContext(), R.string.hash_copied, Toast.LENGTH_SHORT).show();
             }
         });
 
@@ -157,22 +157,22 @@ public class DetailsFragment extends Fragment implements MainActivity.TorrentFra
             public void onClick(View v) {
                 if (Libtorrent.TorrentStatus(t) == Libtorrent.StatusChecking) {
                     Libtorrent.StopTorrent(t);
-                    Toast.makeText(getContext(), "Stop Checking", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(getContext(), R.string.stop_checking, Toast.LENGTH_SHORT).show();
                     checkUpdate.run();
                     return;
                 }
 
                 Libtorrent.CheckTorrent(t);
-                Toast.makeText(getContext(), "Start Checking", Toast.LENGTH_SHORT).show();
+                Toast.makeText(getContext(), R.string.start_checking, Toast.LENGTH_SHORT).show();
                 checkUpdate.run();
             }
         });
 
         pview.setTorrent(t);
 
-        MainApplication.setText(size, !Libtorrent.MetaTorrent(t) ? "" : MainApplication.formatSize(Libtorrent.TorrentBytesLength(t)));
+        MainApplication.setText(size, !Libtorrent.MetaTorrent(t) ? "" : MainApplication.formatSize(getContext(), Libtorrent.TorrentBytesLength(t)));
 
-        MainApplication.setText(pieces, !Libtorrent.MetaTorrent(t) ? "" : Libtorrent.TorrentPiecesCount(t) + " / " + MainApplication.formatSize(Libtorrent.TorrentPieceLength(t)));
+        MainApplication.setText(pieces, !Libtorrent.MetaTorrent(t) ? "" : Libtorrent.TorrentPiecesCount(t) + " / " + MainApplication.formatSize(getContext(), Libtorrent.TorrentPieceLength(t)));
 
         Libtorrent.InfoTorrent i = Libtorrent.TorrentInfo(t);
 
@@ -189,10 +189,10 @@ public class DetailsFragment extends Fragment implements MainActivity.TorrentFra
                     return;
 
                 AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
-                builder.setTitle("Open URL Browser");
+                builder.setTitle(R.string.open_url);
 
-                builder.setMessage(c + "\n\n" + "Are you sure ? ");
-                builder.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+                builder.setMessage(c + "\n\n" + getContext().getString(R.string.are_you_sure));
+                builder.setPositiveButton(R.string.yes, new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
                         dialog.cancel();
@@ -200,7 +200,7 @@ public class DetailsFragment extends Fragment implements MainActivity.TorrentFra
                         startActivity(browserIntent);
                     }
                 });
-                builder.setNegativeButton("No", new DialogInterface.OnClickListener() {
+                builder.setNegativeButton(R.string.no, new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
                         dialog.cancel();
@@ -212,16 +212,16 @@ public class DetailsFragment extends Fragment implements MainActivity.TorrentFra
 
         switch (Libtorrent.TorrentStatus(t)) {
             case Libtorrent.StatusDownloading:
-                status.setText("Downloading");
+                status.setText(R.string.status_downloading);
                 break;
             case Libtorrent.StatusPaused:
-                status.setText("Paused");
+                status.setText(R.string.status_paused);
                 break;
             case Libtorrent.StatusSeeding:
-                status.setText("Seeding");
+                status.setText(R.string.status_seeding);
                 break;
             case Libtorrent.StatusChecking:
-                status.setText("Checking");
+                status.setText(R.string.status_checking);
                 break;
         }
 
@@ -229,10 +229,10 @@ public class DetailsFragment extends Fragment implements MainActivity.TorrentFra
 
         TextView downloaded = (TextView) v.findViewById(R.id.torrent_downloaded);
         Libtorrent.StatsTorrent b = Libtorrent.TorrentStats(t);
-        downloaded.setText(MainApplication.formatSize(b.getDownloaded()));
+        downloaded.setText(MainApplication.formatSize(getContext(), b.getDownloaded()));
 
         TextView uploaded = (TextView) v.findViewById(R.id.torrent_uploaded);
-        uploaded.setText(MainApplication.formatSize(b.getUploaded()));
+        uploaded.setText(MainApplication.formatSize(getContext(), b.getUploaded()));
 
         TextView ratio = (TextView) v.findViewById(R.id.torrent_ratio);
         float r = 0;
@@ -251,8 +251,8 @@ public class DetailsFragment extends Fragment implements MainActivity.TorrentFra
 
         MainApplication.setDate(completed, info.getDateCompleted());
 
-        downloading.setText(MainApplication.formatDuration(b.getDownloading() / 1000000));
+        downloading.setText(MainApplication.formatDuration(getContext(), b.getDownloading() / 1000000));
 
-        seeding.setText(MainApplication.formatDuration(b.getSeeding() / 1000000));
+        seeding.setText(MainApplication.formatDuration(getContext(), b.getSeeding() / 1000000));
     }
 }

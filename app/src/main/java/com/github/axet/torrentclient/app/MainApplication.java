@@ -64,7 +64,7 @@ public class MainApplication extends Application {
 
     public void create() {
         final SharedPreferences shared = PreferenceManager.getDefaultSharedPreferences(this);
-        SharedPreferences.Editor edit =  shared.edit();
+        SharedPreferences.Editor edit = shared.edit();
         edit.putBoolean(PREFERENCE_RUN, true);
         edit.commit();
 
@@ -93,7 +93,7 @@ public class MainApplication extends Application {
             savestate = null;
         }
         final SharedPreferences shared = PreferenceManager.getDefaultSharedPreferences(this);
-        SharedPreferences.Editor edit =  shared.edit();
+        SharedPreferences.Editor edit = shared.edit();
         edit.putBoolean(PREFERENCE_RUN, false);
         edit.commit();
     }
@@ -182,24 +182,24 @@ public class MainApplication extends Application {
         return str;
     }
 
-    public static String formatFree(long free, long d, long u) {
-        return String.format("%s free · ↓ %s · ↑ %s", MainApplication.formatSize(free), MainApplication.formatSize(d) + "/s", MainApplication.formatSize(u) + "/s");
+    public static String formatFree(Context context, long free, long d, long u) {
+        return context.getString(R.string.free, MainApplication.formatSize(context, free), MainApplication.formatSize(context, d), MainApplication.formatSize(context, u));
     }
 
-    public static String formatSize(long s) {
+    public static String formatSize(Context context, long s) {
         if (s > 0.1 * 1024 * 1024 * 1024) {
             float f = s / 1024f / 1024f / 1024f;
-            return String.format("%.1f GB", f);
+            return context.getString(R.string.size_gb, f);
         } else if (s > 0.1 * 1024 * 1024) {
             float f = s / 1024f / 1024f;
-            return String.format("%.1f MB", f);
+            return context.getString(R.string.size_mb, f);
         } else {
             float f = s / 1024f;
-            return String.format("%.1f kb", f);
+            return context.getString(R.string.size_kb, f);
         }
     }
 
-    static public String formatDuration(long diff) {
+    static public String formatDuration(Context context, long diff) {
         int diffMilliseconds = (int) (diff % 1000);
         int diffSeconds = (int) (diff / 1000 % 60);
         int diffMinutes = (int) (diff / (60 * 1000) % 60);
@@ -209,7 +209,7 @@ public class MainApplication extends Application {
         String str = "";
 
         if (diffDays > 0)
-            str = diffDays + "d " + formatTime(diffHours) + ":" + formatTime(diffMinutes) + ":" + formatTime(diffSeconds);
+            str = diffDays + context.getString(R.string.day_symbol) + " " + formatTime(diffHours) + ":" + formatTime(diffMinutes) + ":" + formatTime(diffSeconds);
         else if (diffHours > 0)
             str = formatTime(diffHours) + ":" + formatTime(diffMinutes) + ":" + formatTime(diffSeconds);
         else

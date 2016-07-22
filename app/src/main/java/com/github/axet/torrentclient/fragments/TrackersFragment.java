@@ -67,9 +67,9 @@ public class TrackersFragment extends Fragment implements MainActivity.TorrentFr
                 @Override
                 public void onClick(View view) {
                     AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
-                    builder.setTitle("Delete Tracker");
-                    builder.setMessage(ff.get(i).getAddr() + "\n\n" + "Are you sure ? ");
-                    builder.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+                    builder.setTitle(R.string.delete_tracker);
+                    builder.setMessage(ff.get(i).getAddr() + "\n\n" + getContext().getString(R.string.are_you_sure));
+                    builder.setPositiveButton(R.string.yes, new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
                             dialog.cancel();
@@ -77,7 +77,7 @@ public class TrackersFragment extends Fragment implements MainActivity.TorrentFr
                             update();
                         }
                     });
-                    builder.setNegativeButton("No", new DialogInterface.OnClickListener() {
+                    builder.setNegativeButton(R.string.no, new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
                             dialog.cancel();
@@ -144,7 +144,7 @@ public class TrackersFragment extends Fragment implements MainActivity.TorrentFr
             @Override
             public void onClick(View view) {
                 final OpenFileDialog.EditTextDialog e = new OpenFileDialog.EditTextDialog(getContext());
-                e.setTitle("Add Tracker");
+                e.setTitle(getContext().getString(R.string.add_tracker));
                 e.setText("");
                 e.setPositiveButton(new DialogInterface.OnClickListener() {
                     @Override

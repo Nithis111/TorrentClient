@@ -103,8 +103,8 @@ public class PeersFragment extends Fragment implements MainActivity.TorrentFragm
             addr.setText(f.getAddr());
             stats.setText(str);
             name.setText(f.getName());
-            d.setText("↓ " + MainApplication.formatSize(di.getCurrentSpeed()) + "/s");
-            u.setText("↑ " + MainApplication.formatSize(ui.getCurrentSpeed()) + "/s");
+            d.setText("↓ " + MainApplication.formatSize(getContext(), di.getCurrentSpeed()) + getContext().getString(R.string.per_second));
+            u.setText("↑ " + MainApplication.formatSize(getContext(), ui.getCurrentSpeed()) + getContext().getString(R.string.per_second));
 
             return view;
         }
