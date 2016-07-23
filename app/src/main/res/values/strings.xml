@@ -112,7 +112,6 @@
     <string name="n_a">N/A</string>
 
     <string name="dht_exchange">DHT Exchange</string>
-    <string name="announce">Announce:</string>
     <string name="peer_exchange">Peer Exchange</string>
     <string name="lpd">Local Peers Discovery</string>
     <string name="announce_tab">Announce:</string>
