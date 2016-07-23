@@ -40,7 +40,7 @@
     <string name="size_kb">%1$.1f кб</string>
     <string name="size_mb">%1$.1f МБ</string>
     <string name="size_gb">%1$.1f ГБ</string>
-    <string name="free">%1$s свободно · ↓ %2$s/с · ↑ %3$s/с</string>
+    <string name="free">%1$s свободно · ↓ %2$s · ↑ %3$s</string>
     <string name="per_second">/с</string>
     <string name="size_tab">Размер: </string>
     <string name="start_checking">Проверка запущена</string>
