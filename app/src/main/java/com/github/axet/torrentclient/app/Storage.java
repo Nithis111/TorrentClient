@@ -319,7 +319,7 @@ public class Storage {
         } catch (PackageManager.NameNotFoundException e) {
         }
 
-        Libtorrent.SetDefaultListenAddr(":0");
+        Libtorrent.setDefaultListenAddr(":0");
 
         if (!Libtorrent.Create()) {
             throw new RuntimeException(Libtorrent.Error());
