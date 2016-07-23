@@ -2,6 +2,7 @@ package com.github.axet.torrentclient.dialogs;
 
 import android.app.Activity;
 import android.app.Dialog;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
@@ -34,10 +35,12 @@ public class TorrentDialogFragment extends DialogFragment implements MainActivit
         long t;
 
         Map<Integer, Fragment> map = new HashMap<>();
+        Context context;
 
-        public TorrentPagerAdapter(FragmentManager fm, long t) {
+        public TorrentPagerAdapter(Context context, FragmentManager fm, long t) {
             super(fm);
 
+            this.context = context;
             this.t = t;
         }
 
@@ -84,13 +87,13 @@ public class TorrentDialogFragment extends DialogFragment implements MainActivit
         public CharSequence getPageTitle(int position) {
             switch (position) {
                 case 0:
-                    return "DETAILS";
+                    return context.getString(R.string.tab_details);
                 case 1:
-                    return "FILES";
+                    return context.getString(R.string.tab_files);
                 case 2:
-                    return "PEERS";
+                    return context.getString(R.string.tab_peers);
                 case 3:
-                    return "TRACKERS";
+                    return context.getString(R.string.tab_trackers);
                 default:
                     return "EMPTY";
             }
@@ -159,7 +162,7 @@ public class TorrentDialogFragment extends DialogFragment implements MainActivit
         long t = getArguments().getLong("torrent");
 
         pager = (ViewPager) v.findViewById(R.id.pager);
-        TorrentPagerAdapter adapter = new TorrentPagerAdapter(getChildFragmentManager(), t);
+        TorrentPagerAdapter adapter = new TorrentPagerAdapter(getContext(), getChildFragmentManager(), t);
         pager.setAdapter(adapter);
 
         TabLayout tabLayout = (TabLayout) v.findViewById(R.id.tab_layout);

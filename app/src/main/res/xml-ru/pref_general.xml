@@ -1,0 +1,43 @@
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <com.github.axet.androidlibrary.widgets.StoragePathPreference
+        android:defaultValue="Torrent Client"
+        android:key="storage_path"
+        android:summary="/sdcard/[path]/"
+        android:title="Путь к папке" />
+
+    <com.github.axet.torrentclient.widgets.MultiEditListPreference
+        android:defaultValue="udp://tracker.openbittorrent.com:80\nudp://tracker.kicks-ass.net:80/announce"
+        android:key="announces_list"
+        android:summary="Список трекеров для новых торрентов"
+        android:title="Список трекеров" />
+
+    <CheckBoxPreference
+        android:defaultValue="false"
+        android:key="dialog"
+        android:summary="Всегда поакзывать 'Диалог для торрентов'"
+        android:title="Диалог для торрентов" />
+
+    <CheckBoxPreference
+        android:defaultValue="false"
+        android:key="start_at_boot"
+        android:summary="Запускать клиент при старте телефона"
+        android:title="Запускать при старте" />
+
+    <CheckBoxPreference
+        android:defaultValue="true"
+        android:key="wifi"
+        android:summary="Скачивать только при включенном Wifi"
+        android:title="Wifi режим" />
+
+    <ListPreference
+        android:defaultValue="Theme_White"
+        android:entries="@array/themes"
+        android:entryValues="@array/themes_values"
+        android:key="theme"
+        android:negativeButtonText="@null"
+        android:positiveButtonText="@null"
+        android:summary="Установить тему приложения (dark / light)"
+        android:title="Тема приложения" />
+
+</PreferenceScreen>

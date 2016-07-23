@@ -14,7 +14,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="DHT Exchange"
+            android:text="@string/dht_exchange"
             android:textStyle="bold" />
 
         <LinearLayout
@@ -25,7 +25,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:paddingLeft="10dp"
-                android:text="Announce:" />
+                android:text="@string/announce_tab" />
 
 
             <TextView
@@ -53,7 +53,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Peer Exchange"
+            android:text="@string/peer_exchange"
             android:textStyle="bold" />
 
         <LinearLayout
@@ -87,7 +87,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Local Peers Discovery"
+            android:text="@string/lpd"
             android:textStyle="bold" />
 
         <LinearLayout

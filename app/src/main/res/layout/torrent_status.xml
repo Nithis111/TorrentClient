@@ -272,7 +272,7 @@
                         android:layout_height="wrap_content"
                         android:layout_gravity="left"
                         android:layout_marginLeft="5dp"
-                        android:text="Downloading" />
+                        android:text="@string/status_downloading" />
                 </TableRow>
 
                 <TableRow>

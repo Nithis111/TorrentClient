@@ -6,7 +6,7 @@
         <item>Theme Dark</item>
     </string-array>
 
-    <string-array name="themes_values">
+    <string-array name="themes_values" translatable="false">
         <item>Theme_White</item>
         <item>Theme_Dark</item>
     </string-array>
@@ -33,7 +33,6 @@
         <item quantity="one">%d second</item>
         <item quantity="other">%d seconds</item>
     </plurals>
-    <string name="title_activity_main2">Main2Activity</string>
 
     <string name="navigation_drawer_open">Open navigation drawer</string>
     <string name="navigation_drawer_close">Close navigation drawer</string>
@@ -54,6 +53,7 @@
     <string name="are_you_sure">"Are you sure ? "</string>
     <string name="yes">Yes</string>
     <string name="no">No</string>
+    <string name="status_queue">Quque</string>
     <string name="status_downloading">Downloading</string>
     <string name="status_paused">Paused</string>
     <string name="status_seeding">Seeding</string>
@@ -80,7 +80,6 @@
     <string name="pieces">Pieces</string>
     <string name="info">Info</string>
     <string name="download_metadata">Download Metadata</string>
-    <string name="browse">Browse</string>
     <string name="path_tab">Path:</string>
     <string name="name_tab">Name:</string>
     <string name="hash_tab">Hash:</string>
@@ -104,4 +103,22 @@
     <string name="trackers">Trackers</string>
     <string name="no_trackers">No Trackers</string>
     <string name="peers_tab">Peers:</string>
+    <string name="ok">OK</string>
+    <string name="cancel">Cancel</string>
+    <string name="tab_details">DETAILS</string>
+    <string name="tab_files">FILES</string>
+    <string name="tab_peers">PEERS</string>
+    <string name="tab_trackers">TRACKERS</string>
+    <string name="n_a">N/A</string>
+
+    <string name="dht_exchange">DHT Exchange</string>
+    <string name="announce">Announce:</string>
+    <string name="peer_exchange">Peer Exchange</string>
+    <string name="lpd">Local Peers Discovery</string>
+    <string name="announce_tab">Announce:</string>
+    <string name="next_tab">next:</string>
+    <string name="scrape_tab">Scrape:</string>
+    <string name="check">Check</string>
+    <string name="open_folder">Open Torrents Folder</string>
+    <string name="exit">Exit</string>
 </resources>

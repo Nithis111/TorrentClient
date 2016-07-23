@@ -31,8 +31,6 @@ public class MainApplication extends Application {
     public static final String PREFERENCE_DIALOG = "dialog";
     public static final String PREFERENCE_RUN = "run";
 
-    public static final String NA = "N/A";
-
     public static final String SAVE_STATE = MainApplication.class.getName() + ".SAVE_STATE";
 
     Storage storage;
@@ -222,7 +220,7 @@ public class MainApplication extends Application {
         TextView t = (TextView) v;
         if (text.isEmpty()) {
             t.setEnabled(false);
-            t.setText(NA);
+            t.setText(R.string.n_a);
         } else {
             t.setEnabled(true);
             t.setText(text);

@@ -1,0 +1,124 @@
+<resources>
+    <string name="app_name">Торрент Клиент</string>
+
+    <string-array name="themes">
+        <item>Тема Светлая (по умолчанию)</item>
+        <item>Тема Темная</item>
+    </string-array>
+
+    <string name="title_activity_main">Торрент Клиент</string>
+    <string name="action_settings">Настройки</string>
+
+    <plurals name="days">
+        <item quantity="one">%d день</item>
+        <item quantity="few">%d дня</item>
+        <item quantity="many">%d дней</item>
+    </plurals>
+
+    <plurals name="hours">
+        <item quantity="one">%d час</item>
+        <item quantity="few">%d часа</item>
+        <item quantity="many">%d часов</item>
+    </plurals>
+
+    <plurals name="minutes">
+        <item quantity="one">%d минута</item>
+        <item quantity="few">%d минуты</item>
+        <item quantity="many">%d минут</item>
+    </plurals>
+
+    <plurals name="seconds">
+        <item quantity="one">%d секунда</item>
+        <item quantity="few">%d секунды</item>
+        <item quantity="many">%d секунд</item>
+    </plurals>
+
+    <string name="navigation_drawer_open">Открыть навигационную панель</string>
+    <string name="navigation_drawer_close">Закрыть навигационную панель</string>
+    <string name="not_permitted">Доступ запрещен</string>
+    <string name="day_symbol">д</string>
+    <string name="size_kb">%1$.1f кб</string>
+    <string name="size_mb">%1$.1f МБ</string>
+    <string name="size_gb">%1$.1f ГБ</string>
+    <string name="free">%1$s свободно · ↓ %2$s/с · ↑ %3$s/с</string>
+    <string name="per_second">/с</string>
+    <string name="size_tab">Размер: </string>
+    <string name="start_checking">Проверка запущена</string>
+    <string name="stop_checking">Проверка остановлена</string>
+    <string name="create_torrent">Создать Торрент</string>
+    <string name="close">Закрыть</string>
+    <string name="hash_copied">Хеш скопирован!</string>
+    <string name="open_url">Открыть URL в Браузере</string>
+    <string name="are_you_sure">Вы уверены?</string>
+    <string name="yes">Да</string>
+    <string name="no">Нет</string>
+    <string name="status_queue">В очереди</string>
+    <string name="status_downloading">Скачивается</string>
+    <string name="status_paused">Пауза</string>
+    <string name="status_seeding">Сидирование</string>
+    <string name="status_checking">Проверка</string>
+    <string name="delete_tracker">Удалить Трекер</string>
+    <string name="add_tracker">Добавить Трекер</string>
+    <string name="add">Добавить</string>
+    <string name="delete_with_data">Удалить с данными</string>
+    <string name="delete_torrent">Удалить Торрент</string>
+    <string name="rename_torrent">Переименовать Торрент</string>
+    <string name="add_magnet">Добавить Магнет</string>
+    <string name="error">Ошибка</string>
+    <string name="fatal">Фатальная</string>
+    <string name="no_folder_app">Нет приложения просмотра папок</string>
+    <string name="port_checking">Проверка порта...</string>
+    <string name="port_closed">Порт закрыт</string>
+    <string name="port_open">Порт открыт</string>
+    <string name="interfaces">Интерфейсы</string>
+    <string name="add_torrent">Добавить Торрент</string>
+    <string name="torrent_list_empty">Список Торрентов пуст\n\nНажмите \'Добавить\' чтобы добавить Торрент</string>
+    <string name="select_all">Выбрать все</string>
+    <string name="select_none">Очистить</string>
+    <string name="pieces_tab">Части:</string>
+    <string name="pieces">Части</string>
+    <string name="info">Информация</string>
+    <string name="download_metadata">Скачать Метадату</string>
+    <string name="path_tab">Путь:</string>
+    <string name="name_tab">Имя:</string>
+    <string name="hash_tab">Хеш:</string>
+    <string name="torrent">Торрент</string>
+    <string name="no_peers">Нет пиров</string>
+    <string name="creator_tab">Создатель:</string>
+    <string name="created_on_tab">Создано:</string>
+    <string name="comment_tab">Комментарий:</string>
+    <string name="transfering">Передача</string>
+    <string name="status_tab">Статус:</string>
+    <string name="progress_tab">Прогресс:</string>
+    <string name="downloaded_tab">Скачено:</string>
+    <string name="uploaded_tab">Загружено:</string>
+    <string name="ratio_tab">Отношение:</string>
+    <string name="dates">Даты</string>
+    <string name="added_tab">Добавлено:</string>
+    <string name="completed_tab">Закончено:</string>
+    <string name="time_elapsed">Прошедшее время</string>
+    <string name="downloading_tab">Скачивание:</string>
+    <string name="seeding_tab">Сидирование:</string>
+    <string name="trackers">Трекрер</string>
+    <string name="no_trackers">Нет трекеров</string>
+    <string name="peers_tab">Пиры:</string>
+    <string name="ok">OK</string>
+    <string name="cancel">Отмена</string>
+    <string name="tab_details">Подробно</string>
+    <string name="tab_files">Файлы</string>
+    <string name="tab_peers">Пиры</string>
+    <string name="tab_trackers">Трекеры</string>
+    <string name="n_a">Н/А</string>
+
+    <string name="dht_exchange">DHT Обмен</string>
+    <string name="peer_exchange">Обмен Пирами</string>
+    <string name="lpd">Локальный Обмен Пирами</string>
+    <string name="announce_tab">Анонс:</string>
+    <string name="next_tab">следующий:</string>
+    <string name="scrape_tab">Скрейп:</string>
+
+    <string name="check">Проверка</string>
+    <string name="open_folder">Открыть папку с торрентами</string>
+    <string name="exit">Выход</string>
+
+</resources>

@@ -220,7 +220,7 @@ public class AddDialogFragment extends DialogFragment implements MainActivity.To
     @Override
     public Dialog onCreateDialog(Bundle savedInstanceState) {
         AlertDialog.Builder b = new AlertDialog.Builder(getActivity())
-                .setPositiveButton("OK",
+                .setPositiveButton(R.string.ok,
                         new DialogInterface.OnClickListener() {
                             public void onClick(DialogInterface dialog, int whichButton) {
                                 long t = getArguments().getLong("torrent");
@@ -232,7 +232,7 @@ public class AddDialogFragment extends DialogFragment implements MainActivity.To
                             }
                         }
                 )
-                .setNegativeButton("Cancel",
+                .setNegativeButton(R.string.cancel,
                         new DialogInterface.OnClickListener() {
                             public void onClick(DialogInterface dialog, int whichButton) {
                                 dialog.dismiss();
@@ -240,7 +240,7 @@ public class AddDialogFragment extends DialogFragment implements MainActivity.To
                             }
                         }
                 )
-                .setTitle("Add Torrent")
+                .setTitle(R.string.add_torrent)
                 .setView(createView(LayoutInflater.from(getContext()), null, savedInstanceState));
 
         builder(b);
@@ -424,7 +424,7 @@ public class AddDialogFragment extends DialogFragment implements MainActivity.To
         } else {
             String n = Libtorrent.TorrentName(t);
             if (n.isEmpty())
-                n = MainApplication.NA;
+                n = getString(R.string.n_a);
             name.setText(n);
         }
 

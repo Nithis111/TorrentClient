@@ -106,9 +106,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:src="@drawable/ic_folder_open_black_24dp"
-                            android:text="@string/browse"
                             android:tint="?attr/colorAccent" />
-
                     </FrameLayout>
                 </FrameLayout>
 
