@@ -2,25 +2,18 @@ package com.github.axet.torrentclient.dialogs;
 
 import android.app.Activity;
 import android.app.Dialog;
-import android.content.Context;
 import android.content.DialogInterface;
-import android.content.SharedPreferences;
 import android.os.Bundle;
-import android.os.Environment;
-import android.preference.PreferenceManager;
 import android.support.annotation.Nullable;
 import android.support.v4.app.DialogFragment;
-import android.support.v4.app.Fragment;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.Window;
 import android.widget.BaseAdapter;
 import android.widget.CheckBox;
-import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
@@ -135,7 +128,7 @@ public class AddDialogFragment extends DialogFragment implements MainActivity.To
             MainApplication.setText(percent, (f.file.getBytesCompleted() * 100 / f.file.getLength()) + "%");
 
             TextView size = (TextView) view.findViewById(R.id.torrent_files_size);
-            size.setText(getContext().getString(R.string.size) + MainApplication.formatSize(getContext(), f.file.getLength()));
+            size.setText(getContext().getString(R.string.size_tab) + MainApplication.formatSize(getContext(), f.file.getLength()));
 
             TextView folder = (TextView) view.findViewById(R.id.torrent_files_folder);
             TextView file = (TextView) view.findViewById(R.id.torrent_files_name);
@@ -227,7 +220,7 @@ public class AddDialogFragment extends DialogFragment implements MainActivity.To
     @Override
     public Dialog onCreateDialog(Bundle savedInstanceState) {
         AlertDialog.Builder b = new AlertDialog.Builder(getActivity())
-                .setPositiveButton("OK",
+                .setPositiveButton(R.string.ok,
                         new DialogInterface.OnClickListener() {
                             public void onClick(DialogInterface dialog, int whichButton) {
                                 long t = getArguments().getLong("torrent");
@@ -239,7 +232,7 @@ public class AddDialogFragment extends DialogFragment implements MainActivity.To
                             }
                         }
                 )
-                .setNegativeButton("Cancel",
+                .setNegativeButton(R.string.cancel,
                         new DialogInterface.OnClickListener() {
                             public void onClick(DialogInterface dialog, int whichButton) {
                                 dialog.dismiss();
@@ -247,7 +240,7 @@ public class AddDialogFragment extends DialogFragment implements MainActivity.To
                             }
                         }
                 )
-                .setTitle("Add Torrent")
+                .setTitle(R.string.add_torrent)
                 .setView(createView(LayoutInflater.from(getContext()), null, savedInstanceState));
 
         builder(b);
@@ -431,7 +424,7 @@ public class AddDialogFragment extends DialogFragment implements MainActivity.To
         } else {
             String n = Libtorrent.TorrentName(t);
             if (n.isEmpty())
-                n = MainApplication.NA;
+                n = getString(R.string.n_a);
             name.setText(n);
         }
 

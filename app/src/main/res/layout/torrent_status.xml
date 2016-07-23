@@ -14,7 +14,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Torrent"
+            android:text="@string/torrent"
             android:textStyle="bold" />
 
         <TableLayout
@@ -30,7 +30,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="right|center_vertical"
-                    android:text="Hash:" />
+                    android:text="@string/hash_tab" />
 
 
                 <com.github.axet.androidlibrary.widgets.PathMax
@@ -74,7 +74,7 @@
                     android:layout_width="90dp"
                     android:layout_height="wrap_content"
                     android:layout_gravity="right"
-                    android:text="Size:" />
+                    android:text="@string/size_tab" />
 
                 <TextView
                     android:id="@+id/torrent_size"
@@ -92,7 +92,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="right"
-                    android:text="Pieces:" />
+                    android:text="@string/pieces_tab" />
 
                 <TextView
                     android:id="@+id/torrent_pieces"
@@ -110,7 +110,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="right|center_vertical"
-                    android:text="Path:" />
+                    android:text="@string/path_tab" />
 
 
                 <com.github.axet.androidlibrary.widgets.PathMax
@@ -155,7 +155,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="right"
-                    android:text="Creator:" />
+                    android:text="@string/creator_tab" />
 
                 <TextView
                     android:id="@+id/torrent_creator"
@@ -173,7 +173,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="right"
-                    android:text="Created On:" />
+                    android:text="@string/created_on_tab" />
 
                 <TextView
                     android:id="@+id/torrent_created_on"
@@ -192,7 +192,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="right|center_vertical"
-                    android:text="Comment:" />
+                    android:text="@string/comment_tab" />
 
                 <TextView
                     android:id="@+id/torrent_comment"
@@ -225,7 +225,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="5dp"
                 android:layout_weight="1"
-                android:text="Transfering"
+                android:text="@string/transfering"
                 android:textStyle="bold" />
 
             <FrameLayout
@@ -239,7 +239,7 @@
                     android:layout_gravity="center"
                     android:layout_marginBottom="5dp"
                     android:layout_weight="1"
-                    android:text="Pieces"
+                    android:text="@string/pieces"
                     android:textStyle="bold" />
 
             </FrameLayout>
@@ -264,7 +264,7 @@
                         android:layout_width="90dp"
                         android:layout_height="wrap_content"
                         android:layout_gravity="right"
-                        android:text="Status:" />
+                        android:text="@string/status_tab" />
 
                     <TextView
                         android:id="@+id/torrent_status"
@@ -272,7 +272,7 @@
                         android:layout_height="wrap_content"
                         android:layout_gravity="left"
                         android:layout_marginLeft="5dp"
-                        android:text="Downloading" />
+                        android:text="@string/status_downloading" />
                 </TableRow>
 
                 <TableRow>
@@ -281,7 +281,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_gravity="right"
-                        android:text="Progress:" />
+                        android:text="@string/progress_tab" />
 
                     <TextView
                         android:id="@+id/torrent_progress"
@@ -299,7 +299,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_gravity="right"
-                        android:text="Downloaded:" />
+                        android:text="@string/downloaded_tab" />
 
                     <TextView
                         android:id="@+id/torrent_downloaded"
@@ -316,7 +316,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_gravity="right"
-                        android:text="Uploaded:" />
+                        android:text="@string/uploaded_tab" />
 
                     <TextView
                         android:id="@+id/torrent_uploaded"
@@ -333,7 +333,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_gravity="right"
-                        android:text="Ratio:" />
+                        android:text="@string/ratio_tab" />
 
                     <TextView
                         android:id="@+id/torrent_ratio"
@@ -380,7 +380,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Dates"
+            android:text="@string/dates"
             android:textStyle="bold" />
 
         <TableLayout
@@ -394,7 +394,7 @@
                     android:layout_width="90dp"
                     android:layout_height="wrap_content"
                     android:layout_gravity="right"
-                    android:text="Added:" />
+                    android:text="@string/added_tab" />
 
                 <TextView
                     android:id="@+id/torrent_added"
@@ -412,7 +412,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="right"
-                    android:text="Completed:" />
+                    android:text="@string/completed_tab" />
 
                 <TextView
                     android:id="@+id/torrent_completed"
@@ -433,7 +433,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Time Elapsed"
+            android:text="@string/time_elapsed"
             android:textStyle="bold" />
 
 
@@ -448,7 +448,7 @@
                     android:layout_width="90dp"
                     android:layout_height="wrap_content"
                     android:layout_gravity="right"
-                    android:text="Downloading:" />
+                    android:text="@string/downloading_tab" />
 
                 <TextView
                     android:id="@+id/torrent_downloading"
@@ -465,7 +465,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="right"
-                    android:text="Seeding:" />
+                    android:text="@string/seeding_tab" />
 
                 <TextView
                     android:id="@+id/torrent_seeding"

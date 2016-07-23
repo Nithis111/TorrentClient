@@ -5,16 +5,16 @@
     <item
         android:id="@+id/action_rename"
         android:orderInCategory="100"
-        android:title="Rename"
+        android:title="@string/rename_torrent"
         app:showAsAction="never" />
     <item
         android:id="@+id/action_check"
         android:orderInCategory="200"
-        android:title="Check"
+        android:title="@string/check"
         app:showAsAction="never" />
     <item
         android:id="@+id/action_delete"
         android:orderInCategory="200"
-        android:title="Delete"
+        android:title="@string/delete_torrent"
         app:showAsAction="never" />
 </menu>

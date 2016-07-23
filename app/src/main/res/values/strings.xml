@@ -6,7 +6,7 @@
         <item>Theme Dark</item>
     </string-array>
 
-    <string-array name="themes_values">
+    <string-array name="themes_values" translatable="false">
         <item>Theme_White</item>
         <item>Theme_Dark</item>
     </string-array>
@@ -33,7 +33,6 @@
         <item quantity="one">%d second</item>
         <item quantity="other">%d seconds</item>
     </plurals>
-    <string name="title_activity_main2">Main2Activity</string>
 
     <string name="navigation_drawer_open">Open navigation drawer</string>
     <string name="navigation_drawer_close">Close navigation drawer</string>
@@ -44,7 +43,7 @@
     <string name="size_gb">%1$.1f GB</string>
     <string name="free">%1$s free · ↓ %2$s/s · ↑ %3$s/s</string>
     <string name="per_second">/s</string>
-    <string name="size">"Size: "</string>
+    <string name="size_tab">"Size: "</string>
     <string name="start_checking">Start Checking</string>
     <string name="stop_checking">Stop Checking</string>
     <string name="create_torrent">Create Torrent</string>
@@ -54,6 +53,7 @@
     <string name="are_you_sure">"Are you sure ? "</string>
     <string name="yes">Yes</string>
     <string name="no">No</string>
+    <string name="status_queue">Quque</string>
     <string name="status_downloading">Downloading</string>
     <string name="status_paused">Paused</string>
     <string name="status_seeding">Seeding</string>
@@ -71,5 +71,54 @@
     <string name="port_checking">Port checking...</string>
     <string name="port_closed">Port Closed</string>
     <string name="port_open">Port Open</string>
+    <string name="interfaces">Interfaces</string>
+    <string name="add_torrent">Add Torrent</string>
+    <string name="torrent_list_empty">Torrents List is Empty\n\nClick \'Add\' to add new Torrent</string>
+    <string name="select_all">Select All</string>
+    <string name="select_none">Select None</string>
+    <string name="pieces_tab">Pieces:</string>
+    <string name="pieces">Pieces</string>
+    <string name="info">Info</string>
+    <string name="download_metadata">Download Metadata</string>
+    <string name="path_tab">Path:</string>
+    <string name="name_tab">Name:</string>
+    <string name="hash_tab">Hash:</string>
+    <string name="torrent">Torrent</string>
+    <string name="no_peers">No Peers</string>
+    <string name="creator_tab">Creator:</string>
+    <string name="created_on_tab">Created On:</string>
+    <string name="comment_tab">Comment:</string>
+    <string name="transfering">Transfering</string>
+    <string name="status_tab">Status:</string>
+    <string name="progress_tab">Progress:</string>
+    <string name="downloaded_tab">Downloaded:</string>
+    <string name="uploaded_tab">Uploaded:</string>
+    <string name="ratio_tab">Ratio:</string>
+    <string name="dates">Dates</string>
+    <string name="added_tab">Added:</string>
+    <string name="completed_tab">Completed:</string>
+    <string name="time_elapsed">Time Elapsed</string>
+    <string name="downloading_tab">Downloading:</string>
+    <string name="seeding_tab">Seeding:</string>
+    <string name="trackers">Trackers</string>
+    <string name="no_trackers">No Trackers</string>
+    <string name="peers_tab">Peers:</string>
+    <string name="ok">OK</string>
+    <string name="cancel">Cancel</string>
+    <string name="tab_details">DETAILS</string>
+    <string name="tab_files">FILES</string>
+    <string name="tab_peers">PEERS</string>
+    <string name="tab_trackers">TRACKERS</string>
+    <string name="n_a">N/A</string>
 
+    <string name="dht_exchange">DHT Exchange</string>
+    <string name="announce">Announce:</string>
+    <string name="peer_exchange">Peer Exchange</string>
+    <string name="lpd">Local Peers Discovery</string>
+    <string name="announce_tab">Announce:</string>
+    <string name="next_tab">next:</string>
+    <string name="scrape_tab">Scrape:</string>
+    <string name="check">Check</string>
+    <string name="open_folder">Open Torrents Folder</string>
+    <string name="exit">Exit</string>
 </resources>

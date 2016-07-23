@@ -211,6 +211,9 @@ public class DetailsFragment extends Fragment implements MainActivity.TorrentFra
         });
 
         switch (Libtorrent.TorrentStatus(t)) {
+            case Libtorrent.StatusQueued:
+                status.setText(R.string.status_queue);
+                break;
             case Libtorrent.StatusDownloading:
                 status.setText(R.string.status_downloading);
                 break;

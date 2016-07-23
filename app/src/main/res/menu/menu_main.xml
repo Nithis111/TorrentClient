@@ -5,7 +5,7 @@
     <item
         android:id="@+id/action_show_folder"
         android:orderInCategory="100"
-        android:title="Open Torrents Folder"
+        android:title="@string/open_folder"
         app:showAsAction="never" />
     <item
         android:id="@+id/action_settings"
@@ -15,6 +15,6 @@
     <item
         android:id="@+id/action_shutdown"
         android:orderInCategory="100"
-        android:title="Exit"
+        android:title="@string/exit"
         app:showAsAction="never" />
 </menu>
