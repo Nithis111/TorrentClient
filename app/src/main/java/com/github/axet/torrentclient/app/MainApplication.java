@@ -181,7 +181,9 @@ public class MainApplication extends Application {
     }
 
     public static String formatFree(Context context, long free, long d, long u) {
-        return context.getString(R.string.free, MainApplication.formatSize(context, free), MainApplication.formatSize(context, d), MainApplication.formatSize(context, u));
+        return context.getString(R.string.free, MainApplication.formatSize(context, free),
+                MainApplication.formatSize(context, d) + context.getString(R.string.per_second),
+                MainApplication.formatSize(context, u) + context.getString(R.string.per_second));
     }
 
     public static String formatSize(Context context, long s) {

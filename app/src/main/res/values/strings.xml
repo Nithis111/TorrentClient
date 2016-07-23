@@ -41,7 +41,7 @@
     <string name="size_kb">%1$.1f kb</string>
     <string name="size_mb">%1$.1f MB</string>
     <string name="size_gb">%1$.1f GB</string>
-    <string name="free">%1$s free · ↓ %2$s/s · ↑ %3$s/s</string>
+    <string name="free">%1$s free · ↓ %2$s · ↑ %3$s</string>
     <string name="per_second">/s</string>
     <string name="size_tab">"Size: "</string>
     <string name="start_checking">Start Checking</string>
