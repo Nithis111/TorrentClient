@@ -8,6 +8,7 @@ Torrent Client simple UI.
 
 Manual install
 
+    git clone --recursive https://github.com/axet/android-torrent-client/
     ./libtorrent/debug.sh && gradle installDebug
 
 # Screenshots
