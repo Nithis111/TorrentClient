@@ -28,7 +28,7 @@
             <TableRow>
 
                 <TextView
-                    android:layout_width="50dp"
+                    android:layout_width="55dp"
                     android:layout_height="wrap_content"
                     android:layout_gravity="right|center_vertical"
                     android:text="@string/hash_tab" />
@@ -183,7 +183,7 @@
                     <TableRow>
 
                         <TextView
-                            android:layout_width="50dp"
+                            android:layout_width="55dp"
                             android:layout_height="wrap_content"
                             android:layout_gravity="right"
                             android:text="@string/size_tab" />
