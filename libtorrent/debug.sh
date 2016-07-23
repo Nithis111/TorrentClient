@@ -7,6 +7,8 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 GOPATH=$DIR
 
+"$DIR/update.sh"
+
 if [ ! -e "$GOPATH/pkg/gomobile" ]; then
   gomobile init || exit 1
 fi

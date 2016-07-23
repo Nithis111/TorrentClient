@@ -120,4 +120,5 @@
     <string name="check">Check</string>
     <string name="open_folder">Open Torrents Folder</string>
     <string name="exit">Exit</string>
+    <string name="tap_restart">\'Tap\' to restart</string>
 </resources>

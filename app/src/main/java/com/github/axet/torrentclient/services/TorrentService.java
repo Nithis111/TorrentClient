@@ -78,7 +78,7 @@ public class TorrentService extends Service {
         filter.addAction(Intent.ACTION_SCREEN_OFF);
         registerReceiver(receiver, filter);
 
-        startForeground(NOTIFICATION_TORRENT_ICON, buildNotification(""));
+        startForeground(NOTIFICATION_TORRENT_ICON, buildNotification(getString(R.string.tap_restart)));
     }
 
     MainApplication getApp() {
