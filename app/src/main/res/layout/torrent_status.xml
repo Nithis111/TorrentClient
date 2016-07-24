@@ -345,30 +345,44 @@
                 </TableRow>
             </TableLayout>
 
-            <RelativeLayout
+            <FrameLayout
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1">
 
-                <com.github.axet.torrentclient.widgets.Pieces
-                    android:id="@+id/torrent_status_pieces"
+                <Button
+                    android:id="@+id/torrent_status_metadata"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_centerHorizontal="true"
-                    android:layout_gravity="center" />
+                    android:layout_gravity="center"
+                    android:text="@string/download_metadata" />
 
-                <ImageView
-                    android:id="@+id/torrent_status_check"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_centerVertical="true"
-                    android:layout_gravity="right|center_vertical"
-                    android:layout_toRightOf="@id/torrent_status_pieces"
-                    android:padding="10dp"
-                    android:src="@drawable/ic_done_all_black_24dp"
-                    android:tint="?attr/colorAccent" />
+                <RelativeLayout
+                    android:id="@+id/torrent_status_parts"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent">
 
-            </RelativeLayout>
+                    <com.github.axet.torrentclient.widgets.Pieces
+                        android:id="@+id/torrent_status_pieces"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_centerHorizontal="true"
+                        android:layout_gravity="center" />
+
+                    <ImageView
+                        android:id="@+id/torrent_status_check"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_centerVertical="true"
+                        android:layout_gravity="right|center_vertical"
+                        android:layout_toRightOf="@id/torrent_status_pieces"
+                        android:padding="10dp"
+                        android:src="@drawable/ic_done_all_black_24dp"
+                        android:tint="?attr/colorAccent" />
+
+                </RelativeLayout>
+
+            </FrameLayout>
         </LinearLayout>
 
         <View

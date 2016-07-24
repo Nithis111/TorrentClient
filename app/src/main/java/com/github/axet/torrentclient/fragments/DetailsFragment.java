@@ -55,6 +55,8 @@ public class DetailsFragment extends Fragment implements MainActivity.TorrentFra
     View pathButton;
     ImageButton pathImage;
     ImageView check;
+    View meta;
+    View parts;
 
     KeyguardManager myKM;
 
@@ -77,6 +79,8 @@ public class DetailsFragment extends Fragment implements MainActivity.TorrentFra
         downloading = (TextView) v.findViewById(R.id.torrent_downloading);
         seeding = (TextView) v.findViewById(R.id.torrent_seeding);
         check = (ImageView) v.findViewById(R.id.torrent_status_check);
+        meta = v.findViewById(R.id.torrent_status_metadata);
+        parts = v.findViewById(R.id.torrent_status_parts);
 
         final long t = getArguments().getLong("torrent");
 
@@ -91,6 +95,16 @@ public class DetailsFragment extends Fragment implements MainActivity.TorrentFra
                 ClipData clip = ClipData.newPlainText("hash", h);
                 clipboard.setPrimaryClip(clip);
                 Toast.makeText(getContext(), R.string.hash_copied, Toast.LENGTH_SHORT).show();
+            }
+        });
+
+        meta.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (!Libtorrent.DownloadMetadata(t)) {
+                    ((MainActivity) getActivity().getApplicationContext()).Error(Libtorrent.Error());
+                    return;
+                }
             }
         });
 
@@ -127,10 +141,19 @@ public class DetailsFragment extends Fragment implements MainActivity.TorrentFra
             pathImage.setColorFilter(ThemeUtils.getThemeColor(getContext(), R.attr.colorAccent));
         }
 
+        if (Libtorrent.MetaTorrent(t)) {
+            meta.setVisibility(View.GONE);
+            parts.setVisibility(View.VISIBLE);
+        } else {
+            meta.setVisibility(View.VISIBLE);
+            parts.setVisibility(View.GONE);
+        }
+
         final Runnable checkUpdate = new Runnable() {
             @Override
             public void run() {
-                switch (Libtorrent.TorrentStatus(t)) {
+                int s = Libtorrent.TorrentStatus(t);
+                switch (s) {
                     case Libtorrent.StatusChecking:
                         check.setImageDrawable(ContextCompat.getDrawable(getContext(), R.drawable.ic_stop_black_24dp));
                         check.setColorFilter(ThemeUtils.getThemeColor(getContext(), R.attr.colorAccent));
