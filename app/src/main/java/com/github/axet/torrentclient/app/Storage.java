@@ -777,6 +777,10 @@ public class Storage {
             }
         }
 
+        if (active()) {
+            saveUpdate();
+        }
+
         Libtorrent.Resume();
     }
 
