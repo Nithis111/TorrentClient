@@ -28,28 +28,6 @@
             <TableRow>
 
                 <TextView
-                    android:layout_width="55dp"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="right|center_vertical"
-                    android:text="@string/hash_tab" />
-
-                <com.github.axet.androidlibrary.widgets.PathMax
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginLeft="5dp">
-
-                    <TextView
-                        android:id="@+id/torrent_hash"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="5aaf706db5414a7696cf5c982a845e20893abcba" />
-                </com.github.axet.androidlibrary.widgets.PathMax>
-
-            </TableRow>
-
-            <TableRow>
-
-                <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="right|center_vertical"
@@ -65,6 +43,47 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="Music Very Long Name Albom mp3 2015" />
+                </com.github.axet.androidlibrary.widgets.PathMax>
+
+                <FrameLayout
+                    android:id="@+id/torrent_add_rename"
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:clipChildren="false">
+
+                    <FrameLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="0dp"
+                        android:layout_gravity="center_vertical"
+                        android:clipChildren="false">
+
+                        <ImageButton
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:src="@drawable/ic_create_black_24dp"
+                            android:tint="?attr/colorAccent" />
+                    </FrameLayout>
+                </FrameLayout>
+            </TableRow>
+
+            <TableRow>
+
+                <TextView
+                    android:layout_width="55dp"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="right|center_vertical"
+                    android:text="@string/hash_tab" />
+
+                <com.github.axet.androidlibrary.widgets.PathMax
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginLeft="5dp">
+
+                    <TextView
+                        android:id="@+id/torrent_hash"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="5aaf706db5414a7696cf5c982a845e20893abcba" />
                 </com.github.axet.androidlibrary.widgets.PathMax>
 
             </TableRow>
@@ -109,8 +128,6 @@
                             android:tint="?attr/colorAccent" />
                     </FrameLayout>
                 </FrameLayout>
-
-
             </TableRow>
         </TableLayout>
 
@@ -179,7 +196,6 @@
                     android:shrinkColumns="1"
                     android:stretchColumns="2">
 
-
                     <TableRow>
 
                         <TextView
@@ -196,7 +212,6 @@
                             android:layout_marginLeft="5dp"
                             android:text="11 Gb" />
                     </TableRow>
-
 
                     <TableRow>
 
