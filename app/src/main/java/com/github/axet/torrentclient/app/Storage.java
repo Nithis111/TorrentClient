@@ -217,7 +217,7 @@ public class Storage {
     }
 
     public Storage(Context context) {
-        Log.d(TAG, "Storage.Close");
+        Log.d(TAG, "Storage()");
 
         this.context = context;
 
@@ -461,7 +461,7 @@ public class Storage {
     }
 
     public void close() {
-        Log.d(TAG, "Storage.Close");
+        Log.d(TAG, "close()");
 
         save();
 
