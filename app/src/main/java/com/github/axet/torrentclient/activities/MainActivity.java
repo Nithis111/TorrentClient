@@ -391,13 +391,19 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
                     RecordingAnimation.apply(list, convertView, true, scrollState == SCROLL_STATE_IDLE && Tag.animate(convertView, TYPE_COLLAPSED));
                 Tag.setTag(convertView, TYPE_EXPANDED, position);
 
-                final View rename = convertView.findViewById(R.id.recording_player_rename);
+                final ImageView rename = (ImageView) convertView.findViewById(R.id.recording_player_rename);
                 rename.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
-                        //renameDialog(t);
+                        renameDialog(t.t);
                     }
                 });
+                if (!Libtorrent.MetaTorrent(t.t)) {
+                    rename.setColorFilter(Color.GRAY);
+                    rename.setOnClickListener(null);
+                } else {
+                    rename.setColorFilter(ThemeUtils.getThemeColor(getContext(), R.attr.colorAccent));
+                }
 
                 final ImageView open = (ImageView) convertView.findViewById(R.id.recording_player_open);
 
@@ -519,7 +525,13 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
         e.setPositiveButton(new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
-                Libtorrent.TorrentFileRename(f, 0, e.getText());
+                String name = e.getText();
+                // clear slashes
+                name = new File(name).getName();
+                if(name.isEmpty())
+                    return;
+                Libtorrent.TorrentRename(f, name);
+                torrents.notifyDataSetChanged();
             }
         });
         e.show();
