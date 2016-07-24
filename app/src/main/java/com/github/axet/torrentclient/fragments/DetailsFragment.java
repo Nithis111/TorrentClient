@@ -52,7 +52,9 @@ public class DetailsFragment extends Fragment implements MainActivity.TorrentFra
     TextView completed;
     TextView downloading;
     TextView seeding;
+    TextView name;
     View pathButton;
+    View renameButton;
     ImageButton pathImage;
     ImageView check;
     View meta;
@@ -121,6 +123,16 @@ public class DetailsFragment extends Fragment implements MainActivity.TorrentFra
             }
         });
 
+        name = (TextView) v.findViewById(R.id.torrent_name);
+
+        renameButton = v.findViewById(R.id.torrent_status_rename);
+        renameButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                ((MainActivity) getActivity()).renameDialog(t);
+            }
+        });
+
         pathImage = (ImageButton) v.findViewById(R.id.torrent_path_image);
 
         myKM = (KeyguardManager) getContext().getSystemService(Context.KEYGUARD_SERVICE);
@@ -178,20 +190,14 @@ public class DetailsFragment extends Fragment implements MainActivity.TorrentFra
         check.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (Libtorrent.TorrentStatus(t) == Libtorrent.StatusChecking) {
-                    Libtorrent.StopTorrent(t);
-                    Toast.makeText(getContext(), R.string.stop_checking, Toast.LENGTH_SHORT).show();
-                    checkUpdate.run();
-                    return;
-                }
-
-                Libtorrent.CheckTorrent(t);
-                Toast.makeText(getContext(), R.string.start_checking, Toast.LENGTH_SHORT).show();
+                ((MainActivity) getActivity()).checkTorrent(t);
                 checkUpdate.run();
             }
         });
 
         pview.setTorrent(t);
+
+        name.setText(Libtorrent.TorrentName(t));
 
         MainApplication.setText(size, !Libtorrent.MetaTorrent(t) ? "" : MainApplication.formatSize(getContext(), Libtorrent.TorrentBytesLength(t)));
 

@@ -492,7 +492,12 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
                                 return true;
                             }
                             if (item.getItemId() == R.id.action_rename) {
-                                //renameDialog(t);
+                                renameDialog(t.t);
+                                return true;
+                            }
+                            if (item.getItemId() == R.id.action_check) {
+                                checkTorrent(t.t);
+                                torrents.notifyDataSetChanged();
                                 return true;
                             }
                             return false;
@@ -512,13 +517,23 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
         }
     }
 
+    public void checkTorrent(long t) {
+        if (Libtorrent.TorrentStatus(t) == Libtorrent.StatusChecking) {
+            Libtorrent.StopTorrent(t);
+            Toast.makeText(this, R.string.stop_checking, Toast.LENGTH_SHORT).show();
+            return;
+        }
+        Libtorrent.CheckTorrent(t);
+        Toast.makeText(this, R.string.start_checking, Toast.LENGTH_SHORT).show();
+    }
+
     void showDetails(Long f) {
         TorrentDialogFragment d = TorrentDialogFragment.create(f);
         dialog = d;
         d.show(getSupportFragmentManager(), "");
     }
 
-    void renameDialog(final Long f) {
+    public void renameDialog(final Long f) {
         final OpenFileDialog.EditTextDialog e = new OpenFileDialog.EditTextDialog(this);
         e.setTitle(getString(R.string.rename_torrent));
         e.setText(Libtorrent.TorrentName(f));
@@ -528,7 +543,7 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
                 String name = e.getText();
                 // clear slashes
                 name = new File(name).getName();
-                if(name.isEmpty())
+                if (name.isEmpty())
                     return;
                 Libtorrent.TorrentRename(f, name);
                 torrents.notifyDataSetChanged();

@@ -24,6 +24,67 @@
             android:shrinkColumns="1"
             android:stretchColumns="2">
 
+
+            <TableRow>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="right|center_vertical"
+                    android:text="@string/name_tab" />
+
+                <com.github.axet.androidlibrary.widgets.PathMax
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginLeft="5dp">
+
+                    <TextView
+                        android:id="@+id/torrent_name"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Music Very Long Name Albom mp3 2015" />
+                </com.github.axet.androidlibrary.widgets.PathMax>
+
+
+                <FrameLayout
+                    android:id="@+id/torrent_status_rename"
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:clipChildren="false">
+
+                    <FrameLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="0dp"
+                        android:layout_gravity="center_vertical"
+                        android:clipChildren="false">
+
+                        <ImageButton
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:src="@drawable/ic_create_black_24dp"
+                            android:tint="?attr/colorAccent" />
+                    </FrameLayout>
+                </FrameLayout>
+            </TableRow>
+
+            <TableRow>
+
+                <TextView
+                    android:layout_width="90dp"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="right"
+                    android:text="@string/size_tab" />
+
+                <TextView
+                    android:id="@+id/torrent_size"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="left"
+                    android:layout_marginLeft="5dp"
+                    android:text="11 Gb" />
+            </TableRow>
+
+
             <TableRow android:clipChildren="false">
 
                 <TextView
@@ -67,24 +128,6 @@
                 </FrameLayout>
 
             </TableRow>
-
-            <TableRow>
-
-                <TextView
-                    android:layout_width="90dp"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="right"
-                    android:text="@string/size_tab" />
-
-                <TextView
-                    android:id="@+id/torrent_size"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="left"
-                    android:layout_marginLeft="5dp"
-                    android:text="11 Gb" />
-            </TableRow>
-
 
             <TableRow>
 

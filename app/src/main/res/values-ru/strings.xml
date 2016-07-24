@@ -42,7 +42,7 @@
     <string name="size_gb">%1$.1f ГБ</string>
     <string name="free">%1$s свободно · ↓ %2$s · ↑ %3$s</string>
     <string name="per_second">/с</string>
-    <string name="size_tab">Размер: </string>
+    <string name="size_tab">Размер:</string>
     <string name="start_checking">Проверка запущена</string>
     <string name="stop_checking">Проверка остановлена</string>
     <string name="create_torrent">Создать Торрент</string>
