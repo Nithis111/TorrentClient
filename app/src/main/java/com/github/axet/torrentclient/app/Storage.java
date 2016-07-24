@@ -777,11 +777,11 @@ public class Storage {
             }
         }
 
+        Libtorrent.Resume();
+
         if (active()) {
             saveUpdate();
         }
-
-        Libtorrent.Resume();
     }
 
     public String formatHeader() {
