@@ -55,6 +55,8 @@ public class Storage {
     public static final String TORRENTS = "torrents";
     public static final String[] PERMISSIONS = new String[]{Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE};
 
+    public static final int SAVE_INTERVAL = 1 * 60 * 1000;
+
     Context context;
 
     SpeedInfo downloaded = new SpeedInfo();
@@ -215,7 +217,7 @@ public class Storage {
     }
 
     public Storage(Context context) {
-        Log.d(TAG, "Storage.Close");
+        Log.d(TAG, "Storage()");
 
         this.context = context;
 
@@ -284,6 +286,7 @@ public class Storage {
     }
 
     public void save() {
+        Log.d(TAG, "save()");
         final SharedPreferences shared = PreferenceManager.getDefaultSharedPreferences(context);
         SharedPreferences.Editor edit = shared.edit();
         edit.putInt("TORRENT_COUNT", torrents.size());
@@ -319,7 +322,7 @@ public class Storage {
         } catch (PackageManager.NameNotFoundException e) {
         }
 
-        Libtorrent.setDefaultListenAddr(":0");
+        Libtorrent.setBindAddr(":0");
 
         if (!Libtorrent.Create()) {
             throw new RuntimeException(Libtorrent.Error());
@@ -454,11 +457,11 @@ public class Storage {
                 saveUpdate();
             }
         };
-        handler.postDelayed(save, 1 * 60 * 1000);
+        handler.postDelayed(save, SAVE_INTERVAL);
     }
 
     public void close() {
-        Log.d(TAG, "Storage.Close");
+        Log.d(TAG, "close()");
 
         save();
 
