@@ -114,7 +114,7 @@
                         android:layout_height="wrap_content"
                         android:layout_gravity="center"
                         android:src="@drawable/ic_create_black_24dp"
-                        android:tint="@android:color/darker_gray" />
+                        android:tint="?attr/colorAccent" />
 
                     <View
                         android:layout_width="0dp"
