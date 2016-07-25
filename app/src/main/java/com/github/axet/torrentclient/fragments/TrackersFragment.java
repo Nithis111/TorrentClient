@@ -30,6 +30,12 @@ import go.libtorrent.Libtorrent;
 
 public class TrackersFragment extends Fragment implements MainActivity.TorrentFragmentInterface {
     View v;
+    View header;
+
+    TextView dhtLast;
+    TextView pex;
+    TextView lpd;
+    View add;
 
     ArrayList<Libtorrent.Tracker> ff = new ArrayList<>();
     Files files;
@@ -120,26 +126,26 @@ public class TrackersFragment extends Fragment implements MainActivity.TorrentFr
     @Override
     public View onCreateView(LayoutInflater inflater,
                              ViewGroup container, Bundle savedInstanceState) {
-        v = inflater.inflate(R.layout.torrent_trackers, container, false);
+        //list = (ListView) v.findViewById(R.id.torrent_trackers_list);
+        list = new ListView(getContext());
+        v = list;
 
-        list = (ListView) v.findViewById(R.id.torrent_trackers_list);
+        header = inflater.inflate(R.layout.torrent_trackers, list, false);
 
         files = new Files();
 
+        list.addHeaderView(header);
         list.setAdapter(files);
 
         list.setEmptyView(v.findViewById(R.id.empty_list));
 
-        update();
+        add = header.findViewById(R.id.torrent_trackers_add);
+        dhtLast = (TextView) header.findViewById(R.id.torrent_trackers_dht_last);
+        pex = (TextView) header.findViewById(R.id.torrent_trackers_pex);
+        lpd = (TextView) header.findViewById(R.id.torrent_trackers_lpd);
 
-        return v;
-    }
-
-    @Override
-    public void update() {
         final long t = getArguments().getLong("torrent");
 
-        View add = v.findViewById(R.id.torrent_trackers_add);
         add.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -157,11 +163,14 @@ public class TrackersFragment extends Fragment implements MainActivity.TorrentFr
             }
         });
 
-        TextView dhtLast = (TextView) v.findViewById(R.id.torrent_trackers_dht_last);
+        update();
 
-        TextView pex = (TextView) v.findViewById(R.id.torrent_trackers_pex);
+        return list;
+    }
 
-        TextView lpd = (TextView) v.findViewById(R.id.torrent_trackers_lpd);
+    @Override
+    public void update() {
+        final long t = getArguments().getLong("torrent");
 
         ff.clear();
         long l = Libtorrent.TorrentTrackersCount(t);

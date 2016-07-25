@@ -57,6 +57,9 @@ public class DetailsFragment extends Fragment implements MainActivity.TorrentFra
     View renameButton;
     ImageButton pathImage;
     ImageView check;
+    TextView downloaded;
+    TextView uploaded;
+    TextView ratio;
     View meta;
     View parts;
 
@@ -136,6 +139,10 @@ public class DetailsFragment extends Fragment implements MainActivity.TorrentFra
         pathImage = (ImageButton) v.findViewById(R.id.torrent_path_image);
 
         myKM = (KeyguardManager) getContext().getSystemService(Context.KEYGUARD_SERVICE);
+
+        downloaded = (TextView) v.findViewById(R.id.torrent_downloaded);
+        uploaded = (TextView) v.findViewById(R.id.torrent_uploaded);
+        ratio = (TextView) v.findViewById(R.id.torrent_ratio);
 
         update();
 
@@ -259,14 +266,11 @@ public class DetailsFragment extends Fragment implements MainActivity.TorrentFra
 
         progress.setText(String.format("%d%%", Storage.Torrent.getProgress(t)));
 
-        TextView downloaded = (TextView) v.findViewById(R.id.torrent_downloaded);
         Libtorrent.StatsTorrent b = Libtorrent.TorrentStats(t);
         downloaded.setText(MainApplication.formatSize(getContext(), b.getDownloaded()));
 
-        TextView uploaded = (TextView) v.findViewById(R.id.torrent_uploaded);
         uploaded.setText(MainApplication.formatSize(getContext(), b.getUploaded()));
 
-        TextView ratio = (TextView) v.findViewById(R.id.torrent_ratio);
         float r = 0;
         if (Libtorrent.MetaTorrent(t)) {
             if (b.getDownloaded() >= Libtorrent.TorrentBytesLength(t)) {

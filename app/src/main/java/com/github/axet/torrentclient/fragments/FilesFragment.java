@@ -240,10 +240,7 @@ public class FilesFragment extends Fragment implements MainActivity.TorrentFragm
         for (long i = 0; i < l; i++) {
             ff.add(new TorFile(i, Libtorrent.TorrentFiles(t, i)));
         }
-
         Collections.sort(ff, new SortFiles());
-
         files.notifyDataSetChanged();
-
     }
 }

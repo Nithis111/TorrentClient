@@ -1,21 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:paddingLeft="5dp"
-    android:paddingRight="5dp">
+    android:layout_height="match_parent">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:clipChildren="false"
         android:orientation="vertical">
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/torrent"
-            android:textStyle="bold" />
 
         <TableLayout
             android:layout_width="match_parent"
@@ -24,11 +16,21 @@
             android:shrinkColumns="1"
             android:stretchColumns="2">
 
-
             <TableRow>
 
                 <TextView
                     android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_span="3"
+                    android:text="@string/torrent"
+                    android:textStyle="bold" />
+
+            </TableRow>
+
+            <TableRow>
+
+                <TextView
+                    android:layout_width="90dp"
                     android:layout_height="wrap_content"
                     android:layout_gravity="right|center_vertical"
                     android:text="@string/name_tab" />
@@ -70,7 +72,7 @@
             <TableRow>
 
                 <TextView
-                    android:layout_width="90dp"
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="right"
                     android:text="@string/size_tab" />
@@ -249,45 +251,16 @@
                     android:text="la la la" />
             </TableRow>
 
+            <TableRow>
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:layout_margin="5dp"
+                    android:layout_span="3"
+                    android:background="@color/colorPrimary" />
+            </TableRow>
         </TableLayout>
-
-
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="1dp"
-            android:layout_margin="5dp"
-            android:background="@color/colorPrimary" />
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal">
-
-            <TextView
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="5dp"
-                android:layout_weight="1"
-                android:text="@string/transfering"
-                android:textStyle="bold" />
-
-            <FrameLayout
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_gravity="center"
-                    android:layout_marginBottom="5dp"
-                    android:layout_weight="1"
-                    android:text="@string/pieces"
-                    android:textStyle="bold" />
-
-            </FrameLayout>
-
-        </LinearLayout>
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -300,6 +273,15 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:clipChildren="false">
+
+                <TableRow>
+
+                    <TextView
+                        android:layout_height="wrap_content"
+                        android:layout_span="3"
+                        android:text="@string/transfering"
+                        android:textStyle="bold" />
+                </TableRow>
 
                 <TableRow>
 
@@ -405,10 +387,22 @@
                     android:layout_width="match_parent"
                     android:layout_height="match_parent">
 
+                    <TextView
+                        android:id="@+id/torrent_status_pieces_title"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_centerHorizontal="true"
+                        android:layout_gravity="center"
+                        android:layout_marginBottom="5dp"
+                        android:layout_weight="1"
+                        android:text="@string/pieces"
+                        android:textStyle="bold" />
+
                     <com.github.axet.torrentclient.widgets.Pieces
                         android:id="@+id/torrent_status_pieces"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
+                        android:layout_below="@id/torrent_status_pieces_title"
                         android:layout_centerHorizontal="true"
                         android:layout_gravity="center" />
 
@@ -428,22 +422,30 @@
             </FrameLayout>
         </LinearLayout>
 
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="1dp"
-            android:layout_margin="5dp"
-            android:background="@color/colorPrimary" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/dates"
-            android:textStyle="bold" />
-
         <TableLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:stretchColumns="1">
+
+            <TableRow>
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:layout_margin="5dp"
+                    android:layout_span="3"
+                    android:background="@color/colorPrimary" />
+            </TableRow>
+
+            <TableRow>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_span="3"
+                    android:text="@string/dates"
+                    android:textStyle="bold" />
+            </TableRow>
 
             <TableRow>
 
@@ -479,25 +481,26 @@
                     android:layout_marginLeft="5dp"
                     android:text="23 June 2016 at 15:12" />
             </TableRow>
-        </TableLayout>
 
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="1dp"
-            android:layout_margin="5dp"
-            android:background="@color/colorPrimary" />
+            <TableRow>
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/time_elapsed"
-            android:textStyle="bold" />
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:layout_margin="5dp"
+                    android:layout_span="3"
+                    android:background="@color/colorPrimary" />
+            </TableRow>
 
+            <TableRow>
 
-        <TableLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:stretchColumns="1">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_span="3"
+                    android:text="@string/time_elapsed"
+                    android:textStyle="bold" />
+            </TableRow>
 
             <TableRow>
 
