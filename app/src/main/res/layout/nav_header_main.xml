@@ -17,7 +17,7 @@
         android:layout_height="80dp"
         android:padding="10dp"
         android:src="@drawable/ic_application_icon"
-        android:tint="?android:attr/textColorPrimary" />
+        android:tint="@android:color/white" />
 
     <TextView
         android:layout_width="match_parent"
