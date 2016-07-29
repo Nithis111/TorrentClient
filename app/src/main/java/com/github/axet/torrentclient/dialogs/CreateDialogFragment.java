@@ -45,6 +45,9 @@ public class CreateDialogFragment extends AddDialogFragment {
         View browse = v.findViewById(R.id.torrent_add_browse);
         browse.setVisibility(View.GONE);
 
+        View rename = v.findViewById(R.id.torrent_add_rename);
+        rename.setVisibility(View.GONE);
+
 //        ImageButton check = (ImageButton) v.findViewById(R.id.torrent_add_check);
 //        check.setVisibility(View.GONE);
 
