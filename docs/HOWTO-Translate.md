@@ -8,4 +8,9 @@ To translate 'Torrent Client' to your language you need to translate following f
 Additional file from 'android-library'
   * [https://github.com/axet/android-library/.../strings.xml](https://github.com/axet/android-library/blob/master/src/main/res/values/strings.xml)
 
+Also, add translation to Google Play:
+  * Title
+  * Short Description
+  * Full description
+
 Then add those files to the repository using "New Issue" or create pull request.
