@@ -42,11 +42,7 @@ public class CreateDialogFragment extends AddDialogFragment {
     public View createView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View v = super.createView(inflater, container, savedInstanceState);
 
-        View browse = v.findViewById(R.id.torrent_add_browse);
         browse.setVisibility(View.GONE);
-
-        View rename = v.findViewById(R.id.torrent_add_rename);
-        rename.setVisibility(View.GONE);
 
 //        ImageButton check = (ImageButton) v.findViewById(R.id.torrent_add_check);
 //        check.setVisibility(View.GONE);
@@ -71,6 +67,7 @@ public class CreateDialogFragment extends AddDialogFragment {
         if (v == null)
             return;
 
+        renameButton.setVisibility(View.GONE);
         toolbar.setVisibility(View.GONE);
     }
 }

@@ -50,6 +50,7 @@ public class AddDialogFragment extends DialogFragment implements MainActivity.To
     ImageView check;
     Pieces pview;
     View renameButton;
+    View browse;
 
     Files files;
 
@@ -324,7 +325,7 @@ public class AddDialogFragment extends DialogFragment implements MainActivity.To
             }
         });
 
-        View browse = header.findViewById(R.id.torrent_add_browse);
+        browse = header.findViewById(R.id.torrent_add_browse);
         browse.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
