@@ -13,11 +13,7 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
-import android.graphics.Color;
-import android.graphics.PorterDuff;
-import android.graphics.PorterDuffColorFilter;
 import android.graphics.drawable.ColorDrawable;
-import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
@@ -30,19 +26,15 @@ import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.PopupMenu;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
-import android.view.LayoutInflater;
 import android.view.Menu;
-import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.widget.AbsListView;
-import android.widget.BaseAdapter;
 import android.widget.ImageView;
+import android.widget.ListAdapter;
 import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
@@ -50,29 +42,23 @@ import android.widget.Toast;
 
 import com.getbase.floatingactionbutton.FloatingActionButton;
 import com.getbase.floatingactionbutton.FloatingActionsMenu;
-import com.github.axet.androidlibrary.animations.RemoveItemAnimation;
 import com.github.axet.androidlibrary.widgets.OpenFileDialog;
-import com.github.axet.androidlibrary.widgets.PopupShareActionProvider;
-import com.github.axet.androidlibrary.widgets.ThemeUtils;
 import com.github.axet.torrentclient.R;
+import com.github.axet.torrentclient.app.MainApplication;
+import com.github.axet.torrentclient.app.Storage;
 import com.github.axet.torrentclient.dialogs.AddDialogFragment;
 import com.github.axet.torrentclient.dialogs.CreateDialogFragment;
 import com.github.axet.torrentclient.dialogs.OpenIntentDialogFragment;
-import com.github.axet.torrentclient.dialogs.TorrentDialogFragment;
-import com.github.axet.torrentclient.animations.RecordingAnimation;
-import com.github.axet.torrentclient.app.MainApplication;
-import com.github.axet.torrentclient.app.Storage;
+import com.github.axet.torrentclient.navigators.Search;
+import com.github.axet.torrentclient.navigators.Torrents;
 import com.google.android.gms.appindexing.Action;
 import com.google.android.gms.appindexing.AppIndex;
 import com.google.android.gms.common.api.GoogleApiClient;
-
-import org.apache.commons.io.FileUtils;
 
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
 import go.libtorrent.Libtorrent;
@@ -81,10 +67,6 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
         DialogInterface.OnDismissListener, SharedPreferences.OnSharedPreferenceChangeListener,
         NavigationView.OnNavigationItemSelectedListener {
     public final static String TAG = MainActivity.class.getSimpleName();
-
-    static final int TYPE_COLLAPSED = 0;
-    static final int TYPE_EXPANDED = 1;
-    static final int TYPE_DELETED = 2;
 
     static final long INFO_MANUAL_REFRESH = 5 * 1000;
 
@@ -96,7 +78,7 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
      */
     private GoogleApiClient client;
 
-    int scrollState;
+    public int scrollState;
 
     Runnable refresh;
     Runnable refreshUI;
@@ -107,9 +89,9 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
     ListView list;
     View empty;
     Handler handler;
-    PopupShareActionProvider shareProvider;
 
     NavigationView navigationView;
+    View navigationHeader;
     DrawerLayout drawer;
 
     Thread infoThread;
@@ -138,383 +120,8 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
         context.startActivity(i);
     }
 
-    public static class Tag {
-        public int tag;
-        public int position;
-
-        public Tag(int t, int p) {
-            this.tag = t;
-            this.position = p;
-        }
-
-        public static boolean animate(View v, int s, int p) {
-            if (v.getTag() == null)
-                return true;
-            if (animate(v, s))
-                return true;
-            return ((Tag) v.getTag()).position != p;
-        }
-
-        public static boolean animate(View v, int s) {
-            if (v.getTag() == null)
-                return false;
-            return ((Tag) v.getTag()).tag == s;
-        }
-
-        public static void setTag(View v, int t, int p) {
-            v.setTag(new Tag(t, p));
-        }
-    }
-
     public interface TorrentFragmentInterface {
         void update();
-    }
-
-    public class Torrents extends BaseAdapter {
-        int selected = -1;
-        Context context;
-
-        public Torrents(Context context) {
-            super();
-
-            this.context = context;
-        }
-
-        public Context getContext() {
-            return context;
-        }
-
-        public void update() {
-            for (int i = 0; i < getCount(); i++) {
-                Storage.Torrent t = getItem(i);
-                if (Libtorrent.TorrentActive(t.t)) {
-                    t.update();
-                }
-            }
-
-            notifyDataSetChanged();
-        }
-
-        public void close() {
-        }
-
-        @Override
-        public int getCount() {
-            Storage s = getStorage();
-            if (s == null) // happens on shutdown() from ListView
-                return 0;
-            return s.count();
-        }
-
-        @Override
-        public Storage.Torrent getItem(int i) {
-            return getStorage().torrent(i);
-        }
-
-        @Override
-        public long getItemId(int i) {
-            return i;
-        }
-
-        @Override
-        public View getView(final int position, View convertView, final ViewGroup parent) {
-            LayoutInflater inflater = LayoutInflater.from(getContext());
-
-            if (convertView == null) {
-                convertView = inflater.inflate(R.layout.torrent, parent, false);
-                convertView.setTag(null);
-            }
-
-            final View view = convertView;
-            final View base = convertView.findViewById(R.id.recording_base);
-
-            if (Tag.animate(convertView, TYPE_DELETED)) {
-                RemoveItemAnimation.restore(base);
-                convertView.setTag(null);
-            }
-
-            final Storage.Torrent t = (Storage.Torrent) getItem(position);
-
-            TextView title = (TextView) convertView.findViewById(R.id.torrent_title);
-            title.setText(t.name());
-
-            TextView time = (TextView) convertView.findViewById(R.id.torrent_status);
-            time.setText(t.status());
-
-            final View playerBase = convertView.findViewById(R.id.recording_player);
-            // cover area, prevent click over to convertView
-            playerBase.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                }
-            });
-
-            // we need runnable because we have View references
-            final Runnable delete = new Runnable() {
-                @Override
-                public void run() {
-                    AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
-                    builder.setTitle(R.string.delete_torrent);
-
-                    String name = Libtorrent.MetaTorrent(t.t) ? ".../" + t.name() : t.name();
-
-                    builder.setMessage(name + "\n\n" + getString(R.string.are_you_sure));
-                    if (Libtorrent.MetaTorrent(t.t)) {
-                        builder.setNeutralButton(R.string.delete_with_data, new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface dialog, int which) {
-                                dialog.cancel();
-                                RemoveItemAnimation.apply(list, base, new Runnable() {
-                                    @Override
-                                    public void run() {
-                                        t.stop();
-                                        File f = new File(t.path, t.name());
-                                        FileUtils.deleteQuietly(f);
-                                        getStorage().remove(t);
-                                        Tag.setTag(view, TYPE_DELETED, -1);
-                                        select(-1);
-                                    }
-                                });
-                            }
-                        });
-                    }
-                    builder.setPositiveButton(R.string.yes, new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialog, int which) {
-                            dialog.cancel();
-                            RemoveItemAnimation.apply(list, base, new Runnable() {
-                                @Override
-                                public void run() {
-                                    t.stop();
-                                    getStorage().remove(t);
-                                    Tag.setTag(view, TYPE_DELETED, -1);
-                                    select(-1);
-                                }
-                            });
-                        }
-                    });
-                    builder.setNegativeButton(R.string.no, new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialog, int which) {
-                            dialog.cancel();
-                        }
-                    });
-                    builder.show();
-                }
-            };
-
-            View play = convertView.findViewById(R.id.torrent_play);
-            play.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View view) {
-                    int s = Libtorrent.TorrentStatus(t.t);
-
-                    if (s == Libtorrent.StatusChecking) {
-                        Libtorrent.StopTorrent(t.t);
-                        torrents.notifyDataSetChanged();
-                        return;
-                    }
-
-                    if (s == Libtorrent.StatusQueued) {
-                        // are we on wifi pause mode?
-                        if (Libtorrent.Paused()) // drop torrent from queue
-                            getStorage().stop(t);
-                        else // nope, we are on library pause, start torrent
-                            getStorage().start(t);
-                        torrents.notifyDataSetChanged();
-                        return;
-                    }
-
-                    if (s == Libtorrent.StatusPaused)
-                        getStorage().start(t);
-                    else
-                        getStorage().stop(t);
-                    torrents.notifyDataSetChanged();
-                }
-            });
-
-            {
-                // should be done using states, so animation will apply
-                ProgressBar bar = (ProgressBar) convertView.findViewById(R.id.torrent_process);
-                ImageView stateImage = (ImageView) convertView.findViewById(R.id.torrent_state_image);
-
-                TextView tt = (TextView) convertView.findViewById(R.id.torrent_process_text);
-
-                long p = t.getProgress();
-
-                int color = 0;
-                String text = "";
-
-                Drawable d = null;
-                switch (Libtorrent.TorrentStatus(t.t)) {
-                    case Libtorrent.StatusChecking:
-                        d = ContextCompat.getDrawable(getContext(), R.drawable.ic_pause_24dp);
-                        color = Color.YELLOW;
-                        text = p + "%";
-                        break;
-                    case Libtorrent.StatusPaused:
-                        d = ContextCompat.getDrawable(getContext(), R.drawable.ic_pause_24dp);
-                        color = ThemeUtils.getThemeColor(getContext(), R.attr.secondBackground);
-                        text = p + "%";
-                        break;
-                    case Libtorrent.StatusQueued:
-                        d = ContextCompat.getDrawable(getContext(), R.drawable.ic_pause_24dp);
-                        color = Color.GREEN;
-                        text = "Qued";
-                        break;
-                    case Libtorrent.StatusDownloading:
-                        d = ContextCompat.getDrawable(getContext(), R.drawable.play);
-                        color = ThemeUtils.getThemeColor(getContext(), R.attr.colorAccent);
-                        text = p + "%";
-                        break;
-                    case Libtorrent.StatusSeeding:
-                        d = ContextCompat.getDrawable(getContext(), R.drawable.play);
-                        color = ThemeUtils.getThemeColor(getContext(), R.attr.colorAccent);
-                        text = "Seed";
-                        break;
-                }
-                PorterDuffColorFilter filter = new PorterDuffColorFilter(0x60000000 | (0xFFFFFF & color), PorterDuff.Mode.MULTIPLY);
-                stateImage.setColorFilter(filter);
-                stateImage.setImageDrawable(d);
-
-                bar.getBackground().setColorFilter(filter);
-                bar.getProgressDrawable().setColorFilter(color, PorterDuff.Mode.SRC_IN);
-                bar.setProgress((int) p);
-
-                tt.setText(text);
-            }
-
-            ImageView expand = (ImageView) convertView.findViewById(R.id.torrent_expand);
-
-            if (selected == position) {
-                if (Tag.animate(convertView, TYPE_COLLAPSED, position))
-                    RecordingAnimation.apply(list, convertView, true, scrollState == SCROLL_STATE_IDLE && Tag.animate(convertView, TYPE_COLLAPSED));
-                Tag.setTag(convertView, TYPE_EXPANDED, position);
-
-                final ImageView rename = (ImageView) convertView.findViewById(R.id.recording_player_rename);
-                rename.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-                        renameDialog(t.t);
-                    }
-                });
-                if (!Libtorrent.MetaTorrent(t.t)) {
-                    rename.setColorFilter(Color.GRAY);
-                    rename.setOnClickListener(null);
-                } else {
-                    rename.setColorFilter(ThemeUtils.getThemeColor(getContext(), R.attr.colorAccent));
-                }
-
-                final ImageView open = (ImageView) convertView.findViewById(R.id.recording_player_open);
-
-                open.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-                        openFolder(new File(t.path));
-                    }
-                });
-
-                KeyguardManager myKM = (KeyguardManager) getSystemService(Context.KEYGUARD_SERVICE);
-                if (myKM.inKeyguardRestrictedInputMode()) {
-                    open.setColorFilter(Color.GRAY);
-                    open.setOnClickListener(null);
-                } else {
-                    open.setColorFilter(ThemeUtils.getThemeColor(getContext(), R.attr.colorAccent));
-                }
-
-                final View share = convertView.findViewById(R.id.recording_player_share);
-                share.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-                        shareProvider = new PopupShareActionProvider(getContext(), share);
-
-                        Intent emailIntent = new Intent(Intent.ACTION_SEND);
-                        emailIntent.setType("text/plain");
-                        emailIntent.putExtra(Intent.EXTRA_EMAIL, "");
-                        emailIntent.putExtra(Intent.EXTRA_SUBJECT, Libtorrent.TorrentName(t.t));
-                        emailIntent.putExtra(Intent.EXTRA_TEXT, Libtorrent.TorrentMagnet(t.t));
-
-                        shareProvider.setShareIntent(emailIntent);
-
-                        shareProvider.show();
-                    }
-                });
-
-                View trash = convertView.findViewById(R.id.recording_player_trash);
-                trash.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-                        delete.run();
-                    }
-                });
-
-                expand.setImageDrawable(ContextCompat.getDrawable(getContext(), R.drawable.ic_expand_less_black_24dp));
-                expand.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-                        select(-1);
-                    }
-                });
-            } else {
-                if (Tag.animate(convertView, TYPE_EXPANDED, position))
-                    RecordingAnimation.apply(list, convertView, false, scrollState == SCROLL_STATE_IDLE && Tag.animate(convertView, TYPE_EXPANDED));
-                Tag.setTag(convertView, TYPE_COLLAPSED, position);
-
-                expand.setImageDrawable(ContextCompat.getDrawable(getContext(), R.drawable.ic_expand_more_black_24dp));
-                expand.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-                        select(position);
-                    }
-                });
-            }
-
-            convertView.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View view) {
-                    if (dialog == null) { // prevent double dialogs
-                        showDetails(t.t);
-                    }
-                }
-            });
-
-            convertView.setOnLongClickListener(new View.OnLongClickListener() {
-                @Override
-                public boolean onLongClick(View v) {
-                    PopupMenu popup = new PopupMenu(getContext(), v);
-                    MenuInflater inflater = popup.getMenuInflater();
-                    inflater.inflate(R.menu.menu_context, popup.getMenu());
-                    popup.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
-                        @Override
-                        public boolean onMenuItemClick(MenuItem item) {
-                            if (item.getItemId() == R.id.action_delete) {
-                                delete.run();
-                                return true;
-                            }
-                            if (item.getItemId() == R.id.action_rename) {
-                                renameDialog(t.t);
-                                return true;
-                            }
-                            if (item.getItemId() == R.id.action_check) {
-                                checkTorrent(t.t);
-                                torrents.notifyDataSetChanged();
-                                return true;
-                            }
-                            return false;
-                        }
-                    });
-                    popup.show();
-                    return true;
-                }
-            });
-
-            return convertView;
-        }
-
-        public void select(int pos) {
-            selected = pos;
-            notifyDataSetChanged();
-        }
     }
 
     public void checkTorrent(long t) {
@@ -525,12 +132,6 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
         }
         Libtorrent.CheckTorrent(t);
         Toast.makeText(this, R.string.start_checking, Toast.LENGTH_SHORT).show();
-    }
-
-    void showDetails(Long f) {
-        TorrentDialogFragment d = TorrentDialogFragment.create(f);
-        dialog = d;
-        d.show(getSupportFragmentManager(), "");
     }
 
     public void renameDialog(final Long f) {
@@ -592,7 +193,9 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
         navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
 
-        TextView ver = (TextView) navigationView.findViewById(R.id.nav_version);
+        navigationHeader = navigationView.getHeaderView(0);
+
+        TextView ver = (TextView) navigationHeader.findViewById(R.id.nav_version);
         try {
             PackageInfo pInfo = getPackageManager().getPackageInfo(getPackageName(), 0);
             String version = "v" + pInfo.versionName;
@@ -801,13 +404,12 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
                 invalidateOptionsMenu();
 
                 list.setOnScrollListener(MainActivity.this);
-                list.setEmptyView(findViewById(R.id.empty_list));
+                list.setEmptyView(empty);
 
                 final SharedPreferences shared = PreferenceManager.getDefaultSharedPreferences(MainActivity.this);
                 shared.registerOnSharedPreferenceChangeListener(MainActivity.this);
 
-                torrents = new Torrents(MainActivity.this);
-
+                torrents = new Torrents(MainActivity.this, list);
                 list.setAdapter(torrents);
 
                 if (permitted()) {
@@ -1136,7 +738,7 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
             @Override
             public void run() {
                 if (delayedInit == null)
-                    list.smoothScrollToPosition(torrents.selected);
+                    list.smoothScrollToPosition(torrents.getSelected());
             }
         });
     }
@@ -1195,7 +797,10 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
     @Override
     public void onDismiss(DialogInterface dialogInterface) {
         dialog = null;
-        torrents.notifyDataSetChanged();
+        ListAdapter a = list.getAdapter();
+        if (a instanceof DialogInterface.OnDismissListener) {
+            ((DialogInterface.OnDismissListener) a).onDismiss(dialogInterface);
+        }
     }
 
     void updateHeader(Storage s) {
@@ -1213,12 +818,12 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
             str += ip + "\n";
         }
         str = str.trim();
-        TextView textView = (TextView) navigationView.findViewById(R.id.torrent_ip);
+        TextView textView = (TextView) navigationHeader.findViewById(R.id.torrent_ip);
         textView.setText(str);
 
-        View portButton = navigationView.findViewById(R.id.torrent_port_button);
-        ImageView portIcon = (ImageView) navigationView.findViewById(R.id.torrent_port_icon);
-        TextView port = (TextView) navigationView.findViewById(R.id.torrent_port_text);
+        View portButton = navigationHeader.findViewById(R.id.torrent_port_button);
+        ImageView portIcon = (ImageView) navigationHeader.findViewById(R.id.torrent_port_icon);
+        TextView port = (TextView) navigationHeader.findViewById(R.id.torrent_port_text);
 
         portButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -1406,6 +1011,16 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
     @Override
     public boolean onNavigationItemSelected(MenuItem item) {
         int id = item.getItemId();
+        if (id == R.id.nav_torrents) {
+            empty.setVisibility(View.GONE);
+            list.setEmptyView(empty);
+            list.setAdapter(torrents);
+        }
+        if (id == R.id.nav_search) {
+            empty.setVisibility(View.GONE);
+            list.setEmptyView(null);
+            list.setAdapter(new Search(this));
+        }
         drawer.closeDrawer(GravityCompat.START);
         return true;
     }

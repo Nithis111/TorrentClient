@@ -121,4 +121,5 @@
     <string name="open_folder">Open Torrents Folder</string>
     <string name="exit">Exit</string>
     <string name="tap_restart">\'Tap\' to restart</string>
+    <string name="torrents">Torrents</string>
 </resources>
