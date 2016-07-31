@@ -411,6 +411,7 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
 
                 torrents = new Torrents(MainActivity.this, list);
                 list.setAdapter(torrents);
+                navigationView.setCheckedItem(R.id.nav_torrents);
 
                 if (permitted()) {
                     try {
@@ -912,10 +913,14 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
     }
 
     public void addMagnet(String ff) {
+        final SharedPreferences shared = PreferenceManager.getDefaultSharedPreferences(MainActivity.this);
+        addMagnet(ff, shared.getBoolean(MainApplication.PREFERENCE_DIALOG, false));
+    }
+
+    public void addMagnet(String ff, boolean dialog) {
         try {
-            final SharedPreferences shared = PreferenceManager.getDefaultSharedPreferences(MainActivity.this);
             List<String> m = getStorage().splitMagnets(ff);
-            if (shared.getBoolean(MainApplication.PREFERENCE_DIALOG, false) && m.size() == 1) {
+            if (dialog && m.size() == 1) {
                 String s = m.get(0);
 
                 String p = getStorage().getStoragePath().getPath();
@@ -946,9 +951,13 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
     }
 
     public void addTorrentFromBytes(byte[] buf) {
+        final SharedPreferences shared = PreferenceManager.getDefaultSharedPreferences(MainActivity.this);
+        addTorrentFromBytes(buf, shared.getBoolean(MainApplication.PREFERENCE_DIALOG, false));
+    }
+
+    public void addTorrentFromBytes(byte[] buf, boolean dialog) {
         try {
-            final SharedPreferences shared = PreferenceManager.getDefaultSharedPreferences(MainActivity.this);
-            if (shared.getBoolean(MainApplication.PREFERENCE_DIALOG, false)) {
+            if (dialog) {
                 String s = getStorage().getStoragePath().getPath();
                 long t = Libtorrent.AddTorrentFromBytes(s, buf);
                 if (t == -1) {
@@ -1017,9 +1026,10 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
             list.setAdapter(torrents);
         }
         if (id == R.id.nav_search) {
+            Search search = new Search(this);
             empty.setVisibility(View.GONE);
             list.setEmptyView(null);
-            list.setAdapter(new Search(this));
+            search.install(list);
         }
         drawer.closeDrawer(GravityCompat.START);
         return true;
