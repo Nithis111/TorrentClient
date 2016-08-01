@@ -425,7 +425,7 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
                     try {
                         getStorage().migrateLocalStorage();
                     } catch (RuntimeException e) {
-                        Error(e.getMessage());
+                        Error(e);
                     }
                 } else {
                     // with no permission we can't choise files to 'torrent', or select downloaded torrent
@@ -558,6 +558,11 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
                 Error(msg);
             }
         });
+    }
+
+    public void Error(Throwable e) {
+        Log.e(TAG, "Exception", e);
+        Error(e.getMessage());
     }
 
     public void Error(String err) {
@@ -709,7 +714,7 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
                     try {
                         getStorage().migrateLocalStorage();
                     } catch (RuntimeException e) {
-                        Error(e.getMessage());
+                        Error(e);
                     }
                     create.setVisibility(View.VISIBLE);
                     add.setVisibility(View.VISIBLE);
@@ -826,6 +831,9 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
     public void onDismiss(DialogInterface dialogInterface) {
         dialog = null;
         ListAdapter a = list.getAdapter();
+        if (a != null && a instanceof HeaderViewListAdapter) {
+            a = ((HeaderViewListAdapter) a).getWrappedAdapter();
+        }
         if (a instanceof DialogInterface.OnDismissListener) {
             ((DialogInterface.OnDismissListener) a).onDismiss(dialogInterface);
         }
@@ -963,7 +971,7 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
                 }
             }
         } catch (RuntimeException e) {
-            Error(e.getMessage());
+            Error(e);
         }
         torrents.notifyDataSetChanged();
     }
@@ -972,7 +980,7 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
         try {
             getStorage().addTorrentFromURL(p);
         } catch (RuntimeException e) {
-            Error(e.getMessage());
+            Error(e);
         }
         torrents.notifyDataSetChanged();
     }
@@ -995,7 +1003,7 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
                 getStorage().addTorrentFromBytes(buf);
             }
         } catch (RuntimeException e) {
-            Error(e.getMessage());
+            Error(e);
         }
         torrents.notifyDataSetChanged();
     }
@@ -1094,7 +1102,7 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
                     try {
                         manager.add(p);
                     } catch (RuntimeException e) {
-                        Error(e.getMessage());
+                        Error(e);
                         return;
                     }
                     manager.save();

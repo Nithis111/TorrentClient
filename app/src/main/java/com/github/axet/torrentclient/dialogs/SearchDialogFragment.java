@@ -30,7 +30,7 @@ import org.apache.commons.io.IOUtils;
 import java.io.IOException;
 import java.net.URL;
 
-public class SearchDialogFragment extends DialogFragment implements MainActivity.TorrentFragmentInterface {
+public class SearchDialogFragment extends DialogFragment implements MainActivity.TorrentFragmentInterface, DialogInterface {
     ViewPager pager;
     View v;
     Handler handler = new Handler();
@@ -49,6 +49,12 @@ public class SearchDialogFragment extends DialogFragment implements MainActivity
     @Override
     public void onDismiss(DialogInterface dialog) {
         super.onDismiss(dialog);
+
+        if (web != null) {
+            web.destroy();
+            web = null;
+        }
+
         final Activity activity = getActivity();
         if (activity instanceof DialogInterface.OnDismissListener) {
             ((DialogInterface.OnDismissListener) activity).onDismiss(dialog);
@@ -209,5 +215,10 @@ public class SearchDialogFragment extends DialogFragment implements MainActivity
             forward.setColorFilter(Color.GRAY);
             forward.setEnabled(false);
         }
+    }
+
+    @Override
+    public void cancel() {
+
     }
 }

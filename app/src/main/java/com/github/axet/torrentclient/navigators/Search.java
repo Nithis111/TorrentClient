@@ -4,6 +4,7 @@ import android.annotation.TargetApi;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.graphics.Color;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
@@ -15,10 +16,12 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.inputmethod.InputMethodManager;
 import android.webkit.ConsoleMessage;
+import android.webkit.CookieManager;
 import android.webkit.JavascriptInterface;
 import android.webkit.JsResult;
 import android.webkit.PermissionRequest;
 import android.webkit.WebChromeClient;
+import android.webkit.WebResourceError;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebResourceResponse;
 import android.webkit.WebView;
@@ -33,11 +36,13 @@ import com.github.axet.androidlibrary.widgets.ThemeUtils;
 import com.github.axet.torrentclient.R;
 import com.github.axet.torrentclient.activities.MainActivity;
 import com.github.axet.torrentclient.app.SearchEngine;
+import com.github.axet.torrentclient.dialogs.LoginDialogFragment;
 import com.github.axet.torrentclient.dialogs.SearchDialogFragment;
 
 import org.apache.commons.io.IOUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
+import org.jsoup.parser.Parser;
 import org.jsoup.select.Elements;
 
 import java.io.ByteArrayInputStream;
@@ -45,13 +50,17 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.net.URLEncoder;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import cz.msebera.android.httpclient.Header;
 import cz.msebera.android.httpclient.HttpEntity;
 import cz.msebera.android.httpclient.NameValuePair;
 import cz.msebera.android.httpclient.client.CookieStore;
@@ -61,9 +70,14 @@ import cz.msebera.android.httpclient.client.methods.HttpGet;
 import cz.msebera.android.httpclient.client.methods.HttpPost;
 import cz.msebera.android.httpclient.client.protocol.HttpClientContext;
 import cz.msebera.android.httpclient.cookie.Cookie;
+import cz.msebera.android.httpclient.entity.ContentType;
 import cz.msebera.android.httpclient.impl.client.BasicCookieStore;
 import cz.msebera.android.httpclient.impl.client.CloseableHttpClient;
+import cz.msebera.android.httpclient.impl.client.HttpClientBuilder;
 import cz.msebera.android.httpclient.impl.client.HttpClients;
+import cz.msebera.android.httpclient.impl.client.LaxRedirectStrategy;
+import cz.msebera.android.httpclient.impl.cookie.BasicClientCookie;
+import cz.msebera.android.httpclient.impl.cookie.BasicClientCookie2;
 import cz.msebera.android.httpclient.message.BasicNameValuePair;
 import cz.msebera.android.httpclient.util.EntityUtils;
 
@@ -75,7 +89,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
     Context context;
     MainActivity main;
     ArrayList<SearchItem> list = new ArrayList<>();
-    CloseableHttpClient httpclient = HttpClients.createDefault();
+    CloseableHttpClient httpclient;
     HttpClientContext httpClientContext = HttpClientContext.create();
     Thread thread;
     WebView web;
@@ -107,6 +121,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         this.main = m;
         this.context = m;
         this.handler = new Handler();
+        this.httpclient = HttpClientBuilder.create().setRedirectStrategy(new LaxRedirectStrategy()).build();
     }
 
     public void setEngine(SearchEngine engine) {
@@ -177,7 +192,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         search_header = inflater.inflate(R.layout.search_header, header, false);
 
         final TextView t = (TextView) search_header.findViewById(R.id.search_header_text);
-        View search = search_header.findViewById(R.id.search_header_search);
+        final View search = search_header.findViewById(R.id.search_header_search);
         search.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -222,16 +237,32 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
             }
         });
 
+        View login = search_header.findViewById(R.id.search_header_login);
+        login.setVisibility(engine.getMap("login") == null ? View.GONE : View.VISIBLE);
+        login.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Map<String, String> login = Search.this.engine.getMap("login");
+                LoginDialogFragment d = LoginDialogFragment.create(login.get("details"));
+                d.show(main.getSupportFragmentManager(), "");
+            }
+        });
+
         header.removeAllViews();
-        if (engine.getMap("login") != null) {
-            header.addView(login_header);
-        } else {
-            header.addView(search_header);
-        }
+        header.addView(search_header);
 
         list.addHeaderView(header);
 
         list.setAdapter(this);
+
+        handler.post(new Runnable() {
+            @Override
+            public void run() {
+                // hide keyboard on search completed
+                InputMethodManager imm = (InputMethodManager) context.getSystemService(Context.INPUT_METHOD_SERVICE);
+                imm.showSoftInputFromInputMethod(t.getWindowToken(), 0);
+            }
+        });
     }
 
     public void remove(ListView list) {
@@ -239,6 +270,10 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
     }
 
     void request(final Runnable run) {
+        if (thread != null) {
+            thread.interrupt();
+            thread = null;
+        }
         thread = new Thread(new Runnable() {
             @Override
             public void run() {
@@ -265,6 +300,47 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
 
     @Override
     public void onDismiss(DialogInterface dialog) {
+        if (dialog instanceof LoginDialogFragment.Result) {
+            LoginDialogFragment.Result l = (LoginDialogFragment.Result) dialog;
+            if (!l.ok) {
+                return;
+            }
+            if (l.browser) {
+                String url = engine.getMap("login").get("details");
+                String cookies = CookieManager.getInstance().getCookie(url);
+                if (cookies == null || cookies.isEmpty()) {
+                    main.Error("Cookies are empty");
+                    return;
+                }
+
+                String[] cc = cookies.split(";");
+
+                CookieStore cookieStore = httpClientContext.getCookieStore();
+                if (cookieStore == null) {
+                    cookieStore = new BasicCookieStore();
+                    httpClientContext.setCookieStore(cookieStore);
+                }
+                for (String c : cc) {
+                    String[] vv = c.split("=");
+                    BasicClientCookie cookie = new BasicClientCookie(vv[0].trim(), vv[1].trim());
+
+                    try {
+                        URL u = new URL(url);
+                        String host = u.getHost();
+                        cookie.setDomain(host);
+                    } catch (MalformedURLException e) {
+                        // ignore
+                    }
+                    cookieStore.addCookie(cookie);
+                }
+            } else {
+                try {
+                    login(l.login, l.pass);
+                } catch (IOException e) {
+                    main.Error(e);
+                }
+            }
+        }
         notifyDataSetChanged();
     }
 
@@ -292,6 +368,30 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         }
 
         final SearchItem item = getItem(position);
+
+        TextView size = (TextView) convertView.findViewById(R.id.search_item_size);
+        if (item.size == null || item.size.isEmpty()) {
+            size.setVisibility(View.GONE);
+        } else {
+            size.setVisibility(View.VISIBLE);
+            size.setText(context.getString(R.string.size_tab) + " " + item.size);
+        }
+
+        TextView seed = (TextView) convertView.findViewById(R.id.search_item_seed);
+        if (item.seed == null || item.seed.isEmpty()) {
+            seed.setVisibility(View.GONE);
+        } else {
+            seed.setVisibility(View.VISIBLE);
+            seed.setText(context.getString(R.string.seed_tab) + " " + item.seed);
+        }
+
+        TextView leech = (TextView) convertView.findViewById(R.id.search_item_leech);
+        if (item.leech == null || item.leech.isEmpty()) {
+            leech.setVisibility(View.GONE);
+        } else {
+            leech.setVisibility(View.VISIBLE);
+            leech.setText(context.getString(R.string.leech_tab) + " " + item.leech);
+        }
 
         TextView text = (TextView) convertView.findViewById(R.id.search_item_name);
         text.setText(item.title);
@@ -327,10 +427,15 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         return convertView;
     }
 
-    public void inject(String html, String js, final Inject inject) {
+    public void inject(String url, String html, String js, final Inject inject) {
         final String script = js + "\n\nbrowser.result(document.documentElement.outerHTML)";
 
-        final String localhost = "http://localhost";
+        if (web != null) {
+            web.destroy();
+        }
+
+        Uri u = Uri.parse(url);
+        final String domain = u.getHost();
 
         web = new WebView(context);
         web.getSettings().setDomStorageEnabled(true);
@@ -341,13 +446,13 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
                 String msg = consoleMessage.message() + " " + consoleMessage.lineNumber();
                 Log.d(TAG, msg);
                 main.post(msg);
-                return super.onConsoleMessage(consoleMessage);
+                return true;//super.onConsoleMessage(consoleMessage);
             }
 
             @Override
             public boolean onJsAlert(WebView view, String url, final String message, JsResult result) {
                 main.post(message);
-                return super.onJsAlert(view, url, message, result);
+                return true;//super.onJsAlert(view, url, message, result);
             }
         });
         web.setWebViewClient(new WebViewClient() {
@@ -361,23 +466,44 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
                 super.onLoadResource(view, url);
             }
 
+            @Override
+            public void onReceivedError(WebView view, WebResourceRequest request, WebResourceError error) {
+                super.onReceivedError(view, request, error);
+
+                Log.d(TAG, error.toString());
+            }
+
             @TargetApi(Build.VERSION_CODES.LOLLIPOP)
             @Override
             public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
-                if (request.getUrl().toString().startsWith(localhost))
+                // Not allowed to load local resource: file:///android_asset/webkit/android-weberror.png
+                if (request.getUrl().toString().startsWith("file"))
                     return new WebResourceResponse("", "", null);
-                if (request.getUrl().toString().startsWith("http"))
+                Uri u = request.getUrl();
+                String d = u.getHost();
+                if (!d.equals(domain)) {
                     return new WebResourceResponse("", "", null);
+                }
                 return super.shouldInterceptRequest(view, request);
             }
 
             @Override
             public WebResourceResponse shouldInterceptRequest(WebView view, String url) {
-                if (url.startsWith(localhost))
+                // Not allowed to load local resource: file:///android_asset/webkit/android-weberror.png
+                if (url.toString().startsWith("file"))
                     return new WebResourceResponse("", "", null);
-                if (url.toString().startsWith("http"))
+                Uri u = Uri.parse(url);
+                String d = u.getHost();
+                if (!d.equals(domain)) {
                     return new WebResourceResponse("", "", null);
+                }
                 return super.shouldInterceptRequest(view, url);
+            }
+
+
+            @Override
+            public void onPageCommitVisible(WebView view, String url) {
+                super.onPageCommitVisible(view, url);
             }
 
             @Override
@@ -389,65 +515,76 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         web.addJavascriptInterface(inject, "browser");
         // Uncaught SecurityError: Failed to read the 'cookie' property from 'Document': Cookies are disabled inside 'data:' URLs.
         // called when page loaded with loadData()
-        web.loadDataWithBaseURL(localhost, html, "text/html", null, null);
+        web.loadDataWithBaseURL(url, html, "text/html", null, null);
     }
 
-    public void login(Map<String, String> login) throws IOException {
-        HttpPost httpPost = new HttpPost("http://targethost/login");
-        List<NameValuePair> nvps = new ArrayList<>();
-        nvps.add(new BasicNameValuePair("username", "vip"));
-        nvps.add(new BasicNameValuePair("password", "secret"));
-        httpPost.setEntity(new UrlEncodedFormEntity(nvps));
-        CloseableHttpResponse response2 = httpclient.execute(httpPost, httpClientContext);
+    public void login(String login, String pass) throws IOException {
+        final Map<String, String> s = engine.getMap("login");
 
-        try {
-            System.out.println(response2.getStatusLine());
-            HttpEntity entity2 = response2.getEntity();
-            // do something useful with the response body
-            // and ensure it is fully consumed
-            EntityUtils.consume(entity2);
-        } finally {
-            response2.close();
+        final String post = s.get("post");
+        if (post != null) {
+            String l = s.get("post_login");
+            String p = s.get("post_pass");
+            String html = post(post, new String[][]{{l, login}, {p, pass}});
+
+            final String js = s.get("js");
+            if (js != null) {
+                inject(post, html, js, new Inject() {
+                    @JavascriptInterface
+                    public void result(String html) {
+                        // ignore
+                    }
+                });
+            }
         }
     }
 
     public void search(String search, final Runnable done) throws IOException {
         final Map<String, String> s = engine.getMap("search");
 
+        String url = null;
+        String html = null;
+
         String post = s.get("post");
         if (post != null) {
+            String t = s.get("post_search");
+            url = post;
+            html = post(url, new String[][]{{t, search}});
         }
 
         String get = s.get("get");
         if (get != null) {
-            String query = URLEncoder.encode(search, "UTF8");
-            String url = String.format(get, query);
-            final String html = get(url);
-            final String js = s.get("js");
-            if (js != null) {
-                handler.post(new Runnable() {
-                    @Override
-                    public void run() {
-                        inject(html, js, new Inject() {
-                            @JavascriptInterface
-                            public void result(String html) {
-                                try {
-                                    searchList(s, html);
-                                    if (done != null)
-                                        done.run();
-                                } catch (final RuntimeException e) {
-                                    main.post(e);
-                                }
-                            }
-                        });
-                    }
-                });
-                return;
-            }
-            searchList(s, html);
-            if (done != null)
-                done.run();
+            String query = URLEncoder.encode(search, UTF8);
+            url = String.format(get, query);
+            html = get(url);
         }
+
+        final String js = s.get("js");
+        if (js != null) {
+            final String u = url;
+            final String h = html;
+            handler.post(new Runnable() {
+                @Override
+                public void run() {
+                    inject(u, h, js, new Inject() {
+                        @JavascriptInterface
+                        public void result(String html) {
+                            try {
+                                searchList(s, html);
+                                if (done != null)
+                                    done.run();
+                            } catch (final RuntimeException e) {
+                                main.post(e);
+                            }
+                        }
+                    });
+                }
+            });
+            return;
+        }
+        searchList(s, html);
+        if (done != null)
+            done.run();
     }
 
     void searchList(Map<String, String> s, String html) {
@@ -473,8 +610,10 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         if (q == null)
             return null;
 
+        String base = "regex\\((.*)\\)";
+
         String r = null;
-        Pattern p = Pattern.compile("(.*):regex\\((.*)\\)", Pattern.DOTALL);
+        Pattern p = Pattern.compile("(.*):" + base, Pattern.DOTALL);
         Matcher m = p.matcher(q);
         if (m.matches()) {
             q = m.group(1);
@@ -482,7 +621,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         }
 
         // check for regex only
-        p = Pattern.compile("regex\\((.*)\\)", Pattern.DOTALL);
+        p = Pattern.compile(base, Pattern.DOTALL);
         m = p.matcher(q);
         if (m.matches()) {
             q = null;
@@ -494,7 +633,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         if (q == null || q.isEmpty()) {
             a = html;
         } else {
-            Document doc1 = Jsoup.parse(html);
+            Document doc1 = Jsoup.parse(html, "", Parser.xmlParser());
             Elements list1 = doc1.select(q);
             if (list1.size() > 0) {
                 a = list1.get(0).outerHtml();
@@ -502,7 +641,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         }
 
         if (r != null) {
-            Pattern p1 = Pattern.compile(r);
+            Pattern p1 = Pattern.compile(r, Pattern.DOTALL);
             Matcher m1 = p1.matcher(a);
             if (m1.matches()) {
                 return m1.group(1);
@@ -517,10 +656,32 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         HttpGet httpGet = new HttpGet(url);
         CloseableHttpResponse response1 = httpclient.execute(httpGet, httpClientContext);
         System.out.println(response1.getStatusLine());
-        HttpEntity entity1 = response1.getEntity();
-        String html = IOUtils.toString(entity1.getContent(), "UTF8");
-        EntityUtils.consume(entity1);
+        HttpEntity entity = response1.getEntity();
+        ContentType contentType = ContentType.getOrDefault(entity);
+        String html = IOUtils.toString(entity.getContent(), contentType.getCharset());
+        EntityUtils.consume(entity);
         response1.close();
+        return html;
+    }
+
+    String post(String url, String[][] map) throws IOException {
+        HttpPost httpPost = new HttpPost(url);
+        List<NameValuePair> nvps = new ArrayList<>();
+        for (int i = 0; i < map.length; i++) {
+            nvps.add(new BasicNameValuePair(map[i][0], map[i][1]));
+        }
+        httpPost.setEntity(new UrlEncodedFormEntity(nvps));
+        CloseableHttpResponse response = httpclient.execute(httpPost, httpClientContext);
+        String html;
+        try {
+            System.out.println(response.getStatusLine());
+            HttpEntity entity = response.getEntity();
+            ContentType contentType = ContentType.getOrDefault(entity);
+            html = IOUtils.toString(entity.getContent(), contentType.getCharset());
+            EntityUtils.consume(entity);
+        } finally {
+            response.close();
+        }
         return html;
     }
 
