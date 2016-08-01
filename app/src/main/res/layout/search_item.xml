@@ -43,7 +43,7 @@
             android:layout_height="wrap_content"
             android:layout_gravity="center"
             android:paddingLeft="5dp"
-            android:text="Size: 10Gb" />
+            android:text="Size: 100 MiB" />
 
         <TextView
             android:id="@+id/search_item_seed"
@@ -51,7 +51,7 @@
             android:layout_height="wrap_content"
             android:layout_gravity="center"
             android:paddingLeft="5dp"
-            android:text="Seed: 100" />
+            android:text="Seed: 1300" />
 
         <TextView
             android:id="@+id/search_item_leech"
@@ -59,7 +59,7 @@
             android:layout_height="wrap_content"
             android:layout_gravity="center"
             android:paddingLeft="5dp"
-            android:text="Leech: 2" />
+            android:text="Leech: 222" />
     </LinearLayout>
 
 </LinearLayout>

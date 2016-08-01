@@ -19,7 +19,6 @@ import android.webkit.ConsoleMessage;
 import android.webkit.CookieManager;
 import android.webkit.JavascriptInterface;
 import android.webkit.JsResult;
-import android.webkit.PermissionRequest;
 import android.webkit.WebChromeClient;
 import android.webkit.WebResourceError;
 import android.webkit.WebResourceRequest;
@@ -30,6 +29,7 @@ import android.widget.BaseAdapter;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.ListView;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import com.github.axet.androidlibrary.widgets.ThemeUtils;
@@ -37,7 +37,7 @@ import com.github.axet.torrentclient.R;
 import com.github.axet.torrentclient.activities.MainActivity;
 import com.github.axet.torrentclient.app.SearchEngine;
 import com.github.axet.torrentclient.dialogs.LoginDialogFragment;
-import com.github.axet.torrentclient.dialogs.SearchDialogFragment;
+import com.github.axet.torrentclient.dialogs.BrowserDialogFragment;
 
 import org.apache.commons.io.IOUtils;
 import org.jsoup.Jsoup;
@@ -53,14 +53,12 @@ import java.io.ObjectOutputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLEncoder;
-import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import cz.msebera.android.httpclient.Header;
 import cz.msebera.android.httpclient.HttpEntity;
 import cz.msebera.android.httpclient.NameValuePair;
 import cz.msebera.android.httpclient.client.CookieStore;
@@ -74,10 +72,8 @@ import cz.msebera.android.httpclient.entity.ContentType;
 import cz.msebera.android.httpclient.impl.client.BasicCookieStore;
 import cz.msebera.android.httpclient.impl.client.CloseableHttpClient;
 import cz.msebera.android.httpclient.impl.client.HttpClientBuilder;
-import cz.msebera.android.httpclient.impl.client.HttpClients;
 import cz.msebera.android.httpclient.impl.client.LaxRedirectStrategy;
 import cz.msebera.android.httpclient.impl.cookie.BasicClientCookie;
-import cz.msebera.android.httpclient.impl.cookie.BasicClientCookie2;
 import cz.msebera.android.httpclient.message.BasicNameValuePair;
 import cz.msebera.android.httpclient.util.EntityUtils;
 
@@ -92,6 +88,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
     CloseableHttpClient httpclient;
     HttpClientContext httpClientContext = HttpClientContext.create();
     Thread thread;
+    Looper threadLooper;
     WebView web;
     SearchEngine engine;
     Handler handler;
@@ -99,6 +96,9 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
     FrameLayout header;
     View search_header;
     View login_header;
+    ProgressBar progress;
+    View search;
+    TextView searchText;
 
     public static class SearchItem {
         public String title;
@@ -191,8 +191,17 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
 
         search_header = inflater.inflate(R.layout.search_header, header, false);
 
-        final TextView t = (TextView) search_header.findViewById(R.id.search_header_text);
-        final View search = search_header.findViewById(R.id.search_header_search);
+        progress = (ProgressBar) search_header.findViewById(R.id.search_header_progress);
+        progress.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                requestCancel();
+            }
+        });
+        progress.setVisibility(View.GONE);
+
+        searchText = (TextView) search_header.findViewById(R.id.search_header_text);
+        search = search_header.findViewById(R.id.search_header_search);
         search.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -200,37 +209,19 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
                     @Override
                     public void run() {
                         try {
-                            Looper.prepare();
-                            search(t.getText().toString(), new Runnable() {
+                            search(searchText.getText().toString(), new Runnable() {
                                 @Override
                                 public void run() {
                                     handler.post(new Runnable() {
                                         @Override
                                         public void run() {
-                                            Log.d(TAG, "Destory Web");
-
-                                            // hide keyboard on search completed
-                                            InputMethodManager imm = (InputMethodManager) context.getSystemService(Context.INPUT_METHOD_SERVICE);
-                                            imm.hideSoftInputFromWindow(t.getWindowToken(), 0);
-
-                                            if (web != null) {
-                                                web.destroy();
-                                                web = null;
-                                            }
-
-                                            if (thread != null) {
-                                                thread.interrupt();
-                                                thread = null;
-                                            }
+                                            requestCancel();
                                         }
                                     });
                                 }
                             });
-                            Looper.loop();
                         } catch (IOException e) {
                             throw new RuntimeException(e);
-                        } finally {
-                            Log.d(TAG, "Thread Exit");
                         }
                     }
                 });
@@ -260,7 +251,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
             public void run() {
                 // hide keyboard on search completed
                 InputMethodManager imm = (InputMethodManager) context.getSystemService(Context.INPUT_METHOD_SERVICE);
-                imm.showSoftInputFromInputMethod(t.getWindowToken(), 0);
+                imm.showSoftInputFromInputMethod(searchText.getWindowToken(), 0);
             }
         });
     }
@@ -269,18 +260,54 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         list.removeHeaderView(header);
     }
 
-    void request(final Runnable run) {
+    void requestCancel() {
+        boolean i = false;
         if (thread != null) {
             thread.interrupt();
             thread = null;
+            i = true;
         }
+        if (threadLooper != null) {
+            threadLooper.quit();
+            threadLooper = null;
+            i = true;
+        }
+        if (i)
+            Log.d(TAG, "interrupt");
+    }
+
+    void request(final Runnable run) {
+        requestCancel();
+
+        progress.setVisibility(View.VISIBLE);
+        search.setVisibility(View.GONE);
+
         thread = new Thread(new Runnable() {
             @Override
             public void run() {
                 try {
+                    Looper.prepare();
+                    threadLooper = Looper.myLooper();
                     run.run();
+                    Looper.loop();
                 } catch (final RuntimeException e) {
                     main.post(e);
+                } finally {
+                    handler.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            Log.d(TAG, "Destory Web");
+
+                            if (web != null) {
+                                web.destroy();
+                                web = null;
+                            }
+
+                            progress.setVisibility(View.GONE);
+                            search.setVisibility(View.VISIBLE);
+                        }
+                    });
+                    Log.d(TAG, "Thread Exit");
                 }
             }
         });
@@ -301,7 +328,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
     @Override
     public void onDismiss(DialogInterface dialog) {
         if (dialog instanceof LoginDialogFragment.Result) {
-            LoginDialogFragment.Result l = (LoginDialogFragment.Result) dialog;
+            final LoginDialogFragment.Result l = (LoginDialogFragment.Result) dialog;
             if (!l.ok) {
                 return;
             }
@@ -334,11 +361,21 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
                     cookieStore.addCookie(cookie);
                 }
             } else {
-                try {
-                    login(l.login, l.pass);
-                } catch (IOException e) {
-                    main.Error(e);
-                }
+                request(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            login(l.login, l.pass, new Runnable() {
+                                @Override
+                                public void run() {
+                                    requestCancel();
+                                }
+                            });
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+                    }
+                });
             }
         }
         notifyDataSetChanged();
@@ -418,7 +455,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
             convertView.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    SearchDialogFragment d = SearchDialogFragment.create(item.details);
+                    BrowserDialogFragment d = BrowserDialogFragment.create(item.details);
                     d.show(main.getSupportFragmentManager(), "");
                 }
             });
@@ -444,14 +481,26 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
             @Override
             public boolean onConsoleMessage(final ConsoleMessage consoleMessage) {
                 String msg = consoleMessage.message() + " " + consoleMessage.lineNumber();
-                Log.d(TAG, msg);
-                main.post(msg);
+                onConsoleMessage(msg, 0, "");
                 return true;//super.onConsoleMessage(consoleMessage);
+            }
+
+            @Override
+            public void onConsoleMessage(String msg, int lineNumber, String sourceID) {
+                Log.d(TAG, msg);
+                // Refused to display 'https://traffic.adxprts.com/tpb/na/728x90_h/' in a frame because it set 'X-Frame-Options' to 'SAMEORIGIN'. 0
+                if (msg.contains("X-Frame-Options"))
+                    return;
+                // Not allowed to load local resource: file:///android_asset/webkit/android-weberror.png 0
+                if (msg.contains("file:///android_asset/webkit"))
+                    return;
+                main.post(msg);
             }
 
             @Override
             public boolean onJsAlert(WebView view, String url, final String message, JsResult result) {
                 main.post(message);
+                result.confirm();
                 return true;//super.onJsAlert(view, url, message, result);
             }
         });
@@ -466,37 +515,32 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
                 super.onLoadResource(view, url);
             }
 
+            @TargetApi(Build.VERSION_CODES.M)
             @Override
             public void onReceivedError(WebView view, WebResourceRequest request, WebResourceError error) {
                 super.onReceivedError(view, request, error);
+                String str = error.getDescription().toString();
+                Log.d(TAG, str);
+            }
 
-                Log.d(TAG, error.toString());
+            @Override
+            public void onReceivedError(WebView view, int errorCode, String description, String failingUrl) {
+                super.onReceivedError(view, errorCode, description, failingUrl);
+
+                // on M will becalled above method
+                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
+                    Log.d(TAG, description);
+                }
             }
 
             @TargetApi(Build.VERSION_CODES.LOLLIPOP)
             @Override
             public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
-                // Not allowed to load local resource: file:///android_asset/webkit/android-weberror.png
-                if (request.getUrl().toString().startsWith("file"))
-                    return new WebResourceResponse("", "", null);
-                Uri u = request.getUrl();
-                String d = u.getHost();
-                if (!d.equals(domain)) {
-                    return new WebResourceResponse("", "", null);
-                }
                 return super.shouldInterceptRequest(view, request);
             }
 
             @Override
             public WebResourceResponse shouldInterceptRequest(WebView view, String url) {
-                // Not allowed to load local resource: file:///android_asset/webkit/android-weberror.png
-                if (url.toString().startsWith("file"))
-                    return new WebResourceResponse("", "", null);
-                Uri u = Uri.parse(url);
-                String d = u.getHost();
-                if (!d.equals(domain)) {
-                    return new WebResourceResponse("", "", null);
-                }
                 return super.shouldInterceptRequest(view, url);
             }
 
@@ -518,25 +562,35 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         web.loadDataWithBaseURL(url, html, "text/html", null, null);
     }
 
-    public void login(String login, String pass) throws IOException {
+    public void login(String login, String pass, final Runnable done) throws IOException {
         final Map<String, String> s = engine.getMap("login");
 
         final String post = s.get("post");
         if (post != null) {
             String l = s.get("post_login");
-            String p = s.get("post_pass");
-            String html = post(post, new String[][]{{l, login}, {p, pass}});
+            String p = s.get("post_password");
+            final String html = post(post, new String[][]{{l, login}, {p, pass}});
 
             final String js = s.get("js");
             if (js != null) {
-                inject(post, html, js, new Inject() {
-                    @JavascriptInterface
-                    public void result(String html) {
-                        // ignore
+                handler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        inject(post, html, js, new Inject() {
+                            @JavascriptInterface
+                            public void result(String html) {
+                                if (done != null)
+                                    done.run();
+                            }
+                        });
                     }
                 });
+                return;
             }
         }
+
+        if (done != null)
+            done.run();
     }
 
     public void search(String search, final Runnable done) throws IOException {
@@ -571,10 +625,11 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
                         public void result(String html) {
                             try {
                                 searchList(s, html);
-                                if (done != null)
-                                    done.run();
                             } catch (final RuntimeException e) {
                                 main.post(e);
+                            } finally {
+                                if (done != null)
+                                    done.run();
                             }
                         }
                     });
@@ -603,6 +658,17 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
             item.leech = matcher(item.html, s.get("leech"));
             item.details = matcher(item.html, s.get("details"));
             this.list.add(item);
+        }
+
+        if (list.size() > 0) {
+            handler.post(new Runnable() {
+                @Override
+                public void run() {
+                    // hide keyboard on search sucecful completed
+                    InputMethodManager imm = (InputMethodManager) context.getSystemService(Context.INPUT_METHOD_SERVICE);
+                    imm.hideSoftInputFromWindow(searchText.getWindowToken(), 0);
+                }
+            });
         }
     }
 
@@ -654,13 +720,13 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
 
     String get(String url) throws IOException {
         HttpGet httpGet = new HttpGet(url);
-        CloseableHttpResponse response1 = httpclient.execute(httpGet, httpClientContext);
-        System.out.println(response1.getStatusLine());
-        HttpEntity entity = response1.getEntity();
+        CloseableHttpResponse response = httpclient.execute(httpGet, httpClientContext);
+        Log.d(TAG, response.getStatusLine().toString());
+        HttpEntity entity = response.getEntity();
         ContentType contentType = ContentType.getOrDefault(entity);
         String html = IOUtils.toString(entity.getContent(), contentType.getCharset());
         EntityUtils.consume(entity);
-        response1.close();
+        response.close();
         return html;
     }
 
@@ -672,20 +738,13 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         }
         httpPost.setEntity(new UrlEncodedFormEntity(nvps));
         CloseableHttpResponse response = httpclient.execute(httpPost, httpClientContext);
-        String html;
-        try {
-            System.out.println(response.getStatusLine());
-            HttpEntity entity = response.getEntity();
-            ContentType contentType = ContentType.getOrDefault(entity);
-            html = IOUtils.toString(entity.getContent(), contentType.getCharset());
-            EntityUtils.consume(entity);
-        } finally {
-            response.close();
-        }
+        Log.d(TAG, response.getStatusLine().toString());
+        HttpEntity entity = response.getEntity();
+        ContentType contentType = ContentType.getOrDefault(entity);
+        String html = IOUtils.toString(entity.getContent(), contentType.getCharset());
+        EntityUtils.consume(entity);
+        response.close();
         return html;
-    }
-
-    public void download() {
     }
 
 }

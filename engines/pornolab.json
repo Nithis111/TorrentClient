@@ -14,7 +14,7 @@
   "search": {
     "post": "http://pornolab.net/forum/tracker.php",
     "post_search": "nm",
-    "js": "document.querySelectorAll('form[action=login\\\\.php]').length == 0 || alert('Not Logged In'); var ee = document.querySelectorAll('a.tLink'); for(var i = 0; i < ee.length; i++) {  var e  = ee[i];  var href = e.getAttribute('href');  href = 'http://pornolab.net/forum/' + href;  e.setAttribute('href', href);}",
+    "js": "document.querySelectorAll('form[action=login\\\\.php]').length == 0 || alert('Not Logged In'); var ee = document.querySelectorAll('a.tLink'); for(var i = 0; i < ee.length; i++) {  var e  = ee[i];  var href = e.getAttribute('href');  href = 'http://pornolab.net/forum/' + href;  e.setAttribute('href', href);}; var ee = document.querySelectorAll('a.dl-stub');for (var i = 0 ;i < ee.length;i++) {  var e = ee[i];  var h = e.innerHTML.replace(/&nbsp;/ig, ' ');  e.innerHTML = h;};var ee = document.querySelectorAll('a.tLink');for (var i = 0 ;i < ee.length;i++) {  var e = ee[i];  var h = e.innerHTML.replace(/<wbr.*>/ig, ' ');  e.innerHTML = h;}",
     "list": ".forumline.tablesorter tbody tr",
     "title": "a.tLink:regex(<a[^>]*>(.*)</a>)",
     "details": "a.tLink:regex(.*href=[\"'](.*)[\"'].*)",

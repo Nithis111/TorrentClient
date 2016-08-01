@@ -1,40 +1,22 @@
 package com.github.axet.torrentclient.dialogs;
 
-import android.app.Activity;
 import android.app.Dialog;
 import android.content.DialogInterface;
-import android.graphics.Bitmap;
-import android.graphics.Color;
 import android.os.Bundle;
-import android.os.Handler;
 import android.support.annotation.Nullable;
-import android.support.v4.app.DialogFragment;
 import android.support.v4.view.ViewPager;
 import android.support.v7.app.AlertDialog;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.webkit.DownloadListener;
-import android.webkit.WebResourceError;
-import android.webkit.WebResourceRequest;
-import android.webkit.WebResourceResponse;
-import android.webkit.WebView;
-import android.webkit.WebViewClient;
 import android.widget.Button;
 import android.widget.FrameLayout;
-import android.widget.ImageButton;
 import android.widget.TextView;
 
-import com.github.axet.androidlibrary.widgets.OpenFileDialog;
 import com.github.axet.torrentclient.R;
 import com.github.axet.torrentclient.activities.MainActivity;
 
-import org.apache.commons.io.IOUtils;
-
-import java.io.IOException;
-import java.net.URL;
-
-public class LoginDialogFragment extends SearchDialogFragment {
+public class LoginDialogFragment extends BrowserDialogFragment {
     ViewPager pager;
     FrameLayout v;
     TextView login;

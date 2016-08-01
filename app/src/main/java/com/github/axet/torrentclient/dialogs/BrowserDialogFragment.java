@@ -30,7 +30,7 @@ import org.apache.commons.io.IOUtils;
 import java.io.IOException;
 import java.net.URL;
 
-public class SearchDialogFragment extends DialogFragment implements MainActivity.TorrentFragmentInterface, DialogInterface {
+public class BrowserDialogFragment extends DialogFragment implements MainActivity.TorrentFragmentInterface, DialogInterface {
     ViewPager pager;
     View v;
     Handler handler = new Handler();
@@ -38,8 +38,8 @@ public class SearchDialogFragment extends DialogFragment implements MainActivity
     ImageButton forward;
     WebView web;
 
-    public static SearchDialogFragment create(String url) {
-        SearchDialogFragment f = new SearchDialogFragment();
+    public static BrowserDialogFragment create(String url) {
+        BrowserDialogFragment f = new BrowserDialogFragment();
         Bundle args = new Bundle();
         args.putString("url", url);
         f.setArguments(args);
@@ -190,6 +190,7 @@ public class SearchDialogFragment extends DialogFragment implements MainActivity
             }
         });
 
+        web.getSettings().setJavaScriptEnabled(true);
         web.getSettings().setLoadWithOverviewMode(true);
         web.getSettings().setUseWideViewPort(true);
         web.getSettings().setBuiltInZoomControls(true);
