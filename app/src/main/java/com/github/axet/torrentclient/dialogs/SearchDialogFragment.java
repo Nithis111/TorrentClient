@@ -2,49 +2,41 @@ package com.github.axet.torrentclient.dialogs;
 
 import android.app.Activity;
 import android.app.Dialog;
-import android.content.Context;
 import android.content.DialogInterface;
-import android.content.SharedPreferences;
+import android.graphics.Bitmap;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
-import android.preference.PreferenceManager;
 import android.support.annotation.Nullable;
-import android.support.design.widget.TabLayout;
 import android.support.v4.app.DialogFragment;
-import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentManager;
-import android.support.v4.app.FragmentPagerAdapter;
 import android.support.v4.view.ViewPager;
 import android.support.v7.app.AlertDialog;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.webkit.DownloadListener;
+import android.webkit.WebResourceError;
+import android.webkit.WebResourceRequest;
+import android.webkit.WebResourceResponse;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
-import android.widget.Toast;
+import android.widget.ImageButton;
 
 import com.github.axet.torrentclient.R;
 import com.github.axet.torrentclient.activities.MainActivity;
-import com.github.axet.torrentclient.app.MainApplication;
-import com.github.axet.torrentclient.fragments.DetailsFragment;
-import com.github.axet.torrentclient.fragments.FilesFragment;
-import com.github.axet.torrentclient.fragments.PeersFragment;
-import com.github.axet.torrentclient.fragments.TrackersFragment;
 
 import org.apache.commons.io.IOUtils;
 
 import java.io.IOException;
 import java.net.URL;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 public class SearchDialogFragment extends DialogFragment implements MainActivity.TorrentFragmentInterface {
     ViewPager pager;
     View v;
     Handler handler = new Handler();
+    ImageButton back;
+    ImageButton forward;
+    WebView web;
 
     public static SearchDialogFragment create(String url) {
         SearchDialogFragment f = new SearchDialogFragment();
@@ -102,16 +94,16 @@ public class SearchDialogFragment extends DialogFragment implements MainActivity
     public View createView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         v = inflater.inflate(R.layout.search_details, container);
 
-        final WebView web = (WebView) v.findViewById(R.id.webview);
+        web = (WebView) v.findViewById(R.id.webview);
 
-        final View back = v.findViewById(R.id.search_details_back);
+        back = (ImageButton) v.findViewById(R.id.search_details_back);
+        forward = (ImageButton) v.findViewById(R.id.search_details_forward);
         back.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 web.goBack();
             }
         });
-        final View forward = v.findViewById(R.id.search_details_forward);
         forward.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -119,8 +111,7 @@ public class SearchDialogFragment extends DialogFragment implements MainActivity
             }
         });
 
-        back.setEnabled(web.canGoBack());
-        forward.setEnabled(web.canGoForward());
+        updateButtons();
 
         String url = getArguments().getString("url");
 
@@ -129,14 +120,43 @@ public class SearchDialogFragment extends DialogFragment implements MainActivity
             public void onPageFinished(WebView view, String url) {
                 super.onPageFinished(view, url);
 
-                back.setEnabled(web.canGoBack());
-                forward.setEnabled(web.canGoForward());
+                updateButtons();
+            }
+
+            @Override
+            public void onReceivedHttpError(WebView view, WebResourceRequest request, WebResourceResponse errorResponse) {
+                super.onReceivedHttpError(view, request, errorResponse);
+
+                updateButtons();
+            }
+
+            @Override
+            public void onPageCommitVisible(WebView view, String url) {
+                super.onPageCommitVisible(view, url);
+
+                updateButtons();
+            }
+
+            @Override
+            public void onReceivedError(WebView view, WebResourceRequest request, WebResourceError error) {
+                super.onReceivedError(view, request, error);
+
+                updateButtons();
+            }
+
+            @Override
+            public void onPageStarted(WebView view, String url, Bitmap favicon) {
+                super.onPageStarted(view, url, favicon);
+
+                updateButtons();
             }
 
             @Override
             public boolean shouldOverrideUrlLoading(WebView view, String url) {
-                back.setEnabled(web.canGoBack());
-                forward.setEnabled(web.canGoForward());
+                if (url.startsWith("magnet")) {
+                    getMainActivity().addMagnet(url, true);
+                    return true;
+                }
                 return super.shouldOverrideUrlLoading(view, url);
             }
         });
@@ -144,32 +164,23 @@ public class SearchDialogFragment extends DialogFragment implements MainActivity
         web.setDownloadListener(new DownloadListener() {
             @Override
             public void onDownloadStart(final String url, String userAgent, String contentDisposition, String mimetype, long contentLength) {
-                if (url.startsWith("magnet")) {
-                    getMainActivity().addMagnet(url, true);
-                } else {
-                    Thread thread = new Thread(new Runnable() {
-                        @Override
-                        public void run() {
-                            try {
-                                final byte[] buf = IOUtils.toByteArray(new URL(url));
-                                handler.post(new Runnable() {
-                                    @Override
-                                    public void run() {
-                                        getMainActivity().addTorrentFromBytes(buf, true);
-                                    }
-                                });
-                            } catch (final IOException e) {
-                                handler.post(new Runnable() {
-                                    @Override
-                                    public void run() {
-                                        getMainActivity().Error(e.getMessage());
-                                    }
-                                });
-                            }
+                Thread thread = new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            final byte[] buf = IOUtils.toByteArray(new URL(url));
+                            handler.post(new Runnable() {
+                                @Override
+                                public void run() {
+                                    getMainActivity().addTorrentFromBytes(buf, true);
+                                }
+                            });
+                        } catch (final IOException e) {
+                            getMainActivity().post(e);
                         }
-                    });
-                    thread.start();
-                }
+                    }
+                });
+                thread.start();
             }
         });
 
@@ -183,4 +194,20 @@ public class SearchDialogFragment extends DialogFragment implements MainActivity
         return v;
     }
 
+    void updateButtons() {
+        if (web.canGoBack()) {
+            back.setColorFilter(Color.BLACK);
+            back.setEnabled(true);
+        } else {
+            back.setColorFilter(Color.GRAY);
+            back.setEnabled(false);
+        }
+        if (web.canGoForward()) {
+            forward.setColorFilter(Color.BLACK);
+            forward.setEnabled(true);
+        } else {
+            forward.setColorFilter(Color.GRAY);
+            forward.setEnabled(false);
+        }
+    }
 }

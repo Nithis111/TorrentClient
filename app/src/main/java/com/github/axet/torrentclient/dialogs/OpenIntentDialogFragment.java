@@ -44,12 +44,7 @@ public class OpenIntentDialogFragment extends DialogFragment {
                 try {
                     openURL(getArguments().getString("url"));
                 } catch (final RuntimeException e) {
-                    handler.post(new Runnable() {
-                        @Override
-                        public void run() {
-                            activity.Error(e.getMessage());
-                        }
-                    });
+                    activity.post(e);
                 }
                 handler.post(new Runnable() {
                     @Override

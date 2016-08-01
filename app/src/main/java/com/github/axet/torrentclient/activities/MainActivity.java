@@ -1,7 +1,6 @@
 package com.github.axet.torrentclient.activities;
 
 import android.Manifest;
-import android.app.AlertDialog;
 import android.app.KeyguardManager;
 import android.app.ProgressDialog;
 import android.content.BroadcastReceiver;
@@ -13,6 +12,7 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
+import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.net.Uri;
 import android.os.Bundle;
@@ -25,6 +25,7 @@ import android.support.v4.content.ContextCompat;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
@@ -33,6 +34,8 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.AbsListView;
+import android.widget.Adapter;
+import android.widget.HeaderViewListAdapter;
 import android.widget.ImageView;
 import android.widget.ListAdapter;
 import android.widget.ListView;
@@ -42,9 +45,12 @@ import android.widget.Toast;
 
 import com.getbase.floatingactionbutton.FloatingActionButton;
 import com.getbase.floatingactionbutton.FloatingActionsMenu;
+import com.github.axet.androidlibrary.animations.RemoveItemAnimation;
 import com.github.axet.androidlibrary.widgets.OpenFileDialog;
 import com.github.axet.torrentclient.R;
+import com.github.axet.torrentclient.app.EnginesManager;
 import com.github.axet.torrentclient.app.MainApplication;
+import com.github.axet.torrentclient.app.SearchEngine;
 import com.github.axet.torrentclient.app.Storage;
 import com.github.axet.torrentclient.dialogs.AddDialogFragment;
 import com.github.axet.torrentclient.dialogs.CreateDialogFragment;
@@ -54,6 +60,8 @@ import com.github.axet.torrentclient.navigators.Torrents;
 import com.google.android.gms.appindexing.Action;
 import com.google.android.gms.appindexing.AppIndex;
 import com.google.android.gms.common.api.GoogleApiClient;
+
+import org.apache.commons.io.FileUtils;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -112,6 +120,8 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
     Runnable delayedInit;
 
     BroadcastReceiver screenreceiver;
+
+    EnginesManager manager;
 
     public static void startActivity(Context context) {
         Intent i = new Intent(context, MainActivity.class);
@@ -193,6 +203,9 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
         navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
 
+        manager = new EnginesManager(this);
+        updateManager();
+
         navigationHeader = navigationView.getHeaderView(0);
 
         TextView ver = (TextView) navigationHeader.findViewById(R.id.nav_version);
@@ -261,12 +274,7 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
                                     }
 
                                     if (!Libtorrent.HashMetaInfo(i.get())) {
-                                        handler.post(new Runnable() {
-                                            @Override
-                                            public void run() {
-                                                activity.Error(Libtorrent.Error());
-                                            }
-                                        });
+                                        activity.post(Libtorrent.Error());
                                         Libtorrent.CloseMetaInfo();
                                         progress.dismiss();
                                         return;
@@ -497,6 +505,11 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
             delayedInit = null;
         }
 
+        if (manager != null) {
+            manager.save();
+            manager = null;
+        }
+
         refreshUI = null;
 
         if (refresh != null) {
@@ -531,6 +544,20 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
         getApp().close();
         finishAffinity();
         ExitActivity.exitApplication(this);
+    }
+
+    public void post(final Throwable e) {
+        Log.e(TAG, "Exception", e);
+        post(e.getMessage());
+    }
+
+    public void post(final String msg) {
+        handler.post(new Runnable() {
+            @Override
+            public void run() {
+                Error(msg);
+            }
+        });
     }
 
     public void Error(String err) {
@@ -1020,18 +1047,115 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
     @Override
     public boolean onNavigationItemSelected(MenuItem item) {
         int id = item.getItemId();
+
+        // here only two types of adapters, so setup empty view manually here.
+
+        Adapter a = list.getAdapter();
+        if (a != null && a instanceof HeaderViewListAdapter) {
+            a = ((HeaderViewListAdapter) a).getWrappedAdapter();
+        }
+        if (a != null && a instanceof Search) {
+            ((Search) a).remove(list);
+        }
+
         if (id == R.id.nav_torrents) {
             empty.setVisibility(View.GONE);
             list.setEmptyView(empty);
+
             list.setAdapter(torrents);
         }
         if (id == R.id.nav_search) {
-            Search search = new Search(this);
             empty.setVisibility(View.GONE);
             list.setEmptyView(null);
+
+            int pos = (int) item.getActionView().getTag();
+            Search search = manager.get(pos);
             search.install(list);
+        }
+        if (id == R.id.nav_add) {
+            final OpenFileDialog f = new OpenFileDialog(MainActivity.this);
+
+            String path = "";
+
+            final SharedPreferences shared = PreferenceManager.getDefaultSharedPreferences(MainActivity.this);
+
+            if (path == null || path.isEmpty()) {
+                path = shared.getString(MainApplication.PREFERENCE_LAST_PATH, Environment.getExternalStorageDirectory().getPath());
+            }
+
+            f.setCurrentPath(new File(path));
+            f.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    File p = f.getCurrentPath();
+
+                    shared.edit().putString(MainApplication.PREFERENCE_LAST_PATH, p.getParent()).commit();
+
+                    try {
+                        manager.add(p);
+                    } catch (RuntimeException e) {
+                        Error(e.getMessage());
+                        return;
+                    }
+                    manager.save();
+                    updateManager();
+                }
+            });
+            f.show();
+            // prevent close drawer
+            return true;
         }
         drawer.closeDrawer(GravityCompat.START);
         return true;
+    }
+
+    void updateManager() {
+        Menu menu = navigationView.getMenu();
+
+        while (menu.findItem(R.id.nav_search) != null) {
+            menu.removeItem(R.id.nav_search);
+        }
+
+        for (int i = 0; i < manager.getCount(); i++) {
+            final Search search = manager.get(i);
+            final SearchEngine engine = search.getEngine();
+            MenuItem item = menu.add(R.id.group_torrents, R.id.nav_search, Menu.NONE, engine.getName());
+            item.setIcon(R.drawable.share);
+            final ImageView icon = new ImageView(this);
+            icon.setTag(i);
+            icon.setImageDrawable(ContextCompat.getDrawable(this, R.drawable.trash));
+            icon.setColorFilter(Color.BLACK);
+            icon.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    Context context = MainActivity.this;
+                    AlertDialog.Builder builder = new AlertDialog.Builder(context);
+                    builder.setTitle("Delete Search Engine");
+
+                    String name = engine.getName();
+
+                    builder.setMessage(name + "\n\n" + context.getString(R.string.are_you_sure));
+                    builder.setPositiveButton(R.string.yes, new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            dialog.cancel();
+                            manager.remove(search);
+                            manager.save();
+                            updateManager();
+                        }
+                    });
+                    builder.setNegativeButton(R.string.no, new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            dialog.cancel();
+                        }
+                    });
+                    builder.show();
+                }
+            });
+            item.setActionView(icon);
+        }
+        // reset group. add recent items to toggle group
+        menu.setGroupCheckable(R.id.group_torrents, true, true);
     }
 }

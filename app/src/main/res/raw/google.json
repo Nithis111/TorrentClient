@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "name": "google.com",
+  "home": {
+    "get": "https://google.com"
+  },
+  "search": {
+    "get": "https://www.google.com/search?q=filetype:torrent+%s",
+    "js": "var elements = document.querySelectorAll('a[href]'); for (var i = 0; i < elements.length; i++) { var elem = elements[i]; var stripped = elem.innerHTML.replace(/<b>/ig, '').replace(/<\\/b>/ig, ''); elem.innerHTML = stripped;};",
+    "list": "h3.r [target=_blank]",
+    "details": "a:regex(.*href=[\"']/url\\?q=(.*)[\"'].*)",
+    "title": "a:regex(<a[^>]*>(.*)</a>)"
+  }
+}

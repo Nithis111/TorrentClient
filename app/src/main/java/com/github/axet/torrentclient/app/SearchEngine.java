@@ -14,6 +14,8 @@ public class SearchEngine {
     public static final String TAG = SearchEngine.class.getSimpleName();
 
     Map<String, Object> map = new HashMap<>();
+    // update url
+    String url;
 
     // http://stackoverflow.com/questions/21720759/convert-a-json-string-to-a-hashmap
 
@@ -71,5 +73,14 @@ public class SearchEngine {
 
     public String getString(String key) {
         return (String) map.get(key);
+    }
+
+    public String save() {
+        JSONObject o = new JSONObject(map);
+        return o.toString();
+    }
+
+    public String getName() {
+        return getString("name");
     }
 }
