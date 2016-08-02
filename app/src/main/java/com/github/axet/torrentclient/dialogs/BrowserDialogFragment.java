@@ -1,10 +1,12 @@
 package com.github.axet.torrentclient.dialogs;
 
+import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.Dialog;
 import android.content.DialogInterface;
 import android.graphics.Bitmap;
 import android.graphics.Color;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.annotation.Nullable;
@@ -37,6 +39,7 @@ public class BrowserDialogFragment extends DialogFragment implements MainActivit
     ImageButton back;
     ImageButton forward;
     WebView web;
+    Thread thread;
 
     public static BrowserDialogFragment create(String url) {
         BrowserDialogFragment f = new BrowserDialogFragment();
@@ -151,6 +154,11 @@ public class BrowserDialogFragment extends DialogFragment implements MainActivit
             }
 
             @Override
+            public void onLoadResource(WebView view, String url) {
+                super.onLoadResource(view, url);
+            }
+
+            @Override
             public void onPageStarted(WebView view, String url, Bitmap favicon) {
                 super.onPageStarted(view, url, favicon);
 
@@ -165,12 +173,23 @@ public class BrowserDialogFragment extends DialogFragment implements MainActivit
                 }
                 return super.shouldOverrideUrlLoading(view, url);
             }
+
+            @TargetApi(Build.VERSION_CODES.LOLLIPOP)
+            @Override
+            public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
+                return super.shouldInterceptRequest(view, request);
+            }
+
+            @Override
+            public WebResourceResponse shouldInterceptRequest(WebView view, String url) {
+                return super.shouldInterceptRequest(view, url);
+            }
         });
 
         web.setDownloadListener(new DownloadListener() {
             @Override
             public void onDownloadStart(final String url, String userAgent, String contentDisposition, String mimetype, long contentLength) {
-                Thread thread = new Thread(new Runnable() {
+                thread = new Thread(new Runnable() {
                     @Override
                     public void run() {
                         try {

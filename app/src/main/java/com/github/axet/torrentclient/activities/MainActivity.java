@@ -1076,11 +1076,12 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
 
             list.setAdapter(torrents);
         }
-        if (id == R.id.nav_search) {
+        if (id > 0 && id < 0x00ffffff) {
             empty.setVisibility(View.GONE);
             list.setEmptyView(null);
 
-            int pos = (int) item.getActionView().getTag();
+            int pos = id - 1;
+
             Search search = manager.get(pos);
             search.install(list);
         }
@@ -1123,11 +1124,21 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
 
     public void openDrawer(Search search) {
         drawer.openDrawer(GravityCompat.START);
-        NavigationMenu menu = (NavigationMenu) navigationView.getMenu();
-        for (int i = 0; i < menu.size(); i++) {
-            MenuItem m = menu.getItem(i);
+        for (int i = 0; i < manager.getCount(); i++) {
             if (manager.get(i) == search) {
-                m.getActionView().performClick();
+                int id = i + 1;
+                navigationView.setCheckedItem(id);
+
+                Adapter a = list.getAdapter();
+                if (a != null && a instanceof HeaderViewListAdapter) {
+                    a = ((HeaderViewListAdapter) a).getWrappedAdapter();
+                }
+                if (a != null && a instanceof Search) {
+                    ((Search) a).remove(list);
+                }
+                empty.setVisibility(View.GONE);
+                list.setEmptyView(null);
+                search.install(list);
                 return;
             }
         }
@@ -1136,17 +1147,23 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
     public void updateManager() {
         Menu menu = navigationView.getMenu();
 
-        while (menu.findItem(R.id.nav_search) != null) {
-            menu.removeItem(R.id.nav_search);
+        for (int i = 0; i < menu.size(); i++) {
+            MenuItem m = menu.getItem(i);
+            int id = m.getItemId();
+            if (id > 0 && id < 0x00ffffff) {
+                menu.removeItem(id);
+                i = 0;
+            }
         }
 
         for (int i = 0; i < manager.getCount(); i++) {
             final Search search = manager.get(i);
             final SearchEngine engine = search.getEngine();
-            MenuItem item = menu.add(R.id.group_torrents, R.id.nav_search, Menu.NONE, engine.getName());
+            // save to set < 0x00ffffff. check View.generateViewId()
+            int id = i + 1;
+            MenuItem item = menu.add(R.id.group_torrents, id, Menu.NONE, engine.getName());
             item.setIcon(R.drawable.share);
             final ImageView icon = new ImageView(this);
-            icon.setTag(i);
             icon.setImageDrawable(ContextCompat.getDrawable(this, R.drawable.trash));
             icon.setColorFilter(Color.BLACK);
             icon.setOnClickListener(new View.OnClickListener() {

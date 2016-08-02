@@ -468,7 +468,20 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
             convertView.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    BrowserDialogFragment d = BrowserDialogFragment.create(item.details);
+                    String url = item.details;
+
+                    CookieStore cookieStore = httpClientContext.getCookieStore();
+
+                    if (cookieStore != null) {
+                        CookieManager m = CookieManager.getInstance();
+                        List<Cookie> list = cookieStore.getCookies();
+                        for (int i = 0; i < list.size(); i++) {
+                            Cookie c = list.get(i);
+                            m.setCookie(c.getDomain(), c.getName() + "=" + c.getValue());
+                        }
+                    }
+
+                    BrowserDialogFragment d = BrowserDialogFragment.create(url);
                     d.show(main.getSupportFragmentManager(), "");
                 }
             });
@@ -556,7 +569,6 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
             public WebResourceResponse shouldInterceptRequest(WebView view, String url) {
                 return super.shouldInterceptRequest(view, url);
             }
-
 
             @Override
             public void onPageCommitVisible(WebView view, String url) {

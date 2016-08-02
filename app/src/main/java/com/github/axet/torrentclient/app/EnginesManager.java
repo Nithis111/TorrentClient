@@ -97,8 +97,8 @@ public class EnginesManager {
                                 public void run() {
                                     Search search = add(url, engine);
                                     save();
-                                    main.openDrawer(search);
                                     main.updateManager();
+                                    main.openDrawer(search);
                                 }
                             });
                         } catch (RuntimeException e) {
