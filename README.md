@@ -8,7 +8,7 @@ Torrent Client simple UI.
 
 # Engines
 
-  * [google.json](magnet:?as=https://raw.githubusercontent.com/axet/android-torrent-client/dev/engines/google.json)
+  * [google.json](http://magnet:?as=https://raw.githubusercontent.com/axet/android-torrent-client/dev/engines/google.json)
   * [piratebay.json](magnet:?as=https://raw.githubusercontent.com/axet/android-torrent-client/dev/engines/piratebay.json)
   * [pornolab.json](magnet:?as=https://raw.githubusercontent.com/axet/android-torrent-client/dev/engines/pornolab.json)
   * [rutracker.json](magnet:?as=https://raw.githubusercontent.com/axet/android-torrent-client/dev/engines/rutracker.json)
