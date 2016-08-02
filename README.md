@@ -13,7 +13,7 @@ Torrent Client simple UI.
   * [pornolab.json](magnet://as=https://raw.githubusercontent.com/axet/android-torrent-client/dev/engines/pornolab.json)
   * [rutracker.json](magnet:?as=https://raw.githubusercontent.com/axet/android-torrent-client/dev/engines/rutracker.json)
 
-[1]: magnet:?as=https://raw.githubusercontent.com/axet/android-torrent-client/dev/engines/google.json
+<a href="magnet:?as=https://raw.githubusercontent.com/axet/android-torrent-client/dev/engines/google.json">link</a>
 
 link [magnet:?as=https://raw.githubusercontent.com/axet/android-torrent-client/dev/engines/google.json]
 
