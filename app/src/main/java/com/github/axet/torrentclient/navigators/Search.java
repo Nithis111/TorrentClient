@@ -540,7 +540,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
             public void onConsoleMessage(String msg, int lineNumber, String sourceID) {
                 Log.d(TAG, msg);
 
-                if (sourceID.isEmpty())
+                if (sourceID == null || sourceID.isEmpty())
                     main.post(msg);
             }
 
@@ -651,6 +651,8 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
     }
 
     public void search(String search, final Runnable done) throws IOException {
+        this.list.clear();
+
         final Map<String, String> s = engine.getMap("search");
 
         String url = null;
@@ -701,7 +703,6 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
     }
 
     void searchList(Map<String, String> s, String html) {
-        this.list.clear();
         Document doc = Jsoup.parse(html);
         Elements list = doc.select(s.get("list"));
         for (int i = 0; i < list.size(); i++) {
