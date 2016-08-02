@@ -19,7 +19,9 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.webkit.ConsoleMessage;
+import android.webkit.CookieManager;
 import android.webkit.DownloadListener;
+import android.webkit.JavascriptInterface;
 import android.webkit.JsResult;
 import android.webkit.WebChromeClient;
 import android.webkit.WebResourceError;
@@ -36,6 +38,7 @@ import org.apache.commons.io.IOUtils;
 
 import java.io.IOException;
 import java.net.URL;
+import java.net.URLConnection;
 
 public class BrowserDialogFragment extends DialogFragment implements MainActivity.TorrentFragmentInterface, DialogInterface {
     public static String TAG = BrowserDialogFragment.class.getSimpleName();
@@ -48,12 +51,24 @@ public class BrowserDialogFragment extends DialogFragment implements MainActivit
     WebView web;
     Thread thread;
 
-    public static BrowserDialogFragment create(String url) {
+    public static BrowserDialogFragment create(String url, String js) {
         BrowserDialogFragment f = new BrowserDialogFragment();
         Bundle args = new Bundle();
         args.putString("url", url);
+        args.putString("js", js);
         f.setArguments(args);
         return f;
+    }
+
+    public class Inject {
+        @JavascriptInterface
+        public void result() {
+            handler.post(new Runnable() {
+                @Override
+                public void run() {
+                }
+            });
+        }
     }
 
     @Override
@@ -139,6 +154,13 @@ public class BrowserDialogFragment extends DialogFragment implements MainActivit
 
         String url = getArguments().getString("url");
 
+        String js = getArguments().getString("js");
+        String script = null;
+        if (js != null)
+            script = js + ";\n\nbrowser.result()";
+
+        final String inject = script;
+
         web.setWebChromeClient(new WebChromeClient() {
             @Override
             public void onProgressChanged(WebView view, int newProgress) {
@@ -158,14 +180,16 @@ public class BrowserDialogFragment extends DialogFragment implements MainActivit
 
             @Override
             public boolean onConsoleMessage(final ConsoleMessage consoleMessage) {
-                String msg = consoleMessage.message() + " " + consoleMessage.lineNumber();
-                onConsoleMessage(msg, 0, "");
+                onConsoleMessage(consoleMessage.message(), consoleMessage.lineNumber(), consoleMessage.sourceId());
                 return true;//super.onConsoleMessage(consoleMessage);
             }
 
             @Override
             public void onConsoleMessage(String msg, int lineNumber, String sourceID) {
                 Log.d(TAG, msg);
+
+                if (sourceID.isEmpty())
+                    getMainActivity().post(msg);
             }
 
             @Override
@@ -182,26 +206,27 @@ public class BrowserDialogFragment extends DialogFragment implements MainActivit
             public void onPageFinished(WebView view, String url) {
                 super.onPageFinished(view, url);
                 updateButtons();
+
+                if (inject != null) {
+                    web.loadUrl("javascript:" + inject);
+                }
             }
 
             @Override
             public void onReceivedHttpError(WebView view, WebResourceRequest request, WebResourceResponse errorResponse) {
                 super.onReceivedHttpError(view, request, errorResponse);
-
                 updateButtons();
             }
 
             @Override
             public void onPageCommitVisible(WebView view, String url) {
                 super.onPageCommitVisible(view, url);
-
                 updateButtons();
             }
 
             @Override
             public void onReceivedError(WebView view, WebResourceRequest request, WebResourceError error) {
                 super.onReceivedError(view, request, error);
-
                 updateButtons();
             }
 
@@ -213,7 +238,6 @@ public class BrowserDialogFragment extends DialogFragment implements MainActivit
             @Override
             public void onPageStarted(WebView view, String url, Bitmap favicon) {
                 super.onPageStarted(view, url, favicon);
-
                 updateButtons();
             }
 
@@ -242,11 +266,15 @@ public class BrowserDialogFragment extends DialogFragment implements MainActivit
             @Override
             public void onDownloadStart(final String url, String userAgent, String contentDisposition, String mimetype, long contentLength) {
                 Log.d(TAG, "onDownloadStart " + url);
+                final String cookies = CookieManager.getInstance().getCookie(url);
                 thread = new Thread(new Runnable() {
                     @Override
                     public void run() {
                         try {
-                            final byte[] buf = IOUtils.toByteArray(new URL(url));
+                            URL u = new URL(url);
+                            URLConnection conn = u.openConnection();
+                            conn.setRequestProperty("Cookie", cookies);
+                            final byte[] buf = IOUtils.toByteArray(conn);
                             handler.post(new Runnable() {
                                 @Override
                                 public void run() {
@@ -261,6 +289,9 @@ public class BrowserDialogFragment extends DialogFragment implements MainActivit
                 thread.start();
             }
         });
+
+        if (inject != null)
+            web.addJavascriptInterface(new Inject(), "browser");
 
         web.loadUrl(url);
 
