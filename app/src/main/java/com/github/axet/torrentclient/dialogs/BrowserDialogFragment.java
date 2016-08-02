@@ -19,6 +19,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.webkit.ConsoleMessage;
+import android.webkit.CookieManager;
 import android.webkit.DownloadListener;
 import android.webkit.JavascriptInterface;
 import android.webkit.JsResult;
@@ -37,6 +38,7 @@ import org.apache.commons.io.IOUtils;
 
 import java.io.IOException;
 import java.net.URL;
+import java.net.URLConnection;
 
 public class BrowserDialogFragment extends DialogFragment implements MainActivity.TorrentFragmentInterface, DialogInterface {
     public static String TAG = BrowserDialogFragment.class.getSimpleName();
@@ -47,7 +49,6 @@ public class BrowserDialogFragment extends DialogFragment implements MainActivit
     ImageButton back;
     ImageButton forward;
     WebView web;
-    boolean log;
     Thread thread;
 
     public static BrowserDialogFragment create(String url, String js) {
@@ -65,7 +66,6 @@ public class BrowserDialogFragment extends DialogFragment implements MainActivit
             handler.post(new Runnable() {
                 @Override
                 public void run() {
-                    log = false;
                 }
             });
         }
@@ -187,7 +187,8 @@ public class BrowserDialogFragment extends DialogFragment implements MainActivit
             @Override
             public void onConsoleMessage(String msg, int lineNumber, String sourceID) {
                 Log.d(TAG, msg);
-                if (log)
+
+                if (sourceID.isEmpty())
                     getMainActivity().post(msg);
             }
 
@@ -207,7 +208,6 @@ public class BrowserDialogFragment extends DialogFragment implements MainActivit
                 updateButtons();
 
                 if (inject != null) {
-                    log = true;
                     web.loadUrl("javascript:" + inject);
                 }
             }
@@ -266,11 +266,15 @@ public class BrowserDialogFragment extends DialogFragment implements MainActivit
             @Override
             public void onDownloadStart(final String url, String userAgent, String contentDisposition, String mimetype, long contentLength) {
                 Log.d(TAG, "onDownloadStart " + url);
+                final String cookies = CookieManager.getInstance().getCookie(url);
                 thread = new Thread(new Runnable() {
                     @Override
                     public void run() {
                         try {
-                            final byte[] buf = IOUtils.toByteArray(new URL(url));
+                            URL u = new URL(url);
+                            URLConnection conn = u.openConnection();
+                            conn.setRequestProperty("Cookie", cookies);
+                            final byte[] buf = IOUtils.toByteArray(conn);
                             handler.post(new Runnable() {
                                 @Override
                                 public void run() {

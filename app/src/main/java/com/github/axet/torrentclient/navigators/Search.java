@@ -95,7 +95,6 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
     AbstractExecutionAwareRequest request;
 
     WebView web;
-    boolean log = false;
     SearchEngine engine;
     Handler handler;
 
@@ -127,7 +126,6 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
             handler.post(new Runnable() {
                 @Override
                 public void run() {
-                    log = false;
                 }
             });
         }
@@ -536,7 +534,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
             public void onConsoleMessage(String msg, int lineNumber, String sourceID) {
                 Log.d(TAG, msg);
 
-                if (log)
+                if (sourceID.isEmpty())
                     main.post(msg);
             }
 
@@ -593,7 +591,6 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
 
             @Override
             public void onPageFinished(WebView view, String url) {
-                log = true;
                 web.loadUrl("javascript:" + script);
                 super.onPageFinished(view, url);
             }
