@@ -6,7 +6,7 @@
   },
   "search": {
     "get": "https://www.google.com/search?q=filetype:torrent+%s",
-    "js": "var elements = document.querySelectorAll('a[href]'); for (var i = 0; i < elements.length; i++) { var elem = elements[i]; var stripped = elem.innerHTML.replace(/<b>/ig, '').replace(/<\\/b>/ig, ''); elem.innerHTML = stripped;};",
+    "js": "ee=document.querySelectorAll('a[href]'); if(ee){for(i=0;i<ee.length;i++){e=ee[i];s=e.innerHTML.replace(/<b>/ig,'').replace(/<\\/b>/ig,'');e.innerHTML=s;};};",
     "list": "h3.r [target=_blank]",
     "details": "a:regex(.*href=[\"']/url\\?q=(.*)[\"'].*)",
     "title": "a:regex(<a[^>]*>(.*)</a>)"
