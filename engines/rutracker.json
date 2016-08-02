@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "name": "rutracker.org",
+  "home": {
+    "get": "http://rutracker.org"
+  },
+  "login": {
+    "details": "http://rutracker.org/forum/login.php",
+    "post": "http://rutracker.org/forum/login.php",
+    "post_login": "login_username",
+    "post_password": "login_password",
+    "post_params": "login=вход",
+    "js": "document.querySelectorAll('form[action=login\\\\.php]').length == 0 || alert('Not Logged In');"
+  },
+  "search": {
+    "post": "http://rutracker.org/forum/tracker.php",
+    "post_search": "nm",
+    "js": "document.querySelectorAll('form[action=login\\\\.php]').length == 0 || alert('Not Logged In'); var ee = document.querySelectorAll('a.tLink'); for(var i = 0; i < ee.length; i++) {  var e  = ee[i];  var href = e.getAttribute('href');  href = 'http://pornolab.net/forum/' + href;  e.setAttribute('href', href);}; var ee = document.querySelectorAll('a.dl-stub');for (var i = 0 ;i < ee.length;i++) {  var e = ee[i];  var h = e.innerHTML.replace(/&nbsp;/ig, ' ');  e.innerHTML = h;};var ee = document.querySelectorAll('a.tLink');for (var i = 0 ;i < ee.length;i++) {  var e = ee[i];  var h = e.innerHTML.replace(/<span.*>/ig, ' ');  e.innerHTML = h;}",
+    "list": ".forumline.tablesorter tbody tr",
+    "title": "a.tLink:regex(<a[^>]*>(.*)</a>)",
+    "details": "a.tLink:regex(.*href=[\"'](.*)[\"'].*)",
+    "size": "a.dl-stub:regex(<a[^>]*>(.*)</a>)",
+    "seed": "b.seedmed:regex(<b[^>]*>(.*)</b>)",
+    "leech": "td.leechmed b:regex(<b[^>]*>(.*)</b>)"
+  }
+}

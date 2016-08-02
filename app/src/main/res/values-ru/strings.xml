@@ -122,4 +122,9 @@
     <string name="exit">Выход</string>
 
     <string name="tap_restart">Нажмите чтобы перезапустить</string>
+
+    <string name="torrents">Торренты</string>
+
+    <string name="leech_tab">Личи:</string>
+    <string name="seed_tab">Сиды:</string>
 </resources>

@@ -2,7 +2,11 @@
 
 Torrent Client simple UI.
 
-# Install
+# Search Engines
+
+* [Install](http://axet.github.io/android-torrent-client/)
+
+# Google Play
 
 [![ Google Play](docs/google-play-badge.png)](https://play.google.com/store/apps/details?id=com.github.axet.torrentclient) 
 
