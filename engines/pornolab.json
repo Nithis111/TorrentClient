@@ -19,6 +19,7 @@
     "list": ".forumline.tablesorter tbody tr",
     "title": "a.tLink:regex(<a[^>]*>(.*)</a>)",
     "details": "a.tLink:regex(.*href=[\"'](.*)[\"'].*)",
+    "details_js": "",
     "size": "a.dl-stub:regex(<a[^>]*>(.*)</a>)",
     "seed": "td.seedmed b:regex(<b[^>]*>(.*)</b>)",
     "leech": "td.leechmed b:regex(<b[^>]*>(.*)</b>)"
