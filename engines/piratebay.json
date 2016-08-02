@@ -7,7 +7,7 @@
   "search": {
     "get": "https://thepiratebay.org/search/%s/0/99/0",
     "list": "tbody tr",
-    "js": "var elements = document.querySelectorAll('tbody tr a[href]'); for(var i = 0; i < elements.length; i++) {  var elem = elements[i];  var href = elem.getAttribute('href');  if (href.startsWith('/torrent')) {    href = 'https://thepiratebay.org/' + href;    elem.setAttribute('href', href);  }}; var ee = document.querySelectorAll('font.detDesc');for (var i = 0 ;i < ee.length;i++) {  var e = ee[i];  var h = e.innerHTML.replace(/&nbsp;/ig, ' ');  e.innerHTML = h;}",
+    "js": "ee=document.querySelectorAll('tbody tr a[href]');for(i=0;i<ee.length;i++){e=ee[i];h=e.getAttribute('href');if(h.startsWith('/torrent')){h='https://thepiratebay.org/'+h;e.setAttribute('href',h);}};ee=document.querySelectorAll('font.detDesc');for(i=0;i<ee.length;i++){e=ee[i];h=e.innerHTML.replace(/&nbsp;/ig,' ');e.innerHTML=h;}",
     "title": "a.detLink:regex(<a[^>]*>(.*)</a>)",
     "details": "a.detLink:regex(.*href=[\"'](.*)[\"'].*)",
     "magnet": "a[href^=magnet]:regex(.*href=[\"']([^'^\"]*).*)",

@@ -10,15 +10,16 @@
     "post_login": "login_username",
     "post_password": "login_password",
     "post_params": "login=вход",
-    "js": "document.querySelectorAll('form[action=login\\\\.php]').length == 0 || alert('Not Logged In');"
+    "js": "document.querySelectorAll('form[action=login\\\\.php]').length==0 || alert('Not Logged In');"
   },
   "search": {
     "post": "http://rutracker.org/forum/tracker.php",
     "post_search": "nm",
-    "js": "document.querySelectorAll('form[action=login\\\\.php]').length == 0 || alert('Not Logged In'); var ee = document.querySelectorAll('a.tLink'); for(var i = 0; i < ee.length; i++) {  var e  = ee[i];  var href = e.getAttribute('href');  href = 'http://pornolab.net/forum/' + href;  e.setAttribute('href', href);}; var ee = document.querySelectorAll('a.dl-stub');for (var i = 0 ;i < ee.length;i++) {  var e = ee[i];  var h = e.innerHTML.replace(/&nbsp;/ig, ' ');  e.innerHTML = h;};var ee = document.querySelectorAll('a.tLink');for (var i = 0 ;i < ee.length;i++) {  var e = ee[i];  var h = e.innerHTML.replace(/<span.*>/ig, ' ');  e.innerHTML = h;}",
+    "js": "document.querySelectorAll('form[action=login\\\\.php]').length==0 || alert('Not Logged In');ee=document.querySelectorAll('a.tLink');for(i=0;i<ee.length;i++){e=ee[i];h=e.getAttribute('href');h='http://rutracker.org/forum/'+h;e.setAttribute('href',h);};ee=document.querySelectorAll('a.dl-stub');for(i=0;i<ee.length;i++){e=ee[i];h=e.innerHTML.replace(/&nbsp;/ig,' ');e.innerHTML=h;};ee=document.querySelectorAll('a.tLink');for(i=0;i<ee.length;i++){e=ee[i];h=e.innerHTML.replace(/<span.*>/ig,' ');e.innerHTML=h;}",
     "list": ".forumline.tablesorter tbody tr",
     "title": "a.tLink:regex(<a[^>]*>(.*)</a>)",
     "details": "a.tLink:regex(.*href=[\"'](.*)[\"'].*)",
+    "details_js": "aa=document.querySelectorAll('a.dl-stub');for(i=0;i<aa.length;i++){a=aa[i];h=a.getAttribute('href');a.setAttribute('href','#');id=h.split('t=')[1];function c(){location.href=h};a.onclick=c}",
     "size": "a.dl-stub:regex(<a[^>]*>(.*)</a>)",
     "seed": "b.seedmed:regex(<b[^>]*>(.*)</b>)",
     "leech": "td.leechmed b:regex(<b[^>]*>(.*)</b>)"
