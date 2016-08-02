@@ -15,6 +15,8 @@ Torrent Client simple UI.
 
 [1]: magnet:?as=https://raw.githubusercontent.com/axet/android-torrent-client/dev/engines/google.json
 
+link [magnet:?as=https://raw.githubusercontent.com/axet/android-torrent-client/dev/engines/google.json]
+
 Manual install
 
     ./libtorrent/debug.sh && gradle installDebug
