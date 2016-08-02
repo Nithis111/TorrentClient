@@ -11,7 +11,8 @@
         android:layout_height="wrap_content"
         android:layout_gravity="center"
         android:layout_margin="5dp"
-        android:src="@drawable/ic_vpn_key_black_24dp" />
+        android:src="@drawable/ic_vpn_key_black_24dp"
+        android:tint="?attr/colorAccent" />
 
     <EditText
         android:id="@+id/search_header_text"
@@ -23,22 +24,31 @@
 
     <FrameLayout
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content">
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="5dp">
 
         <ImageButton
             android:id="@+id/search_header_search"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
-            android:layout_marginLeft="5dp"
-            android:src="@drawable/ic_search_black_24dp" />
+            android:src="@drawable/ic_search_black_24dp"
+            android:tint="?attr/colorAccent" />
 
         <ProgressBar
             android:id="@+id/search_header_progress"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginLeft="5dp"
+            android:layout_gravity="center"
             android:indeterminateOnly="true" />
+
+        <ImageView
+            android:id="@+id/search_header_stop"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:src="@drawable/ic_stop_black_24dp"
+            android:tint="?attr/colorAccent" />
     </FrameLayout>
 
 </LinearLayout>

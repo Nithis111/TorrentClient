@@ -105,6 +105,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
     View search_header;
     View login_header;
     ProgressBar progress;
+    View stop;
     View search;
     TextView searchText;
 
@@ -206,6 +207,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         searchText = (TextView) search_header.findViewById(R.id.search_header_text);
         search = search_header.findViewById(R.id.search_header_search);
         progress = (ProgressBar) search_header.findViewById(R.id.search_header_progress);
+        stop = search_header.findViewById(R.id.search_header_stop);
 
         searchText.setText(lastSearch);
 
@@ -217,9 +219,11 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         });
         if (thread == null) {
             progress.setVisibility(View.GONE);
+            stop.setVisibility(View.GONE);
             search.setVisibility(View.VISIBLE);
         } else {
             progress.setVisibility(View.VISIBLE);
+            stop.setVisibility(View.VISIBLE);
             search.setVisibility(View.GONE);
         }
 
@@ -307,6 +311,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         requestCancel();
 
         progress.setVisibility(View.VISIBLE);
+        stop.setVisibility(View.VISIBLE);
         search.setVisibility(View.GONE);
 
         thread = new Thread(new Runnable() {
@@ -336,6 +341,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
                             request = null;
 
                             progress.setVisibility(View.GONE);
+                            stop.setVisibility(View.GONE);
                             search.setVisibility(View.VISIBLE);
                         }
                     });

@@ -12,19 +12,72 @@
             android:id="@+id/search_details_back"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:src="@drawable/ic_arrow_back_black_24dp" />
+            android:src="@drawable/ic_arrow_back_black_24dp"
+            android:tint="?attr/colorAccent" />
+
+        <FrameLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center">
+
+            <ProgressBar
+                android:id="@+id/search_details_process"
+                style="?android:attr/progressBarStyleHorizontal"
+                android:layout_width="35dp"
+                android:layout_height="35dp"
+                android:layout_gravity="center"
+                android:background="@drawable/roundprogress_bg"
+                android:indeterminate="false"
+                android:max="100"
+                android:progress="65"
+                android:progressDrawable="?attr/roundprogress_style" />
+
+            <ImageView
+                android:id="@+id/search_details_stop"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:src="@drawable/ic_stop_black_24dp"
+                android:tint="?attr/colorAccent" />
+
+            <ImageView
+                android:id="@+id/search_details_refresh"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:src="@drawable/ic_refresh_black_24dp"
+                android:tint="?attr/colorAccent" />
+        </FrameLayout>
 
         <ImageButton
             android:id="@+id/search_details_forward"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:src="@drawable/ic_arrow_forward_black_24dp" />
+            android:src="@drawable/ic_arrow_forward_black_24dp"
+            android:tint="?attr/colorAccent" />
     </LinearLayout>
+
+    <com.github.axet.androidlibrary.widgets.PathMax
+        android:id="@+id/status_details_status_group"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:paddingLeft="5dp"
+        android:paddingRight="5dp">
+
+        <TextView
+            android:id="@+id/status_details_status"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="10dp"
+            android:text="status..." />
+    </com.github.axet.androidlibrary.widgets.PathMax>
 
     <WebView
         android:id="@+id/webview"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:layout_above="@id/status_details_status_group"
         android:layout_below="@id/search_details_toolbar"
         android:orientation="vertical"
         android:padding="5dp"></WebView>
