@@ -62,7 +62,12 @@ public class BrowserDialogFragment extends DialogFragment implements MainActivit
     public class Inject {
         @JavascriptInterface
         public void result() {
-            log = false;
+            handler.post(new Runnable() {
+                @Override
+                public void run() {
+                    log = false;
+                }
+            });
         }
     }
 
@@ -175,8 +180,7 @@ public class BrowserDialogFragment extends DialogFragment implements MainActivit
 
             @Override
             public boolean onConsoleMessage(final ConsoleMessage consoleMessage) {
-                String msg = consoleMessage.message() + " " + consoleMessage.lineNumber();
-                onConsoleMessage(msg, consoleMessage.lineNumber(), consoleMessage.sourceId());
+                onConsoleMessage(consoleMessage.message(), consoleMessage.lineNumber(), consoleMessage.sourceId());
                 return true;//super.onConsoleMessage(consoleMessage);
             }
 

@@ -124,7 +124,12 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
     public class Inject {
         @JavascriptInterface
         void result(String html) {
-            log = false;
+            handler.post(new Runnable() {
+                @Override
+                public void run() {
+                    log = false;
+                }
+            });
         }
     }
 
@@ -523,8 +528,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         web.setWebChromeClient(new WebChromeClient() {
             @Override
             public boolean onConsoleMessage(final ConsoleMessage consoleMessage) {
-                String msg = consoleMessage.message() + " " + consoleMessage.lineNumber();
-                onConsoleMessage(msg, consoleMessage.lineNumber(), consoleMessage.sourceId());
+                onConsoleMessage(consoleMessage.message(), consoleMessage.lineNumber(), consoleMessage.sourceId());
                 return true;//super.onConsoleMessage(consoleMessage);
             }
 
