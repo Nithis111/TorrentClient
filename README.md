@@ -1,8 +1,6 @@
 # Torrent Client
 
-Torrent Client simple UI.
-
-**Search Engines**
+Torrent Client simple UI. Additional Search Engines can be found here:
 
 * [Install](http://axet.github.io/android-torrent-client/)
 
