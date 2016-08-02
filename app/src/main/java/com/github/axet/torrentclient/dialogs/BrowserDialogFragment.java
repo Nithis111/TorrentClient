@@ -219,7 +219,7 @@ public class BrowserDialogFragment extends DialogFragment implements MainActivit
             public void onConsoleMessage(String msg, int lineNumber, String sourceID) {
                 Log.d(TAG, msg);
 
-                if (sourceID.isEmpty())
+                if (sourceID == null || sourceID.isEmpty())
                     getMainActivity().post(msg);
             }
 

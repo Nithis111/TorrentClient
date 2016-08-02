@@ -540,7 +540,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
             public void onConsoleMessage(String msg, int lineNumber, String sourceID) {
                 Log.d(TAG, msg);
 
-                if (sourceID.isEmpty())
+                if (sourceID == null || sourceID.isEmpty())
                     main.post(msg);
             }
 
