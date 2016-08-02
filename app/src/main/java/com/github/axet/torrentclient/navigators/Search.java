@@ -66,6 +66,7 @@ import cz.msebera.android.httpclient.HttpEntity;
 import cz.msebera.android.httpclient.NameValuePair;
 import cz.msebera.android.httpclient.client.CookieStore;
 import cz.msebera.android.httpclient.client.entity.UrlEncodedFormEntity;
+import cz.msebera.android.httpclient.client.methods.AbstractExecutionAwareRequest;
 import cz.msebera.android.httpclient.client.methods.CloseableHttpResponse;
 import cz.msebera.android.httpclient.client.methods.HttpGet;
 import cz.msebera.android.httpclient.client.methods.HttpPost;
@@ -88,8 +89,11 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
     ArrayList<SearchItem> list = new ArrayList<>();
     CloseableHttpClient httpclient;
     HttpClientContext httpClientContext = HttpClientContext.create();
+
     Thread thread;
     Looper threadLooper;
+    AbstractExecutionAwareRequest request;
+
     WebView web;
     SearchEngine engine;
     Handler handler;
@@ -284,6 +288,11 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
             threadLooper = null;
             i = true;
         }
+        if (request != null) {
+            request.abort();
+            request = null;
+            i = true;
+        }
         if (i)
             Log.d(TAG, "interrupt");
     }
@@ -303,7 +312,8 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
                     run.run();
                     Looper.loop();
                 } catch (final RuntimeException e) {
-                    main.post(e);
+                    if (thread != null) // ignore errors on abort()
+                        main.post(e);
                 } finally {
                     handler.post(new Runnable() {
                         @Override
@@ -756,6 +766,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
 
     String get(String url) throws IOException {
         HttpGet httpGet = new HttpGet(url);
+        request = httpGet;
         CloseableHttpResponse response = httpclient.execute(httpGet, httpClientContext);
         Log.d(TAG, response.getStatusLine().toString());
         HttpEntity entity = response.getEntity();
@@ -763,6 +774,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         String html = IOUtils.toString(entity.getContent(), contentType.getCharset());
         EntityUtils.consume(entity);
         response.close();
+        request = null;
         return html;
     }
 
@@ -776,6 +788,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
 
     String post(String url, Map<String, String> map) throws IOException {
         HttpPost httpPost = new HttpPost(url);
+        request = httpPost;
         List<NameValuePair> nvps = new ArrayList<>();
         for (String key : map.keySet()) {
             String value = map.get(key);
@@ -789,6 +802,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         String html = IOUtils.toString(entity.getContent(), contentType.getCharset());
         EntityUtils.consume(entity);
         response.close();
+        request = null;
         return html;
     }
 
