@@ -695,6 +695,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
     }
 
     void searchList(Map<String, String> s, String html) {
+        this.list.clear();
         Document doc = Jsoup.parse(html);
         Elements list = doc.select(s.get("list"));
         for (int i = 0; i < list.size(); i++) {
