@@ -33,6 +33,8 @@ import java.io.IOException;
 import java.net.URL;
 
 public class BrowserDialogFragment extends DialogFragment implements MainActivity.TorrentFragmentInterface, DialogInterface {
+    public static String TAG = BrowserDialogFragment.class.getSimpleName();
+
     ViewPager pager;
     View v;
     Handler handler = new Handler();
@@ -221,6 +223,9 @@ public class BrowserDialogFragment extends DialogFragment implements MainActivit
     }
 
     void updateButtons() {
+        if (web == null) // called from on onReceivedHttpError
+            return;
+
         if (web.canGoBack()) {
             back.setColorFilter(Color.BLACK);
             back.setEnabled(true);

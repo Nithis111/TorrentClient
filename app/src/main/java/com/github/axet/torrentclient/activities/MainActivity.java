@@ -956,6 +956,7 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
     public void addMagnet(String ff, boolean dialog) {
         try {
             List<String> m = getStorage().splitMagnets(ff);
+
             if (dialog && m.size() == 1) {
                 String s = m.get(0);
 
@@ -971,7 +972,8 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
                 addTorrentDialog(t, p);
             } else {
                 for (String s : m) {
-                    getStorage().addMagnet(s);
+                    if (!manager.addManget(s))
+                        getStorage().addMagnet(s);
                 }
             }
         } catch (RuntimeException e) {
