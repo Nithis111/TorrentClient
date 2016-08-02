@@ -61,7 +61,7 @@ public class BrowserDialogFragment extends DialogFragment implements MainActivit
 
     public class Inject {
         @JavascriptInterface
-        void result() {
+        public void result() {
             log = false;
         }
     }
