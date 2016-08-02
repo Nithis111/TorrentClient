@@ -95,6 +95,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
     AbstractExecutionAwareRequest request;
 
     WebView web;
+    boolean log = false;
     SearchEngine engine;
     Handler handler;
 
@@ -120,9 +121,11 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         public Map<String, String> search;
     }
 
-    public interface Inject {
+    public class Inject {
         @JavascriptInterface
-        void result(String html);
+        void result(String html) {
+            log = false;
+        }
     }
 
     public Search(MainActivity m) {
@@ -495,7 +498,10 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
                         }
                     }
 
-                    BrowserDialogFragment d = BrowserDialogFragment.create(url);
+                    final Map<String, String> s = engine.getMap("search");
+                    String js = s.get("details_js");
+
+                    BrowserDialogFragment d = BrowserDialogFragment.create(url, js);
                     d.show(main.getSupportFragmentManager(), "");
                 }
             });
@@ -511,9 +517,6 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
             web.destroy();
         }
 
-        Uri u = Uri.parse(url);
-        final String domain = u.getHost();
-
         web = new WebView(context);
         web.getSettings().setDomStorageEnabled(true);
         web.getSettings().setJavaScriptEnabled(true);
@@ -521,20 +524,16 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
             @Override
             public boolean onConsoleMessage(final ConsoleMessage consoleMessage) {
                 String msg = consoleMessage.message() + " " + consoleMessage.lineNumber();
-                onConsoleMessage(msg, 0, "");
+                onConsoleMessage(msg, consoleMessage.lineNumber(), consoleMessage.sourceId());
                 return true;//super.onConsoleMessage(consoleMessage);
             }
 
             @Override
             public void onConsoleMessage(String msg, int lineNumber, String sourceID) {
                 Log.d(TAG, msg);
-                // Refused to display 'https://traffic.adxprts.com/tpb/na/728x90_h/' in a frame because it set 'X-Frame-Options' to 'SAMEORIGIN'. 0
-                if (msg.contains("X-Frame-Options"))
-                    return;
-                // Not allowed to load local resource: file:///android_asset/webkit/android-weberror.png 0
-                if (msg.contains("file:///android_asset/webkit"))
-                    return;
-                main.post(msg);
+
+                if (log)
+                    main.post(msg);
             }
 
             @Override
@@ -566,7 +565,6 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
             @Override
             public void onReceivedError(WebView view, int errorCode, String description, String failingUrl) {
                 super.onReceivedError(view, errorCode, description, failingUrl);
-
                 // on M will becalled above method
                 if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
                     Log.d(TAG, description);
@@ -591,6 +589,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
 
             @Override
             public void onPageFinished(WebView view, String url) {
+                log = true;
                 web.loadUrl("javascript:" + script);
                 super.onPageFinished(view, url);
             }
@@ -629,6 +628,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
                         inject(post, html, js, new Inject() {
                             @JavascriptInterface
                             public void result(String html) {
+                                super.result(html);
                                 if (done != null)
                                     done.run();
                             }
@@ -673,6 +673,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
                     inject(u, h, js, new Inject() {
                         @JavascriptInterface
                         public void result(String html) {
+                            super.result(html);
                             try {
                                 searchList(s, html);
                             } catch (final RuntimeException e) {

@@ -20,6 +20,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.webkit.ConsoleMessage;
 import android.webkit.DownloadListener;
+import android.webkit.JavascriptInterface;
 import android.webkit.JsResult;
 import android.webkit.WebChromeClient;
 import android.webkit.WebResourceError;
@@ -46,14 +47,23 @@ public class BrowserDialogFragment extends DialogFragment implements MainActivit
     ImageButton back;
     ImageButton forward;
     WebView web;
+    boolean log;
     Thread thread;
 
-    public static BrowserDialogFragment create(String url) {
+    public static BrowserDialogFragment create(String url, String js) {
         BrowserDialogFragment f = new BrowserDialogFragment();
         Bundle args = new Bundle();
         args.putString("url", url);
+        args.putString("js", js);
         f.setArguments(args);
         return f;
+    }
+
+    public class Inject {
+        @JavascriptInterface
+        void result() {
+            log = false;
+        }
     }
 
     @Override
@@ -139,6 +149,13 @@ public class BrowserDialogFragment extends DialogFragment implements MainActivit
 
         String url = getArguments().getString("url");
 
+        String js = getArguments().getString("js");
+        String script = null;
+        if (js != null)
+            script = js + "\n\nbrowser.result()";
+
+        final String inject = script;
+
         web.setWebChromeClient(new WebChromeClient() {
             @Override
             public void onProgressChanged(WebView view, int newProgress) {
@@ -159,13 +176,15 @@ public class BrowserDialogFragment extends DialogFragment implements MainActivit
             @Override
             public boolean onConsoleMessage(final ConsoleMessage consoleMessage) {
                 String msg = consoleMessage.message() + " " + consoleMessage.lineNumber();
-                onConsoleMessage(msg, 0, "");
+                onConsoleMessage(msg, consoleMessage.lineNumber(), consoleMessage.sourceId());
                 return true;//super.onConsoleMessage(consoleMessage);
             }
 
             @Override
             public void onConsoleMessage(String msg, int lineNumber, String sourceID) {
                 Log.d(TAG, msg);
+                if (log)
+                    getMainActivity().post(msg);
             }
 
             @Override
@@ -182,26 +201,28 @@ public class BrowserDialogFragment extends DialogFragment implements MainActivit
             public void onPageFinished(WebView view, String url) {
                 super.onPageFinished(view, url);
                 updateButtons();
+
+                if (inject != null) {
+                    log = true;
+                    web.loadUrl("javascript:" + inject);
+                }
             }
 
             @Override
             public void onReceivedHttpError(WebView view, WebResourceRequest request, WebResourceResponse errorResponse) {
                 super.onReceivedHttpError(view, request, errorResponse);
-
                 updateButtons();
             }
 
             @Override
             public void onPageCommitVisible(WebView view, String url) {
                 super.onPageCommitVisible(view, url);
-
                 updateButtons();
             }
 
             @Override
             public void onReceivedError(WebView view, WebResourceRequest request, WebResourceError error) {
                 super.onReceivedError(view, request, error);
-
                 updateButtons();
             }
 
@@ -213,7 +234,6 @@ public class BrowserDialogFragment extends DialogFragment implements MainActivit
             @Override
             public void onPageStarted(WebView view, String url, Bitmap favicon) {
                 super.onPageStarted(view, url, favicon);
-
                 updateButtons();
             }
 
@@ -261,6 +281,9 @@ public class BrowserDialogFragment extends DialogFragment implements MainActivit
                 thread.start();
             }
         });
+
+        if (inject != null)
+            web.addJavascriptInterface(new Inject(), "browser");
 
         web.loadUrl(url);
 
