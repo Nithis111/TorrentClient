@@ -516,7 +516,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
     }
 
     public void inject(String url, String html, String js, final Inject inject) {
-        final String script = js + "\n\nbrowser.result(document.documentElement.outerHTML)";
+        final String script = js + ";\n\nbrowser.result(document.documentElement.outerHTML)";
 
         if (web != null) {
             web.destroy();

@@ -157,7 +157,7 @@ public class BrowserDialogFragment extends DialogFragment implements MainActivit
         String js = getArguments().getString("js");
         String script = null;
         if (js != null)
-            script = js + "\n\nbrowser.result()";
+            script = js + ";\n\nbrowser.result()";
 
         final String inject = script;
 
