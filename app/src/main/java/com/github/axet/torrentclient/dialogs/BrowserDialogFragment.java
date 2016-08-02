@@ -30,6 +30,9 @@ import android.webkit.WebResourceResponse;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.ImageButton;
+import android.widget.ImageView;
+import android.widget.ProgressBar;
+import android.widget.TextView;
 
 import com.github.axet.torrentclient.R;
 import com.github.axet.torrentclient.activities.MainActivity;
@@ -50,6 +53,7 @@ public class BrowserDialogFragment extends DialogFragment implements MainActivit
     ImageButton forward;
     WebView web;
     Thread thread;
+    int load;
 
     public static BrowserDialogFragment create(String url, String js) {
         BrowserDialogFragment f = new BrowserDialogFragment();
@@ -127,6 +131,23 @@ public class BrowserDialogFragment extends DialogFragment implements MainActivit
 
         web = (WebView) v.findViewById(R.id.webview);
 
+        final ProgressBar progress = (ProgressBar) v.findViewById(R.id.search_details_process);
+        final ImageView stop = (ImageView) v.findViewById(R.id.search_details_stop);
+        final ImageView refresh = (ImageView) v.findViewById(R.id.search_details_refresh);
+        final TextView status = (TextView) v.findViewById(R.id.status_details_status);
+
+        progress.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if(load < 100) {
+                    web.stopLoading();
+                    load = 100;
+                    return;
+                }
+                web.reload();
+            }
+        });
+
         web.getSettings().setSupportMultipleWindows(true);
         web.getSettings().setDomStorageEnabled(true);
         web.getSettings().setJavaScriptEnabled(true);
@@ -165,6 +186,16 @@ public class BrowserDialogFragment extends DialogFragment implements MainActivit
             @Override
             public void onProgressChanged(WebView view, int newProgress) {
                 super.onProgressChanged(view, newProgress);
+                load = newProgress;
+                if (newProgress < 100) {
+                    stop.setVisibility(View.VISIBLE);
+                    refresh.setVisibility(View.GONE);
+                    progress.setProgress(newProgress);
+                } else {
+                    stop.setVisibility(View.GONE);
+                    refresh.setVisibility(View.VISIBLE);
+                    progress.setProgress(0);
+                }
             }
 
             @Override
@@ -206,7 +237,6 @@ public class BrowserDialogFragment extends DialogFragment implements MainActivit
             public void onPageFinished(WebView view, String url) {
                 super.onPageFinished(view, url);
                 updateButtons();
-
                 if (inject != null) {
                     web.loadUrl("javascript:" + inject);
                 }
@@ -233,6 +263,8 @@ public class BrowserDialogFragment extends DialogFragment implements MainActivit
             @Override
             public void onLoadResource(WebView view, String url) {
                 super.onLoadResource(view, url);
+
+                status.setText(url);
             }
 
             @Override
