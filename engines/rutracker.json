@@ -9,6 +9,7 @@
     "post": "http://rutracker.org/forum/login.php",
     "post_login": "login_username",
     "post_password": "login_password",
+    "post_params": "login=вход",
     "js": "document.querySelectorAll('form[action=login\\\\.php]').length == 0 || alert('Not Logged In');"
   },
   "search": {

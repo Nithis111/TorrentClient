@@ -19,6 +19,7 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.preference.PreferenceManager;
+import android.support.design.internal.NavigationMenu;
 import android.support.design.widget.NavigationView;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
@@ -958,6 +959,9 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
             if (dialog && m.size() == 1) {
                 String s = m.get(0);
 
+                if (manager.addManget(s))
+                    return;
+
                 String p = getStorage().getStoragePath().getPath();
                 long t = Libtorrent.AddMagnet(p, s);
                 if (t == -1) {
@@ -1117,7 +1121,19 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
         return true;
     }
 
-    void updateManager() {
+    public void openDrawer(Search search) {
+        drawer.openDrawer(GravityCompat.START);
+        NavigationMenu menu = (NavigationMenu) navigationView.getMenu();
+        for (int i = 0; i < menu.size(); i++) {
+            MenuItem m = menu.getItem(i);
+            if (manager.get(i) == search) {
+                m.getActionView().performClick();
+                return;
+            }
+        }
+    }
+
+    public void updateManager() {
         Menu menu = navigationView.getMenu();
 
         while (menu.findItem(R.id.nav_search) != null) {

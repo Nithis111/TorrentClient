@@ -1,9 +1,16 @@
 package com.github.axet.torrentclient.app;
 
+import android.net.Uri;
+
+import com.github.axet.torrentclient.navigators.Search;
+
+import org.apache.commons.io.IOUtils;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.IOException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -14,8 +21,6 @@ public class SearchEngine {
     public static final String TAG = SearchEngine.class.getSimpleName();
 
     Map<String, Object> map = new HashMap<>();
-    // update url
-    String url;
 
     // http://stackoverflow.com/questions/21720759/convert-a-json-string-to-a-hashmap
 
@@ -63,6 +68,16 @@ public class SearchEngine {
             JSONObject j = new JSONObject(json);
             map = jsonToMap(j);
         } catch (JSONException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public void loadUrl(String url) {
+        try {
+            URL u = new URL(url);
+            String json = IOUtils.toString(u.openStream(), MainApplication.UTF8);
+            loadJson(json);
+        } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }

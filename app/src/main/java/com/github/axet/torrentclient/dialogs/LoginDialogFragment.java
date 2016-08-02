@@ -39,10 +39,11 @@ public class LoginDialogFragment extends BrowserDialogFragment {
         }
     }
 
-    public static LoginDialogFragment create(String url) {
+    public static LoginDialogFragment create(String login, String url) {
         LoginDialogFragment f = new LoginDialogFragment();
         Bundle args = new Bundle();
         args.putString("url", url);
+        args.putString("login", login);
         f.setArguments(args);
         return f;
     }
@@ -137,6 +138,13 @@ public class LoginDialogFragment extends BrowserDialogFragment {
 
         login = (TextView) vv.findViewById(R.id.search_login_login);
         pass = (TextView) vv.findViewById(R.id.search_login_pass);
+
+        String lastLogin = getArguments().getString("login");
+
+        if (lastLogin != null) {
+            login.setText(lastLogin);
+            pass.requestFocus();
+        }
 
         return v;
     }

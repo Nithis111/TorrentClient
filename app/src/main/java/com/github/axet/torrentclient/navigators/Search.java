@@ -35,6 +35,7 @@ import android.widget.TextView;
 import com.github.axet.androidlibrary.widgets.ThemeUtils;
 import com.github.axet.torrentclient.R;
 import com.github.axet.torrentclient.activities.MainActivity;
+import com.github.axet.torrentclient.app.MainApplication;
 import com.github.axet.torrentclient.app.SearchEngine;
 import com.github.axet.torrentclient.dialogs.LoginDialogFragment;
 import com.github.axet.torrentclient.dialogs.BrowserDialogFragment;
@@ -52,8 +53,10 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -80,8 +83,6 @@ import cz.msebera.android.httpclient.util.EntityUtils;
 public class Search extends BaseAdapter implements DialogInterface.OnDismissListener {
     public static final String TAG = Search.class.getSimpleName();
 
-    public static final String UTF8 = "UTF8";
-
     Context context;
     MainActivity main;
     ArrayList<SearchItem> list = new ArrayList<>();
@@ -92,6 +93,9 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
     WebView web;
     SearchEngine engine;
     Handler handler;
+
+    String lastSearch; // last search request
+    String lastLogin;// last login user name
 
     FrameLayout header;
     View search_header;
@@ -186,22 +190,29 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         LayoutInflater inflater = LayoutInflater.from(context);
 
         header = new FrameLayout(context);
-
         login_header = inflater.inflate(R.layout.search_login, header, false);
-
         search_header = inflater.inflate(R.layout.search_header, header, false);
 
+        searchText = (TextView) search_header.findViewById(R.id.search_header_text);
+        search = search_header.findViewById(R.id.search_header_search);
         progress = (ProgressBar) search_header.findViewById(R.id.search_header_progress);
+
+        searchText.setText(lastSearch);
+
         progress.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 requestCancel();
             }
         });
-        progress.setVisibility(View.GONE);
+        if (thread == null) {
+            progress.setVisibility(View.GONE);
+            search.setVisibility(View.VISIBLE);
+        } else {
+            progress.setVisibility(View.VISIBLE);
+            search.setVisibility(View.GONE);
+        }
 
-        searchText = (TextView) search_header.findViewById(R.id.search_header_text);
-        search = search_header.findViewById(R.id.search_header_search);
         search.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -234,7 +245,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
             @Override
             public void onClick(View v) {
                 Map<String, String> login = Search.this.engine.getMap("login");
-                LoginDialogFragment d = LoginDialogFragment.create(login.get("details"));
+                LoginDialogFragment d = LoginDialogFragment.create(lastLogin, login.get("details"));
                 d.show(main.getSupportFragmentManager(), "");
             }
         });
@@ -257,6 +268,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
     }
 
     public void remove(ListView list) {
+        lastSearch = searchText.getText().toString();
         list.removeHeaderView(header);
     }
 
@@ -365,6 +377,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
                     @Override
                     public void run() {
                         try {
+                            lastLogin = l.login;
                             login(l.login, l.pass, new Runnable() {
                                 @Override
                                 public void run() {
@@ -411,7 +424,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
             size.setVisibility(View.GONE);
         } else {
             size.setVisibility(View.VISIBLE);
-            size.setText(context.getString(R.string.size_tab) + " " + item.size);
+            size.setText(item.size);
         }
 
         TextView seed = (TextView) convertView.findViewById(R.id.search_item_seed);
@@ -569,7 +582,18 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         if (post != null) {
             String l = s.get("post_login");
             String p = s.get("post_password");
-            final String html = post(post, new String[][]{{l, login}, {p, pass}});
+            String pp = s.get("post_params");
+            HashMap<String, String> map = new HashMap<>();
+            map.put(l, login);
+            map.put(p, pass);
+            String[] params = pp.split(";");
+            for (String param : params) {
+                String[] m = param.split("=");
+                for (String a : m) {
+                    map.put(URLDecoder.decode(m[0].trim(), MainApplication.UTF8), URLDecoder.decode(m[1].trim(), MainApplication.UTF8));
+                }
+            }
+            final String html = post(post, map);
 
             final String js = s.get("js");
             if (js != null) {
@@ -608,7 +632,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
 
         String get = s.get("get");
         if (get != null) {
-            String query = URLEncoder.encode(search, UTF8);
+            String query = URLEncoder.encode(search, MainApplication.UTF8);
             url = String.format(get, query);
             html = get(url);
         }
@@ -731,10 +755,19 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
     }
 
     String post(String url, String[][] map) throws IOException {
+        Map<String, String> m = new HashMap<>();
+        for (int i = 0; i < map.length; i++) {
+            m.put(map[i][0], map[i][1]);
+        }
+        return post(url, m);
+    }
+
+    String post(String url, Map<String, String> map) throws IOException {
         HttpPost httpPost = new HttpPost(url);
         List<NameValuePair> nvps = new ArrayList<>();
-        for (int i = 0; i < map.length; i++) {
-            nvps.add(new BasicNameValuePair(map[i][0], map[i][1]));
+        for (String key : map.keySet()) {
+            String value = map.get(key);
+            nvps.add(new BasicNameValuePair(key, value));
         }
         httpPost.setEntity(new UrlEncodedFormEntity(nvps));
         CloseableHttpResponse response = httpclient.execute(httpPost, httpClientContext);
