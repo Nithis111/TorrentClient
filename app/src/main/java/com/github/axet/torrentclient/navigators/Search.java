@@ -324,6 +324,10 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
                                 web.destroy();
                                 web = null;
                             }
+                            // we are this thread, clear it
+                            thread = null;
+                            threadLooper = null;
+                            request = null;
 
                             progress.setVisibility(View.GONE);
                             search.setVisibility(View.VISIBLE);
