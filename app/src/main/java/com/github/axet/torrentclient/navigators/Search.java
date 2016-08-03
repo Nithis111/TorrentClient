@@ -265,7 +265,11 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
             @Override
             public void onClick(View v) {
                 Map<String, String> login = Search.this.engine.getMap("login");
-                LoginDialogFragment d = LoginDialogFragment.create(lastLogin, login.get("details"));
+
+                String url = login.get("details");
+                setCookies2WebView();
+
+                LoginDialogFragment d = LoginDialogFragment.create(lastLogin, url);
                 d.show(main.getSupportFragmentManager(), "");
             }
         });
@@ -375,32 +379,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
             final LoginDialogFragment.Result l = (LoginDialogFragment.Result) dialog;
             if (l.browser) {
                 String url = engine.getMap("login").get("details");
-                String cookies = CookieManager.getInstance().getCookie(url);
-                if (cookies == null || cookies.isEmpty()) {
-                    main.Error("Cookies are empty");
-                    return;
-                }
-
-                String[] cc = cookies.split(";");
-
-                CookieStore cookieStore = httpClientContext.getCookieStore();
-                if (cookieStore == null) {
-                    cookieStore = new BasicCookieStore();
-                    httpClientContext.setCookieStore(cookieStore);
-                }
-                for (String c : cc) {
-                    String[] vv = c.split("=");
-                    BasicClientCookie cookie = new BasicClientCookie(vv[0].trim(), vv[1].trim());
-
-                    try {
-                        URL u = new URL(url);
-                        String host = u.getHost();
-                        cookie.setDomain(host);
-                    } catch (MalformedURLException e) {
-                        // ignore
-                    }
-                    cookieStore.addCookie(cookie);
-                }
+                setCookies2Apache(url);
             } else if (l.ok) {
                 request(new Runnable() {
                     @Override
@@ -499,16 +478,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
                 public void onClick(View v) {
                     String url = item.details;
 
-                    CookieStore cookieStore = httpClientContext.getCookieStore();
-
-                    if (cookieStore != null) {
-                        CookieManager m = CookieManager.getInstance();
-                        List<Cookie> list = cookieStore.getCookies();
-                        for (int i = 0; i < list.size(); i++) {
-                            Cookie c = list.get(i);
-                            m.setCookie(c.getDomain(), c.getName() + "=" + c.getValue());
-                        }
-                    }
+                    setCookies2WebView();
 
                     final Map<String, String> s = engine.getMap("search");
                     String js = s.get("details_js");
@@ -521,6 +491,48 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         }
 
         return convertView;
+    }
+
+    void setCookies2Apache(String url) {
+        String cookies = CookieManager.getInstance().getCookie(url);
+        if (cookies == null || cookies.isEmpty()) {
+            main.Error("Cookies are empty");
+            return;
+        }
+
+        String[] cc = cookies.split(";");
+
+        CookieStore cookieStore = httpClientContext.getCookieStore();
+        if (cookieStore == null) {
+            cookieStore = new BasicCookieStore();
+            httpClientContext.setCookieStore(cookieStore);
+        }
+
+        Uri uri = Uri.parse(url);
+
+        for (String c : cc) {
+            String[] vv = c.split("=");
+            BasicClientCookie cookie = new BasicClientCookie(vv[0].trim(), vv[1].trim());
+            cookie.setDomain(uri.getAuthority());
+            // we do not know if cookie set for just domain, ignore path
+            // cookie.setPath(uri.getPath());
+            cookieStore.addCookie(cookie);
+        }
+    }
+
+    void setCookies2WebView() {
+        CookieStore cookieStore = httpClientContext.getCookieStore();
+
+        // share cookies back (Apache --> WebView)
+        if (cookieStore != null) {
+            CookieManager m = CookieManager.getInstance();
+            List<Cookie> list = cookieStore.getCookies();
+            for (int i = 0; i < list.size(); i++) {
+                Cookie c = list.get(i);
+                String url = new Uri.Builder().scheme("http").authority(c.getDomain()).appendPath(c.getPath()).build().toString();
+                m.setCookie(url, c.getName() + "=" + c.getValue());
+            }
+        }
     }
 
     public void inject(String url, String html, String js, String js_post, final Inject exec) {

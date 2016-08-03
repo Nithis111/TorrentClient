@@ -306,11 +306,13 @@ public class BrowserDialogFragment extends DialogFragment implements MainActivit
             }
         });
 
+        final String cookieURL = url;
+
         web.setDownloadListener(new DownloadListener() {
             @Override
             public void onDownloadStart(final String url, String userAgent, String contentDisposition, String mimetype, long contentLength) {
                 Log.d(TAG, "onDownloadStart " + url);
-                final String cookies = CookieManager.getInstance().getCookie(url);
+                final String cookies = CookieManager.getInstance().getCookie(cookieURL);
                 thread = new Thread(new Runnable() {
                     @Override
                     public void run() {
