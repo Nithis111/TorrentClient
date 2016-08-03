@@ -334,7 +334,7 @@ public class BrowserDialogFragment extends DialogFragment implements MainActivit
             }
         });
 
-        if (inject != null)
+        if (inject != null || inject_post != null)
             web.addJavascriptInterface(new Inject(), "torrentclient");
 
         web.loadUrl(url);
