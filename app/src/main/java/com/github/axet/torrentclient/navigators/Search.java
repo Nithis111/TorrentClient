@@ -65,6 +65,7 @@ import java.util.regex.Pattern;
 import cz.msebera.android.httpclient.HttpEntity;
 import cz.msebera.android.httpclient.NameValuePair;
 import cz.msebera.android.httpclient.client.CookieStore;
+import cz.msebera.android.httpclient.client.config.RequestConfig;
 import cz.msebera.android.httpclient.client.entity.UrlEncodedFormEntity;
 import cz.msebera.android.httpclient.client.methods.AbstractExecutionAwareRequest;
 import cz.msebera.android.httpclient.client.methods.CloseableHttpResponse;
@@ -136,7 +137,15 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         this.main = m;
         this.context = m;
         this.handler = new Handler();
-        this.httpclient = HttpClientBuilder.create().setRedirectStrategy(new LaxRedirectStrategy()).build();
+
+        RequestConfig.Builder requestBuilder = RequestConfig.custom();
+        requestBuilder = requestBuilder.setConnectTimeout(MainApplication.CONNECTION_TIMEOUT);
+        requestBuilder = requestBuilder.setConnectionRequestTimeout(MainApplication.CONNECTION_TIMEOUT);
+
+        this.httpclient = HttpClientBuilder.create()
+                .setDefaultRequestConfig(requestBuilder.build())
+                .setRedirectStrategy(new LaxRedirectStrategy())
+                .build();
     }
 
     public void setEngine(SearchEngine engine) {

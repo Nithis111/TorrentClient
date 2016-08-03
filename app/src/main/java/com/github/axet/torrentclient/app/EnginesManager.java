@@ -46,6 +46,7 @@ public class EnginesManager {
     ArrayList<Item> list = new ArrayList<>();
     Thread thread;
     Handler handler = new Handler();
+    long time; // last update time
 
     public static class Item {
         Search search;
@@ -53,6 +54,8 @@ public class EnginesManager {
         String url;
         // update time
         long time;
+        // update available?
+        boolean update;
 
         public Item() {
         }
@@ -79,6 +82,10 @@ public class EnginesManager {
         return list.get(i).search;
     }
 
+    public boolean getUpdate(int i) {
+        return list.get(i).update;
+    }
+
     public boolean addManget(String magnet) {
         Uri uri = Uri.parse(magnet);
         List<NameValuePair> list = URLEncodedUtils.parse(uri.getQuery(), Charset.forName("UTF-8"));
@@ -91,7 +98,7 @@ public class EnginesManager {
                     public void run() {
                         try {
                             final SearchEngine engine = new SearchEngine();
-                            engine.loadUrl(url);
+                            engine.loadUrl(context, url);
                             handler.post(new Runnable() {
                                 @Override
                                 public void run() {
@@ -190,6 +197,8 @@ public class EnginesManager {
             list.add(new Item(search, url, time));
         }
 
+        this.time = shared.getLong("time", 0);
+
         if (count == 0) {
             try {
                 Uri uri = res(R.raw.google);
@@ -217,6 +226,40 @@ public class EnginesManager {
             edit.putString("engine_" + i + "_url", item.url);
             edit.putLong("engine_" + i + "_time", item.time);
         }
+        edit.putLong("time", time);
         edit.commit();
+    }
+
+    public void refresh() {
+        time = System.currentTimeMillis();
+        for (int i = 0; i < list.size(); i++) {
+            Item item = list.get(i);
+            final SearchEngine engine = new SearchEngine();
+            engine.loadUrl(context, item.url);
+            if (!item.search.getEngine().getVersion().equals(engine.getVersion())) {
+                item.update = true;
+            }
+        }
+    }
+
+    public void update(int i) {
+        Item item = list.get(i);
+        final SearchEngine engine = new SearchEngine();
+        engine.loadUrl(context, item.url);
+        item.search.setEngine(engine);
+        item.update = false;
+        save();
+    }
+
+    public long getTime() {
+        return time;
+    }
+
+    public boolean updates() {
+        for (int i = 0; i < list.size(); i++) {
+            if (list.get(i).update)
+                return true;
+        }
+        return false;
     }
 }
