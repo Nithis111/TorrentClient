@@ -1,5 +1,5 @@
 {
-  "version": 5,
+  "version": 7,
   "name": "rutracker.org",
   "home": {
     "get": "http://rutracker.org"
@@ -15,11 +15,12 @@
   "search": {
     "post": "http://rutracker.org/forum/tracker.php",
     "post_search": "nm",
-    "js_post": "if(document.querySelectorAll('a.logged-in-as-uname').length==0){alert('Not Logged In')};ee=document.querySelectorAll('a.tLink');for(i=0;i<ee.length;i++){e=ee[i];h=e.getAttribute('href');h='http://rutracker.org/forum/'+h;e.setAttribute('href',h);};",
+    "js": "if(document.querySelectorAll('a.logged-in-as-uname').length==0){alert('Not Logged In')}",
+    "js_post": "ee=document.querySelectorAll('a.tLink');for(i=0;i<ee.length;i++){e=ee[i];h=e.getAttribute('href');h='http://rutracker.org/forum/'+h;e.setAttribute('href',h);};",
     "list": ".forumline.tablesorter tbody tr",
     "title": "a.tLink:regex(<a[^>]*>(.*)</a>)",
     "details": "a.tLink:regex(.*href=[\"'](.*)[\"'].*)",
-    "details_js_post": "aa=document.querySelectorAll('a.dl-stub');for(i=0;i<aa.length;i++){a=aa[i];h=a.getAttribute('href');a.setAttribute('href','#');id=h.split('t=')[1];function c(){location.href=h};a.onclick=c}",
+    "details_js": "aa=document.querySelectorAll('a.dl-stub');for(i=0;i<aa.length;i++){a=aa[i];h=a.getAttribute('href');a.setAttribute('href','#');function c(){location.href=h};a.onclick=c}",
     "size": "a.dl-stub:regex(<a[^>]*>(.*)</a>)",
     "seed": "b.seedmed:regex(<b[^>]*>(.*)</b>)",
     "leech": "td.leechmed b:regex(<b[^>]*>(.*)</b>)"

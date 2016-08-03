@@ -2,6 +2,7 @@ package com.github.axet.torrentclient.dialogs;
 
 import android.app.Dialog;
 import android.content.DialogInterface;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.view.ViewPager;
@@ -9,12 +10,17 @@ import android.support.v7.app.AlertDialog;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.webkit.CookieManager;
+import android.webkit.CookieSyncManager;
 import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.TextView;
 
 import com.github.axet.torrentclient.R;
 import com.github.axet.torrentclient.activities.MainActivity;
+
+import cz.msebera.android.httpclient.client.CookieStore;
+import cz.msebera.android.httpclient.impl.client.BasicCookieStore;
 
 public class LoginDialogFragment extends BrowserDialogFragment {
     ViewPager pager;
@@ -27,6 +33,7 @@ public class LoginDialogFragment extends BrowserDialogFragment {
     public static class Result implements DialogInterface {
         public boolean ok;
         public boolean browser;
+        public boolean clear;
         public String login;
         public String pass;
 
@@ -56,7 +63,7 @@ public class LoginDialogFragment extends BrowserDialogFragment {
     @Override
     public Dialog onCreateDialog(final Bundle savedInstanceState) {
         final AlertDialog d = new AlertDialog.Builder(getActivity())
-                .setNeutralButton("Browser", new DialogInterface.OnClickListener() {
+                .setNeutralButton(R.string.browser, new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
                     }
@@ -103,7 +110,31 @@ public class LoginDialogFragment extends BrowserDialogFragment {
         AlertDialog d = (AlertDialog) getDialog();
 
         Button b = d.getButton(AlertDialog.BUTTON_NEUTRAL);
-        b.setVisibility(View.GONE);
+        b.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                result.clear = true;
+
+                String url = getArguments().getString("url");
+
+                String domain = Uri.parse(url).getAuthority();
+
+                CookieManager inst = CookieManager.getInstance();
+
+                String cookies = inst.getCookie(domain);
+
+                if (cookies != null) {
+                    CookieSyncManager.createInstance(getContext());
+                    String[] cc = cookies.split(";");
+                    for (String c : cc) {
+                        String[] vv = c.split("=");
+                        inst.setCookie(domain, vv[0].trim() + "=; Expires=Thu, 1 Jan 1970 03:00:00 GMT");
+                    }
+                    CookieSyncManager.getInstance().sync();
+                }
+            }
+        });
+        b.setText(R.string.clear_cookies);
 
         Button b1 = d.getButton(AlertDialog.BUTTON_NEGATIVE);
         b1.setVisibility(View.GONE);

@@ -8,7 +8,7 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Login:" />
+        android:text="@string/login" />
 
     <EditText
         android:id="@+id/search_login_login"
@@ -22,7 +22,7 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Password:" />
+        android:text="@string/password" />
 
     <EditText
         android:id="@+id/search_login_pass"

@@ -18,6 +18,7 @@ import android.view.ViewGroup;
 import android.view.inputmethod.InputMethodManager;
 import android.webkit.ConsoleMessage;
 import android.webkit.CookieManager;
+import android.webkit.CookieSyncManager;
 import android.webkit.JavascriptInterface;
 import android.webkit.JsResult;
 import android.webkit.WebChromeClient;
@@ -378,6 +379,11 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         if (dialog instanceof LoginDialogFragment.Result) {
             final LoginDialogFragment.Result l = (LoginDialogFragment.Result) dialog;
             if (l.browser) {
+                if (l.clear) {
+                    CookieStore store = httpClientContext.getCookieStore();
+                    if (store != null)
+                        store.clear();
+                }
                 String url = engine.getMap("login").get("details");
                 setCookies2Apache(url);
             } else if (l.ok) {
@@ -512,8 +518,18 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
 
         for (String c : cc) {
             String[] vv = c.split("=");
-            BasicClientCookie cookie = new BasicClientCookie(vv[0].trim(), vv[1].trim());
-            cookie.setDomain(uri.getAuthority());
+            String n = null;
+            if (vv.length > 0)
+                n = vv[0].trim();
+            String v = null;
+            if (vv.length > 1)
+                v = vv[1].trim();
+            BasicClientCookie cookie = new BasicClientCookie(n, v);
+            // TODO it may cause troubles. Cookie maybe set for domain, www.domain or www.domain/path
+            // and since we have to cut all www/path same name cookies with different paths will override.
+            // need to check if returned cookie sting can contains DOMAIN/PATH values. Until then use domain only.
+            String domain = uri.getAuthority();
+            cookie.setDomain(domain);
             // we do not know if cookie set for just domain, ignore path
             // cookie.setPath(uri.getPath());
             cookieStore.addCookie(cookie);
@@ -525,13 +541,19 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
 
         // share cookies back (Apache --> WebView)
         if (cookieStore != null) {
+            CookieSyncManager.createInstance(getContext());
             CookieManager m = CookieManager.getInstance();
             List<Cookie> list = cookieStore.getCookies();
             for (int i = 0; i < list.size(); i++) {
                 Cookie c = list.get(i);
-                String url = new Uri.Builder().scheme("http").authority(c.getDomain()).appendPath(c.getPath()).build().toString();
+                Uri.Builder b = new Uri.Builder().scheme("http").authority(c.getDomain());
+                if (c.getPath() != null) {
+                    b.appendPath(c.getPath());
+                }
+                String url = b.build().toString();
                 m.setCookie(url, c.getName() + "=" + c.getValue());
             }
+            CookieSyncManager.getInstance().sync();
         }
     }
 
@@ -665,9 +687,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
             String[] params = pp.split(";");
             for (String param : params) {
                 String[] m = param.split("=");
-                for (String a : m) {
-                    map.put(URLDecoder.decode(m[0].trim(), MainApplication.UTF8), URLDecoder.decode(m[1].trim(), MainApplication.UTF8));
-                }
+                map.put(URLDecoder.decode(m[0].trim(), MainApplication.UTF8), URLDecoder.decode(m[1].trim(), MainApplication.UTF8));
             }
             final String html = post(post, map);
 
