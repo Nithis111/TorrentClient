@@ -376,9 +376,6 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
     public void onDismiss(DialogInterface dialog) {
         if (dialog instanceof LoginDialogFragment.Result) {
             final LoginDialogFragment.Result l = (LoginDialogFragment.Result) dialog;
-            if (!l.ok) {
-                return;
-            }
             if (l.browser) {
                 String url = engine.getMap("login").get("details");
                 String cookies = CookieManager.getInstance().getCookie(url);
@@ -407,7 +404,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
                     }
                     cookieStore.addCookie(cookie);
                 }
-            } else {
+            } else if (l.ok) {
                 request(new Runnable() {
                     @Override
                     public void run() {
