@@ -1,6 +1,6 @@
 # Search Engine format
 
-```json
+```javascript
 {
   // version of file, if different from loaded by client will update
   "version": 3,
