@@ -129,7 +129,7 @@
     <string name="seed_tab">Сиды:</string>
 
     <string name="no_updates">Нет доступных обновлений</string>
-    <string name="delete_search">Удалить Поисковый Движок</string>
+    <string name="delete_search">Удалить Поисковый Сервис</string>
     <string name="engine_updated">" обновлен до версии: "</string>
-    <string name="add_search_engine">Добавить Поисковый Движок</string>
+    <string name="add_search_engine">Добавить Сервис</string>
 </resources>
