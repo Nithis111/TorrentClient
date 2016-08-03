@@ -61,6 +61,7 @@ import com.google.android.gms.appindexing.AppIndex;
 import com.google.android.gms.common.api.GoogleApiClient;
 
 import java.io.File;
+import java.io.InterruptedIOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -217,7 +218,7 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
             public void onDrawerOpened(View drawerView) {
                 long time = System.currentTimeMillis();
                 long t = manager.getTime();
-                if (t + ENGINES_AUTO_REFRESH > time) {
+                if (t + ENGINES_AUTO_REFRESH < time) {
                     if (update == null)
                         refreshEngines(true);
                 }
@@ -1214,7 +1215,7 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
                                     updateManager();
                                     Search search = manager.get(fi);
                                     SearchEngine engine = search.getEngine();
-                                    Toast.makeText(MainActivity.this, engine.getName() + getString(R.string.engine_updated) + engine.getVersion(), Toast.LENGTH_LONG).show();
+                                    Toast.makeText(MainActivity.this, engine.getName() + getString(R.string.engine_updated) + engine.getVersion(), Toast.LENGTH_SHORT).show();
                                 }
                             });
                         }
@@ -1270,29 +1271,25 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
 
         View update = inflater.inflate(R.layout.search_update, null);
         final ProgressBar progress = (ProgressBar) update.findViewById(R.id.search_update_progress);
-        progress.setOnClickListener(new View.OnClickListener() {
+        View refresh = update.findViewById(R.id.search_update_refresh);
+        update.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 if (MainActivity.this.update != null) {
                     MainActivity.this.update.interrupt();
                     MainActivity.this.update = null;
                     updateManager();
+                } else {
+                    refreshEngines(false);
                 }
-            }
-        });
-        View refresh = update.findViewById(R.id.search_update_refresh);
-        refresh.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                refreshEngines(false);
             }
         });
 
         if (MainActivity.this.update != null) {
             progress.setVisibility(View.VISIBLE);
-            refresh.setVisibility(View.GONE);
+            refresh.setVisibility(View.INVISIBLE);
         } else {
-            progress.setVisibility(View.GONE);
+            progress.setVisibility(View.INVISIBLE);
             refresh.setVisibility(View.VISIBLE);
         }
 
@@ -1317,8 +1314,21 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
                 });
                 try {
                     manager.refresh();
-                } catch (RuntimeException e) {
-                    MainActivity.this.post(e);
+                } catch (final RuntimeException e) {
+                    Log.e(TAG, "Update Engine", e);
+                    // only report errors for current active update thread
+                    if (update == Thread.currentThread()) {
+                        handler.post(new Runnable() {
+                            @Override
+                            public void run() {
+                                String msg = e.getMessage();
+                                Throwable t = e.getCause();
+                                if (t != null)
+                                    msg += " " + t.getMessage();
+                                Toast.makeText(MainActivity.this, msg, Toast.LENGTH_SHORT).show();
+                            }
+                        });
+                    }
                     a = true; // hide update toast on error
                 }
                 final boolean b = a;
@@ -1328,7 +1338,7 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
                         update = null;
                         if (!b) {
                             if (!manager.updates())
-                                Toast.makeText(MainActivity.this, R.string.no_updates, Toast.LENGTH_LONG).show();
+                                Toast.makeText(MainActivity.this, R.string.no_updates, Toast.LENGTH_SHORT).show();
                         }
                         updateManager();
                     }

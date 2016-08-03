@@ -234,10 +234,14 @@ public class EnginesManager {
         time = System.currentTimeMillis();
         for (int i = 0; i < list.size(); i++) {
             Item item = list.get(i);
-            final SearchEngine engine = new SearchEngine();
-            engine.loadUrl(context, item.url);
-            if (!item.search.getEngine().getVersion().equals(engine.getVersion())) {
-                item.update = true;
+            try {
+                final SearchEngine engine = new SearchEngine();
+                engine.loadUrl(context, item.url);
+                if (!item.search.getEngine().getVersion().equals(engine.getVersion())) {
+                    item.update = true;
+                }
+            } catch (RuntimeException e) {
+                throw new RuntimeException(item.search.getEngine().getName(), e);
             }
         }
     }
