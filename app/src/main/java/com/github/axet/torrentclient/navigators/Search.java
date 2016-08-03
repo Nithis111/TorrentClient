@@ -529,6 +529,8 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
     }
 
     public void inject(String url, String html, String js, final Inject inject) {
+        Log.d(TAG, "inject()");
+
         final String script = js + ";\n\nbrowser.result(document.documentElement.outerHTML)";
 
         if (web != null) {
@@ -602,12 +604,14 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
             @Override
             public void onPageCommitVisible(WebView view, String url) {
                 super.onPageCommitVisible(view, url);
+                Log.d(TAG, "onPageCommitVisible");
+                web.loadUrl("javascript:" + script);
             }
 
             @Override
             public void onPageFinished(WebView view, String url) {
-                web.loadUrl("javascript:" + script);
                 super.onPageFinished(view, url);
+                Log.d(TAG, "onPageFinished");
             }
         });
         web.addJavascriptInterface(inject, "browser");
@@ -718,7 +722,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
             SearchItem item = new SearchItem();
             item.html = list.get(i).outerHtml();
             item.title = matcher(item.html, s.get("title"));
-            String magnet = matcher(item.html, s.get("magnet"));
+            item.magnet = matcher(item.html, s.get("magnet"));
             item.torrent = matcher(item.html, s.get("torrent"));
             item.size = matcher(item.html, s.get("size"));
             item.seed = matcher(item.html, s.get("seed"));
