@@ -20,13 +20,13 @@
 
     <item
         android:orderInCategory="1"
-        android:title="Settings">
+        android:title="@string/action_settings">
         <menu>
             <item
                 android:id="@+id/nav_add"
                 android:actionLayout="@layout/search_update"
                 android:icon="@drawable/ic_add_black_24dp"
-                android:title="Add Search Engine"
+                android:title="@string/add_search_engine"
                 app:showAsAction="always" />
         </menu>
     </item>

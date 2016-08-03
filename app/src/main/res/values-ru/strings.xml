@@ -131,4 +131,5 @@
     <string name="no_updates">Нет доступных обновлений</string>
     <string name="delete_search">Удалить Поисковый Движок</string>
     <string name="engine_updated">" обновлен до версии: "</string>
+    <string name="add_search_engine">Добавить Поисковый Движок</string>
 </resources>

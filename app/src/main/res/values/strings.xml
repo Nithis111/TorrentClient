@@ -127,4 +127,5 @@
     <string name="no_updates">No Updates available</string>
     <string name="delete_search">Delete Search Engine</string>
     <string name="engine_updated">" updated to version: "</string>
+    <string name="add_search_engine">Add Search Engine</string>
 </resources>
