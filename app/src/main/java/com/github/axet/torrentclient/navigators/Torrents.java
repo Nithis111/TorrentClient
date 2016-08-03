@@ -38,7 +38,7 @@ import java.io.File;
 
 import go.libtorrent.Libtorrent;
 
-public class Torrents extends BaseAdapter implements DialogInterface.OnDismissListener {
+public class Torrents extends BaseAdapter implements DialogInterface.OnDismissListener, MainActivity.TorrentFragmentInterface {
     static final int TYPE_COLLAPSED = 0;
     static final int TYPE_EXPANDED = 1;
     static final int TYPE_DELETED = 2;
@@ -99,14 +99,19 @@ public class Torrents extends BaseAdapter implements DialogInterface.OnDismissLi
         return getApp().getStorage();
     }
 
+    @Override
     public void update() {
+        if (dialog != null)
+            dialog.update();
+    }
+
+    public void updateStorage() {
         for (int i = 0; i < getCount(); i++) {
             Storage.Torrent t = getItem(i);
             if (Libtorrent.TorrentActive(t.t)) {
                 t.update();
             }
         }
-
         notifyDataSetChanged();
     }
 

@@ -841,22 +841,26 @@ public class Storage {
         return ret;
     }
 
-    public void addMagnet(String s) {
+    public Torrent addMagnet(String s) {
         String p = getStoragePath().getPath();
         long t = Libtorrent.AddMagnet(p, s);
         if (t == -1) {
             throw new RuntimeException(Libtorrent.Error());
         }
-        add(new Storage.Torrent(context, t, p));
+        Torrent tt = new Storage.Torrent(context, t, p);
+        add(tt);
+        return tt;
     }
 
-    public void addTorrentFromBytes(byte[] buf) {
+    public Torrent addTorrentFromBytes(byte[] buf) {
         String s = getStoragePath().getPath();
         long t = Libtorrent.AddTorrentFromBytes(s, buf);
         if (t == -1) {
             throw new RuntimeException(Libtorrent.Error());
         }
-        add(new Storage.Torrent(context, t, s));
+        Torrent tt = new Storage.Torrent(context, t, s);
+        add(tt);
+        return tt;
     }
 
     public void addTorrentFromURL(String p) {

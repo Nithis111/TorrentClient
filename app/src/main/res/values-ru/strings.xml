@@ -60,7 +60,7 @@
     <string name="delete_tracker">Удалить Трекер</string>
     <string name="add_tracker">Добавить Трекер</string>
     <string name="add">Добавить</string>
-    <string name="delete_with_data">Удалить с данными</string>
+    <string name="delete_with_data">Удалить файлы</string>
     <string name="delete_torrent">Удалить Торрент</string>
     <string name="rename_torrent">Переименовать Торрент</string>
     <string name="add_magnet">Добавить Магнет</string>
@@ -132,4 +132,5 @@
     <string name="delete_search">Удалить Поисковый Сервис</string>
     <string name="engine_updated">" обновлен до версии: "</string>
     <string name="add_search_engine">Добавить Сервис</string>
+    <string name="added">"Добавлено:"</string>
 </resources>
