@@ -1,5 +1,5 @@
 {
-  "version": 2,
+  "version": 3,
   "name": "rutracker.org",
   "home": {
     "get": "http://rutracker.org"
@@ -10,12 +10,12 @@
     "post_login": "login_username",
     "post_password": "login_password",
     "post_params": "login=вход",
-    "js": "document.querySelectorAll('form[action=login\\\\.php]').length==0 || alert('Not Logged In');"
+    "js": "if(document.querySelectorAll('a[href^=\\\\.\\\\/profile\\\\.php]').length==0){alert('Not Logged In')}"
   },
   "search": {
     "post": "http://rutracker.org/forum/tracker.php",
     "post_search": "nm",
-    "js": "document.querySelectorAll('form[action=login\\\\.php]').length==0 || alert('Not Logged In');ee=document.querySelectorAll('a.tLink');for(i=0;i<ee.length;i++){e=ee[i];h=e.getAttribute('href');h='http://rutracker.org/forum/'+h;e.setAttribute('href',h);};",
+    "js_post": "if(document.querySelectorAll('a[href^=\\\\.\\\\/profile\\\\.php]').length==0){alert('Not Logged In')};ee=document.querySelectorAll('a.tLink');for(i=0;i<ee.length;i++){e=ee[i];h=e.getAttribute('href');h='http://rutracker.org/forum/'+h;e.setAttribute('href',h);};",
     "list": ".forumline.tablesorter tbody tr",
     "title": "a.tLink:regex(<a[^>]*>(.*)</a>)",
     "details": "a.tLink:regex(.*href=[\"'](.*)[\"'].*)",

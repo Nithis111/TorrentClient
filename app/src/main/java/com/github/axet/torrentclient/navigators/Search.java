@@ -3,6 +3,7 @@ package com.github.axet.torrentclient.navigators;
 import android.annotation.TargetApi;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.Build;
@@ -124,12 +125,8 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
 
     public class Inject {
         @JavascriptInterface
-        void result(String html) {
-            handler.post(new Runnable() {
-                @Override
-                public void run() {
-                }
-            });
+        public void result(String html) {
+            Log.d(TAG, "result()");
         }
     }
 
@@ -515,8 +512,9 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
 
                     final Map<String, String> s = engine.getMap("search");
                     String js = s.get("details_js");
+                    String js_post = s.get("details_js_post");
 
-                    BrowserDialogFragment d = BrowserDialogFragment.create(url, js);
+                    BrowserDialogFragment d = BrowserDialogFragment.create(url, js, js_post);
                     d.show(main.getSupportFragmentManager(), "");
                 }
             });
@@ -525,10 +523,18 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         return convertView;
     }
 
-    public void inject(String url, String html, String js, final Inject inject) {
+    public void inject(String url, String html, String js, String js_post, final Inject exec) {
         Log.d(TAG, "inject()");
 
-        final String script = js + ";\n\nbrowser.result(document.documentElement.outerHTML)";
+        String script = null;
+        if (js != null)
+            script = js + ";\n\ntorrentclient.result(document.documentElement.outerHTML)";
+        final String inject = script;
+
+        String script_post = null;
+        if (js_post != null)
+            script_post = js_post + ";\n\ntorrentclient.result(document.documentElement.outerHTML)";
+        final String inject_post = script_post;
 
         if (web != null) {
             web.destroy();
@@ -602,16 +608,24 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
             public void onPageCommitVisible(WebView view, String url) {
                 super.onPageCommitVisible(view, url);
                 Log.d(TAG, "onPageCommitVisible");
-                web.loadUrl("javascript:" + script);
+                if (inject != null)
+                    web.loadUrl("javascript:" + inject);
+            }
+
+            @Override
+            public void onPageStarted(WebView view, String url, Bitmap favicon) {
+                super.onPageStarted(view, url, favicon);
             }
 
             @Override
             public void onPageFinished(WebView view, String url) {
                 super.onPageFinished(view, url);
                 Log.d(TAG, "onPageFinished");
+                if (inject_post != null)
+                    web.loadUrl("javascript:" + inject_post);
             }
         });
-        web.addJavascriptInterface(inject, "browser");
+        web.addJavascriptInterface(exec, "torrentclient");
         // Uncaught SecurityError: Failed to read the 'cookie' property from 'Document': Cookies are disabled inside 'data:' URLs.
         // called when page loaded with loadData()
         web.loadDataWithBaseURL(url, html, "text/html", null, null);
@@ -638,11 +652,12 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
             final String html = post(post, map);
 
             final String js = s.get("js");
-            if (js != null) {
+            final String js_post = s.get("js_post");
+            if (js != null || js_post != null) {
                 handler.post(new Runnable() {
                     @Override
                     public void run() {
-                        inject(post, html, js, new Inject() {
+                        inject(post, html, js, js_post, new Inject() {
                             @JavascriptInterface
                             public void result(String html) {
                                 super.result(html);
@@ -683,13 +698,14 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         }
 
         final String js = s.get("js");
-        if (js != null) {
+        final String js_post = s.get("js_post");
+        if (js != null || js_post != null) {
             final String u = url;
             final String h = html;
             handler.post(new Runnable() {
                 @Override
                 public void run() {
-                    inject(u, h, js, new Inject() {
+                    inject(u, h, js, js_post, new Inject() {
                         @JavascriptInterface
                         public void result(String html) {
                             super.result(html);
