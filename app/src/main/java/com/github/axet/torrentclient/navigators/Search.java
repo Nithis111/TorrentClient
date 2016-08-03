@@ -513,7 +513,11 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         for (String c : cc) {
             String[] vv = c.split("=");
             BasicClientCookie cookie = new BasicClientCookie(vv[0].trim(), vv[1].trim());
-            cookie.setDomain(uri.getAuthority());
+            // TODO it may cause troubles. Cookie maybe set for domain, www.domain or www.domain/path
+            // and since we have to cut all www/path same name cookies with different paths will override.
+            // need to check if returned cookie sting can contains DOMAIN/PATH values. Until then use domain only.
+            String domain = uri.getAuthority();
+            cookie.setDomain(domain);
             // we do not know if cookie set for just domain, ignore path
             // cookie.setPath(uri.getPath());
             cookieStore.addCookie(cookie);
