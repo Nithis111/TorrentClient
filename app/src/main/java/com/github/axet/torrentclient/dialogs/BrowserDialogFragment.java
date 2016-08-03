@@ -139,7 +139,7 @@ public class BrowserDialogFragment extends DialogFragment implements MainActivit
         progress.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if(load < 100) {
+                if (load < 100) {
                     web.stopLoading();
                     load = 100;
                     return;
@@ -237,9 +237,6 @@ public class BrowserDialogFragment extends DialogFragment implements MainActivit
             public void onPageFinished(WebView view, String url) {
                 super.onPageFinished(view, url);
                 updateButtons();
-                if (inject != null) {
-                    web.loadUrl("javascript:" + inject);
-                }
             }
 
             @Override
@@ -252,6 +249,9 @@ public class BrowserDialogFragment extends DialogFragment implements MainActivit
             public void onPageCommitVisible(WebView view, String url) {
                 super.onPageCommitVisible(view, url);
                 updateButtons();
+                if (inject != null) {
+                    web.loadUrl("javascript:" + inject);
+                }
             }
 
             @Override
