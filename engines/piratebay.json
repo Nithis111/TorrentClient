@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": 2,
   "name": "thepiratebay.org",
   "home": {
     "get": "https://thepiratebay.org/"

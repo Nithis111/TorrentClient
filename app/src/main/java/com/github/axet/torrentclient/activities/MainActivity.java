@@ -12,14 +12,12 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
-import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.preference.PreferenceManager;
-import android.support.design.internal.NavigationMenu;
 import android.support.design.widget.NavigationView;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
@@ -30,6 +28,7 @@ import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -46,7 +45,6 @@ import android.widget.Toast;
 
 import com.getbase.floatingactionbutton.FloatingActionButton;
 import com.getbase.floatingactionbutton.FloatingActionsMenu;
-import com.github.axet.androidlibrary.animations.RemoveItemAnimation;
 import com.github.axet.androidlibrary.widgets.OpenFileDialog;
 import com.github.axet.torrentclient.R;
 import com.github.axet.torrentclient.app.EnginesManager;
@@ -62,8 +60,6 @@ import com.google.android.gms.appindexing.Action;
 import com.google.android.gms.appindexing.AppIndex;
 import com.google.android.gms.common.api.GoogleApiClient;
 
-import org.apache.commons.io.FileUtils;
-
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -78,8 +74,8 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
     public final static String TAG = MainActivity.class.getSimpleName();
 
     static final long INFO_MANUAL_REFRESH = 5 * 1000;
-
     static final long INFO_AUTO_REFRESH = 5 * 60 * 1000;
+    static final long ENGINES_AUTO_REFRESH = 24 * 60 * 60 * 1000;
 
     /**
      * ATTENTION: This was auto-generated to implement the App Indexing API.
@@ -100,6 +96,7 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
     Handler handler;
 
     NavigationView navigationView;
+    DrawerLayout drawerLayout;
     View navigationHeader;
     DrawerLayout drawer;
 
@@ -123,6 +120,9 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
     BroadcastReceiver screenreceiver;
 
     EnginesManager manager;
+    Thread update;
+    Thread updateOne;
+    int updateOneIndex;
 
     public static void startActivity(Context context) {
         Intent i = new Intent(context, MainActivity.class);
@@ -206,6 +206,31 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
 
         manager = new EnginesManager(this);
         updateManager();
+
+        drawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
+        drawerLayout.addDrawerListener(new DrawerLayout.DrawerListener() {
+            @Override
+            public void onDrawerSlide(View drawerView, float slideOffset) {
+            }
+
+            @Override
+            public void onDrawerOpened(View drawerView) {
+                long time = System.currentTimeMillis();
+                long t = manager.getTime();
+                if (t + ENGINES_AUTO_REFRESH > time) {
+                    if (update == null)
+                        refreshEngines(true);
+                }
+            }
+
+            @Override
+            public void onDrawerClosed(View drawerView) {
+            }
+
+            @Override
+            public void onDrawerStateChanged(int newState) {
+            }
+        });
 
         navigationHeader = navigationView.getHeaderView(0);
 
@@ -1149,14 +1174,15 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
     public void updateManager() {
         Menu menu = navigationView.getMenu();
 
-        for (int i = 0; i < menu.size(); i++) {
+        for (int i = menu.size() - 1; i >= 0; i--) {
             MenuItem m = menu.getItem(i);
             int id = m.getItemId();
             if (id > 0 && id < 0x00ffffff) {
                 menu.removeItem(id);
-                i = 0;
             }
         }
+
+        LayoutInflater inflater = LayoutInflater.from(this);
 
         for (int i = 0; i < manager.getCount(); i++) {
             final Search search = manager.get(i);
@@ -1165,9 +1191,50 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
             int id = i + 1;
             MenuItem item = menu.add(R.id.group_torrents, id, Menu.NONE, engine.getName());
             item.setIcon(R.drawable.share);
-            final ImageView icon = new ImageView(this);
-            icon.setImageDrawable(ContextCompat.getDrawable(this, R.drawable.trash));
-            icon.setColorFilter(Color.BLACK);
+            final View view = inflater.inflate(R.layout.search_engine, null);
+            final View release = view.findViewById(R.id.search_engine_new);
+            View progress = view.findViewById(R.id.search_engine_progress);
+
+            final int fi = i;
+            release.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    if (updateOne != null) {
+                        updateOne.interrupt();
+                    }
+                    updateOneIndex = fi;
+                    updateOne = new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+                            manager.update(fi);
+                            handler.post(new Runnable() {
+                                @Override
+                                public void run() {
+                                    updateOne = null;
+                                    updateManager();
+                                    Search search = manager.get(fi);
+                                    SearchEngine engine = search.getEngine();
+                                    Toast.makeText(MainActivity.this, engine.getName() + " updated to version: " + engine.getVersion(), Toast.LENGTH_LONG).show();
+                                }
+                            });
+                        }
+                    }, "Update One");
+                    updateOne.start();
+                }
+            });
+
+            if (updateOne != null && updateOneIndex == i) {
+                progress.setVisibility(View.VISIBLE);
+            } else {
+                progress.setVisibility(View.INVISIBLE);
+            }
+
+            if (manager.getUpdate(i))
+                release.setVisibility(View.VISIBLE);
+            else
+                release.setVisibility(View.INVISIBLE);
+
+            final View icon = view.findViewById(R.id.search_engine_trash);
             icon.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
@@ -1196,9 +1263,78 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
                     builder.show();
                 }
             });
-            item.setActionView(icon);
+            item.setActionView(view);
         }
         // reset group. add recent items to toggle group
         menu.setGroupCheckable(R.id.group_torrents, true, true);
+
+        View update = inflater.inflate(R.layout.search_update, null);
+        final ProgressBar progress = (ProgressBar) update.findViewById(R.id.search_update_progress);
+        progress.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (MainActivity.this.update != null) {
+                    MainActivity.this.update.interrupt();
+                    MainActivity.this.update = null;
+                    updateManager();
+                }
+            }
+        });
+        View refresh = update.findViewById(R.id.search_update_refresh);
+        refresh.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                refreshEngines(false);
+            }
+        });
+
+        if (MainActivity.this.update != null) {
+            progress.setVisibility(View.VISIBLE);
+            refresh.setVisibility(View.GONE);
+        } else {
+            progress.setVisibility(View.GONE);
+            refresh.setVisibility(View.VISIBLE);
+        }
+
+        MenuItem add = menu.findItem(R.id.nav_add);
+        add.setActionView(update);
+    }
+
+    void refreshEngines(final boolean auto) {
+        if (update != null) {
+            update.interrupt();
+        }
+        update = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                boolean a = auto;
+
+                handler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        updateManager();
+                    }
+                });
+                try {
+                    manager.refresh();
+                } catch (RuntimeException e) {
+                    MainActivity.this.post(e);
+                    a = true; // hide update toast on error
+                }
+                final boolean b = a;
+                handler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        update = null;
+                        if (!b) {
+                            if (!manager.updates())
+                                Toast.makeText(MainActivity.this, "No Updates available", Toast.LENGTH_LONG).show();
+                        }
+                        updateManager();
+                    }
+                });
+            }
+        }, "Engines Update");
+        update.start();
     }
 }

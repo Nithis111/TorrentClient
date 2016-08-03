@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<menu xmlns:android="http://schemas.android.com/apk/res/android">
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <group
         android:id="@+id/group_torrents"
@@ -23,8 +24,10 @@
         <menu>
             <item
                 android:id="@+id/nav_add"
+                android:actionLayout="@layout/search_update"
                 android:icon="@drawable/ic_add_black_24dp"
-                android:title="Add Search Engine" />
+                android:title="Add Search Engine"
+                app:showAsAction="always" />
         </menu>
     </item>
 

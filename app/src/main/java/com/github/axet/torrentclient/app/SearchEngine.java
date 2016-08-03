@@ -1,5 +1,6 @@
 package com.github.axet.torrentclient.app;
 
+import android.content.Context;
 import android.net.Uri;
 
 import com.github.axet.torrentclient.navigators.Search;
@@ -10,7 +11,11 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URL;
+import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -72,12 +77,26 @@ public class SearchEngine {
         }
     }
 
-    public void loadUrl(String url) {
+    public void loadUrl(Context context, String url) {
         try {
-            URL u = new URL(url);
-            String json = IOUtils.toString(u.openStream(), MainApplication.UTF8);
+            InputStream is;
+
+            try {
+                URL u = new URL(url);
+                URLConnection conn = u.openConnection();
+                conn.setConnectTimeout(MainApplication.CONNECTION_TIMEOUT);
+                conn.setReadTimeout(MainApplication.CONNECTION_TIMEOUT);
+                is = conn.getInputStream();
+            } catch (MalformedURLException e) {
+                Uri uri = Uri.parse(url);
+                is = context.getContentResolver().openInputStream(uri);
+            }
+
+            String json = IOUtils.toString(is, MainApplication.UTF8);
             loadJson(json);
-        } catch (IOException e) {
+        } catch (RuntimeException e) {
+            throw e;
+        } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
@@ -97,5 +116,9 @@ public class SearchEngine {
 
     public String getName() {
         return getString("name");
+    }
+
+    public Integer getVersion() {
+        return (Integer) map.get("version");
     }
 }
