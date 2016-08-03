@@ -710,8 +710,6 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
             item.html = list.get(i).outerHtml();
             item.title = matcher(item.html, s.get("title"));
             String magnet = matcher(item.html, s.get("magnet"));
-            if (magnet != null)
-                item.magnet = Html.fromHtml(magnet).toString(); // always HTML encoded
             item.torrent = matcher(item.html, s.get("torrent"));
             item.size = matcher(item.html, s.get("size"));
             item.seed = matcher(item.html, s.get("seed"));
@@ -770,12 +768,13 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
             Pattern p1 = Pattern.compile(r, Pattern.DOTALL);
             Matcher m1 = p1.matcher(a);
             if (m1.matches()) {
-                return m1.group(1);
+                a = m1.group(1);
+            } else {
+                a = ""; // tell we did not find any regex match
             }
-            return ""; // tell we did not find any regex match
         }
 
-        return a;
+        return Html.fromHtml(a).toString();
     }
 
     String get(String url) throws IOException {

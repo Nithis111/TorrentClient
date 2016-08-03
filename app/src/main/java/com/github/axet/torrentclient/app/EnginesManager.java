@@ -113,19 +113,19 @@ public class EnginesManager {
         return false;
     }
 
-    public void add(File f) {
+    public Search add(File f) {
         try {
             String json = IOUtils.toString(new FileInputStream(f), MainApplication.UTF8);
-            add(f.toURI().toString(), json);
+            return add(f.toURI().toString(), json);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
 
-    public void add(String url, String json) {
+    public Search add(String url, String json) {
         SearchEngine engine = new SearchEngine();
         engine.loadJson(json);
-        add(url, engine);
+        return add(url, engine);
     }
 
     Search add(String url, SearchEngine engine) {
