@@ -179,13 +179,20 @@ public class BrowserDialogFragment extends DialogFragment implements MainActivit
         String js = getArguments().getString("js");
         String js_post = getArguments().getString("js_post");
 
+        String result = ";\n\ntorrentclient.result()";
+
         String script = null;
-        if (js != null)
-            script = js + ";\n\ntorrentclient.result()";
+        if (js != null) {
+            script = js;
+            // only call .result() once
+            if (js_post == null) {
+                script += result;
+            }
+        }
 
         String script_post = null;
         if (js_post != null)
-            script_post = js_post + ";\n\ntorrentclient.result()";
+            script_post = js_post + result;
 
         final String inject = script;
         final String inject_post = script_post;

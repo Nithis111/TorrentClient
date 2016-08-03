@@ -526,14 +526,22 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
     public void inject(String url, String html, String js, String js_post, final Inject exec) {
         Log.d(TAG, "inject()");
 
+        String result = ";\n\ntorrentclient.result(document.documentElement.outerHTML)";
+
         String script = null;
-        if (js != null)
-            script = js + ";\n\ntorrentclient.result(document.documentElement.outerHTML)";
+        if (js != null) {
+            script = js;
+            // only call .result once
+            if (js_post == null) {
+                script += result;
+            }
+        }
+
         final String inject = script;
 
         String script_post = null;
         if (js_post != null)
-            script_post = js_post + ";\n\ntorrentclient.result(document.documentElement.outerHTML)";
+            script_post = js_post + result;
         final String inject_post = script_post;
 
         if (web != null) {
