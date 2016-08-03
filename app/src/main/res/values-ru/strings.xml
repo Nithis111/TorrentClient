@@ -133,4 +133,8 @@
     <string name="engine_updated">" обновлен до версии: "</string>
     <string name="add_search_engine">Добавить Сервис</string>
     <string name="added">"Добавлено:"</string>
+    <string name="clear_cookies">Очистить cookies</string>
+    <string name="browser">Браузер</string>
+    <string name="password">Пароль:</string>
+    <string name="login">Логин:</string>
 </resources>
