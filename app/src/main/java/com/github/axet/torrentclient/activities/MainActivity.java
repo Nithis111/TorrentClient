@@ -1103,17 +1103,17 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
                 @Override
                 public void onClick(DialogInterface dialog, int which) {
                     File p = f.getCurrentPath();
-
                     shared.edit().putString(MainApplication.PREFERENCE_LAST_PATH, p.getParent()).commit();
-
+                    Search search = null;
                     try {
-                        manager.add(p);
+                        search = manager.add(p);
                     } catch (RuntimeException e) {
                         Error(e);
                         return;
                     }
                     manager.save();
                     updateManager();
+                    openDrawer(search);
                 }
             });
             f.show();
