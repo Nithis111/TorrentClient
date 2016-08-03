@@ -1214,7 +1214,7 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
                                     updateManager();
                                     Search search = manager.get(fi);
                                     SearchEngine engine = search.getEngine();
-                                    Toast.makeText(MainActivity.this, engine.getName() + " updated to version: " + engine.getVersion(), Toast.LENGTH_LONG).show();
+                                    Toast.makeText(MainActivity.this, engine.getName() + getString(R.string.engine_updated) + engine.getVersion(), Toast.LENGTH_LONG).show();
                                 }
                             });
                         }
@@ -1240,7 +1240,7 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
                 public void onClick(View v) {
                     Context context = MainActivity.this;
                     AlertDialog.Builder builder = new AlertDialog.Builder(context);
-                    builder.setTitle("Delete Search Engine");
+                    builder.setTitle(getString(R.string.delete_search));
 
                     String name = engine.getName();
 
@@ -1328,7 +1328,7 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
                         update = null;
                         if (!b) {
                             if (!manager.updates())
-                                Toast.makeText(MainActivity.this, "No Updates available", Toast.LENGTH_LONG).show();
+                                Toast.makeText(MainActivity.this, R.string.no_updates, Toast.LENGTH_LONG).show();
                         }
                         updateManager();
                     }
