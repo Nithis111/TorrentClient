@@ -1,5 +1,5 @@
 {
-  "version": 3,
+  "version": 4,
   "name": "pornolab.net",
   "home": {
     "get": "http://pornolab.net"
@@ -19,7 +19,7 @@
     "list": ".forumline.tablesorter tbody tr",
     "title": "a.tLink:regex(<a[^>]*>(.*)</a>)",
     "details": "a.tLink:regex(.*href=[\"'](.*)[\"'].*)",
-    "details_js": "aa=document.querySelectorAll('a.dl-stub');for(i=0;i<aa.length;i++){a=aa[i];h=a.getAttribute('href');a.setAttribute('href','#');id=h.split('t=')[1];function c(){t='bb_dl='+id;document.cookie=t;location.href=h};a.onclick=c}",
+    "details_js_post": "aa=document.querySelectorAll('a.dl-stub');for(i=0;i<aa.length;i++){a=aa[i];h=a.getAttribute('href');a.setAttribute('href','#');id=h.split('t=')[1];function c(){t='bb_dl='+id;document.cookie=t;location.href=h};a.onclick=c}",
     "size": "a.dl-stub:regex(<a[^>]*>(.*)</a>)",
     "seed": "td.seedmed b:regex(<b[^>]*>(.*)</b>)",
     "leech": "td.leechmed b:regex(<b[^>]*>(.*)</b>)"
