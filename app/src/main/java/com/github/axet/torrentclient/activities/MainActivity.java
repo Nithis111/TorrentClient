@@ -694,6 +694,14 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
 
                 if (dialog != null)
                     dialog.update();
+
+                ListAdapter a = list.getAdapter();
+                if (a != null && a instanceof HeaderViewListAdapter) {
+                    a = ((HeaderViewListAdapter) a).getWrappedAdapter();
+                }
+                if (a instanceof TorrentFragmentInterface) {
+                    ((TorrentFragmentInterface) a).update();
+                }
             }
         };
 
@@ -715,7 +723,7 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
                 s.update();
                 updateHeader(s);
 
-                torrents.update();
+                torrents.updateStorage();
 
                 if (refreshUI != null)
                     refreshUI.run();
@@ -998,8 +1006,10 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
                 addTorrentDialog(t, p);
             } else {
                 for (String s : m) {
-                    if (!manager.addManget(s))
-                        getStorage().addMagnet(s);
+                    if (!manager.addManget(s)) {
+                        Storage.Torrent tt = getStorage().addMagnet(s);
+                        Toast.makeText(MainActivity.this, getString(R.string.added) + " " + tt.name(), Toast.LENGTH_SHORT).show();
+                    }
                 }
             }
         } catch (RuntimeException e) {
@@ -1032,7 +1042,8 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
                 }
                 addTorrentDialog(t, s);
             } else {
-                getStorage().addTorrentFromBytes(buf);
+                Storage.Torrent tt = getStorage().addTorrentFromBytes(buf);
+                Toast.makeText(MainActivity.this, getString(R.string.added) + " " + tt.name(), Toast.LENGTH_SHORT).show();
             }
         } catch (RuntimeException e) {
             Error(e);

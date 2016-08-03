@@ -276,7 +276,7 @@ public class BrowserDialogFragment extends DialogFragment implements MainActivit
             @Override
             public boolean shouldOverrideUrlLoading(WebView view, String url) {
                 if (url.startsWith("magnet")) {
-                    getMainActivity().addMagnet(url, true);
+                    getMainActivity().addMagnet(url);
                     return true;
                 }
                 return super.shouldOverrideUrlLoading(view, url);
@@ -310,7 +310,7 @@ public class BrowserDialogFragment extends DialogFragment implements MainActivit
                             handler.post(new Runnable() {
                                 @Override
                                 public void run() {
-                                    getMainActivity().addTorrentFromBytes(buf, true);
+                                    getMainActivity().addTorrentFromBytes(buf);
                                 }
                             });
                         } catch (final IOException e) {

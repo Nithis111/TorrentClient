@@ -486,7 +486,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
             magnet.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    main.addMagnet(item.magnet, true);
+                    main.addMagnet(item.magnet);
                 }
             });
             magnet.setColorFilter(ThemeUtils.getThemeColor(getContext(), R.attr.colorAccent));
