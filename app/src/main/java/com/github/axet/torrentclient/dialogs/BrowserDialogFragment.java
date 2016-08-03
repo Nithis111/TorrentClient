@@ -43,7 +43,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.net.URLConnection;
 
-public class BrowserDialogFragment extends DialogFragment implements MainActivity.TorrentFragmentInterface, DialogInterface {
+public class BrowserDialogFragment extends DialogFragment implements MainActivity.TorrentFragmentInterface {
     public static String TAG = BrowserDialogFragment.class.getSimpleName();
 
     ViewPager pager;
@@ -55,11 +55,12 @@ public class BrowserDialogFragment extends DialogFragment implements MainActivit
     Thread thread;
     int load;
 
-    public static BrowserDialogFragment create(String url, String js) {
+    public static BrowserDialogFragment create(String url, String js, String js_post) {
         BrowserDialogFragment f = new BrowserDialogFragment();
         Bundle args = new Bundle();
         args.putString("url", url);
         args.putString("js", js);
+        args.putString("js_post", js_post);
         f.setArguments(args);
         return f;
     }
@@ -176,11 +177,18 @@ public class BrowserDialogFragment extends DialogFragment implements MainActivit
         String url = getArguments().getString("url");
 
         String js = getArguments().getString("js");
+        String js_post = getArguments().getString("js_post");
+
         String script = null;
         if (js != null)
-            script = js + ";\n\nbrowser.result()";
+            script = js + ";\n\ntorrentclient.result()";
+
+        String script_post = null;
+        if (js_post != null)
+            script_post = js_post + ";\n\ntorrentclient.result()";
 
         final String inject = script;
+        final String inject_post = script_post;
 
         web.setWebChromeClient(new WebChromeClient() {
             @Override
@@ -196,12 +204,6 @@ public class BrowserDialogFragment extends DialogFragment implements MainActivit
                     refresh.setVisibility(View.VISIBLE);
                     progress.setProgress(0);
                 }
-            }
-
-            @Override
-            public boolean onJsTimeout() {
-                Log.d(TAG, "onJsTimeout");
-                return super.onJsTimeout();
             }
 
             @Override
@@ -237,6 +239,9 @@ public class BrowserDialogFragment extends DialogFragment implements MainActivit
             public void onPageFinished(WebView view, String url) {
                 super.onPageFinished(view, url);
                 updateButtons();
+                if (inject_post != null) {
+                    web.loadUrl("javascript:" + inject_post);
+                }
             }
 
             @Override
@@ -323,7 +328,7 @@ public class BrowserDialogFragment extends DialogFragment implements MainActivit
         });
 
         if (inject != null)
-            web.addJavascriptInterface(new Inject(), "browser");
+            web.addJavascriptInterface(new Inject(), "torrentclient");
 
         web.loadUrl(url);
 
@@ -348,10 +353,5 @@ public class BrowserDialogFragment extends DialogFragment implements MainActivit
             forward.setColorFilter(Color.GRAY);
             forward.setEnabled(false);
         }
-    }
-
-    @Override
-    public void cancel() {
-
     }
 }
