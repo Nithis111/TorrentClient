@@ -271,8 +271,24 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
                 String url = login.get("details");
                 setCookies2WebView();
 
-                LoginDialogFragment d = LoginDialogFragment.create(lastLogin, url);
-                d.show(main.getSupportFragmentManager(), "");
+                String l = null;
+                String p = null;
+
+                if (login.get("post") != null) {
+                    l = login.get("post_login");
+                    p = login.get("post_password");
+                }
+
+                String js = login.get("js");
+                String js_post = login.get("js_post");
+
+                if (l == null && p == null) {
+                    LoginDialogFragment d = LoginDialogFragment.create(url);
+                    d.show(main.getSupportFragmentManager(), "");
+                } else {
+                    LoginDialogFragment d = LoginDialogFragment.create(url, lastLogin);
+                    d.show(main.getSupportFragmentManager(), "");
+                }
             }
         });
 
@@ -683,8 +699,10 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
             String p = s.get("post_password");
             String pp = s.get("post_params");
             HashMap<String, String> map = new HashMap<>();
-            map.put(l, login);
-            map.put(p, pass);
+            if (l != null)
+                map.put(l, login);
+            if (p != null)
+                map.put(p, pass);
             String[] params = pp.split(";");
             for (String param : params) {
                 String[] m = param.split("=");

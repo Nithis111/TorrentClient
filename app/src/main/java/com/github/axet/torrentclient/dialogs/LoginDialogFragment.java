@@ -46,11 +46,20 @@ public class LoginDialogFragment extends BrowserDialogFragment {
         }
     }
 
-    public static LoginDialogFragment create(String login, String url) {
+    public static LoginDialogFragment create(String url, String lastlogin) {
         LoginDialogFragment f = new LoginDialogFragment();
         Bundle args = new Bundle();
         args.putString("url", url);
-        args.putString("login", login);
+        args.putString("login", lastlogin);
+        f.setArguments(args);
+        return f;
+    }
+
+    public static LoginDialogFragment create(String url) {
+        LoginDialogFragment f = new LoginDialogFragment();
+        Bundle args = new Bundle();
+        args.putString("url", url);
+        args.putBoolean("browser", true);
         f.setArguments(args);
         return f;
     }
@@ -98,6 +107,10 @@ public class LoginDialogFragment extends BrowserDialogFragment {
                         browserMode(savedInstanceState);
                     }
                 });
+
+                if (getArguments().getBoolean("browser")) {
+                    browserMode(savedInstanceState);
+                }
             }
         });
 
@@ -128,7 +141,7 @@ public class LoginDialogFragment extends BrowserDialogFragment {
                     String[] cc = cookies.split(";");
                     for (String c : cc) {
                         String[] vv = c.split("=");
-                        inst.setCookie(domain, vv[0].trim() + "=; Expires=Thu, 1 Jan 1970 03:00:00 GMT");
+                        inst.setCookie(domain, vv[0].trim() + "=; " + "expires=Thu, 01 Jan 1970 03:00:00 GMT");
                     }
                     CookieSyncManager.getInstance().sync();
                 }
