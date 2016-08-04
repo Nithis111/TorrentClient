@@ -183,7 +183,8 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
 
     public String save() {
         CookieStore cookieStore = httpClientContext.getCookieStore();
-        if (cookieStore != null) {
+        // do not save cookies between restarts for non login
+        if (cookieStore != null && engine.getMap("login") != null) {
             List<Cookie> cookies = cookieStore.getCookies();
             try {
                 ByteArrayOutputStream bos = new ByteArrayOutputStream();

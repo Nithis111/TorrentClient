@@ -12,6 +12,7 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
+import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.net.Uri;
 import android.os.Bundle;
@@ -46,6 +47,7 @@ import android.widget.Toast;
 import com.getbase.floatingactionbutton.FloatingActionButton;
 import com.getbase.floatingactionbutton.FloatingActionsMenu;
 import com.github.axet.androidlibrary.widgets.OpenFileDialog;
+import com.github.axet.androidlibrary.widgets.ThemeUtils;
 import com.github.axet.torrentclient.R;
 import com.github.axet.torrentclient.app.EnginesManager;
 import com.github.axet.torrentclient.app.MainApplication;
@@ -670,6 +672,9 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
 
         invalidateOptionsMenu();
 
+        // update if keyguard enabled or not
+        updateManager();
+
         KeyguardManager myKM = (KeyguardManager) getSystemService(Context.KEYGUARD_SERVICE);
         if (myKM.inKeyguardRestrictedInputMode()) {
             add.setVisibility(View.GONE);
@@ -1184,6 +1189,9 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
     }
 
     public void updateManager() {
+        KeyguardManager myKM = (KeyguardManager) getSystemService(Context.KEYGUARD_SERVICE);
+        boolean locked = myKM.inKeyguardRestrictedInputMode();
+
         Menu menu = navigationView.getMenu();
 
         for (int i = menu.size() - 1; i >= 0; i--) {
@@ -1246,8 +1254,8 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
             else
                 release.setVisibility(View.INVISIBLE);
 
-            final View icon = view.findViewById(R.id.search_engine_trash);
-            icon.setOnClickListener(new View.OnClickListener() {
+            ImageView trash = (ImageView) view.findViewById(R.id.search_engine_trash);
+            trash.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
                     Context context = MainActivity.this;
@@ -1275,6 +1283,16 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
                     builder.show();
                 }
             });
+            if (locked) {
+                trash.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                    }
+                });
+                trash.setColorFilter(Color.GRAY);
+            } else {
+                trash.setColorFilter(ThemeUtils.getThemeColor(this, R.attr.colorAccent));
+            }
             item.setActionView(view);
         }
         // reset group. add recent items to toggle group
@@ -1282,7 +1300,7 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
 
         View update = inflater.inflate(R.layout.search_update, null);
         final ProgressBar progress = (ProgressBar) update.findViewById(R.id.search_update_progress);
-        View refresh = update.findViewById(R.id.search_update_refresh);
+        ImageView refresh = (ImageView) update.findViewById(R.id.search_update_refresh);
         update.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -1305,6 +1323,20 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
         }
 
         MenuItem add = menu.findItem(R.id.nav_add);
+
+        if (locked) {
+            update.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                }
+            });
+            refresh.setColorFilter(Color.GRAY);
+            add.setEnabled(false);
+        } else {
+            refresh.setColorFilter(ThemeUtils.getThemeColor(this, R.attr.colorAccent));
+            add.setEnabled(true);
+        }
+
         add.setActionView(update);
     }
 
