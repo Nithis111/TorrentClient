@@ -26,6 +26,8 @@
     "details": "http://rutracker.org/forum/login.php",
     // optional. js we need to execute after page loaded
     "js": "if(document.querySelectorAll('a[href^=\\\\.\\\\/profile\\\\.php]').length==0){alert('Not Logged In')}"
+    // optional. js to execute after we page fully loaded
+    "js_post": "if(document.querySelectorAll('a[href^=\\\\.\\\\/profile\\\\.php]').length==0){alert('Not Logged In')}"
   },
   // search operation
   "search": {
@@ -35,6 +37,8 @@
     "post_search": "nm",
     // optional. js we need to execute after page loaded
     "js": "if(document.querySelectorAll('a[href^=\\\\.\\\\/profile\\\\.php]').length==0){alert('Not Logged In')};ee=document.querySelectorAll('a.tLink');for(i=0;i<ee.length;i++){e=ee[i];h=e.getAttribute('href');h='http://rutracker.org/forum/'+h;e.setAttribute('href',h);};",
+    // optional. js to execute after we page fully loaded
+    "js_post": "if(document.querySelectorAll('a[href^=\\\\.\\\\/profile\\\\.php]').length==0){alert('Not Logged In')};ee=document.querySelectorAll('a.tLink');for(i=0;i<ee.length;i++){e=ee[i];h=e.getAttribute('href');h='http://rutracker.org/forum/'+h;e.setAttribute('href',h);};",
     // list torrents selector
     "list": ".forumline.tablesorter tbody tr",
     // title of torrent
@@ -43,6 +47,8 @@
     "details": "a.tLink:regex(.*href=[\"'](.*)[\"'].*)",
     // optional. js to execute after page shown
     "details_js": "aa=document.querySelectorAll('a.dl-stub');for(i=0;i<aa.length;i++){a=aa[i];h=a.getAttribute('href');a.setAttribute('href','#');id=h.split('t=')[1];function c(){location.href=h};a.onclick=c}",
+    // optional. js to execute after page fully loaded
+    "details_js_post": "aa=document.querySelectorAll('a.dl-stub');for(i=0;i<aa.length;i++){a=aa[i];h=a.getAttribute('href');a.setAttribute('href','#');id=h.split('t=')[1];function c(){location.href=h};a.onclick=c}",
     // optional. torrent magnet url
     "magnet": "a[href^=magnet]:regex(.*href=[\"']([^'^\"]*).*)",
     // optional. torrent file url
