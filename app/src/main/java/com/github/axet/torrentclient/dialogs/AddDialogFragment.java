@@ -235,7 +235,7 @@ public class AddDialogFragment extends DialogFragment implements MainActivity.To
                                 long t = getArguments().getLong("torrent");
                                 String path = getArguments().getString("path");
                                 getArguments().putLong("torrent", -1);
-                                getApp().getStorage().add(new Storage.Torrent(getContext(), t, path));
+                                getApp().getStorage().add(new Storage.Torrent(getContext(), t, path, true));
                                 dialog.dismiss();
                                 onDismiss(dialog);
                             }

@@ -31,14 +31,19 @@ import com.github.axet.torrentclient.animations.RecordingAnimation;
 import com.github.axet.torrentclient.app.MainApplication;
 import com.github.axet.torrentclient.app.Storage;
 import com.github.axet.torrentclient.dialogs.TorrentDialogFragment;
+import com.github.axet.torrentclient.widgets.UnreadCountDrawable;
 
 import org.apache.commons.io.FileUtils;
 
 import java.io.File;
+import java.util.HashMap;
+import java.util.Map;
 
 import go.libtorrent.Libtorrent;
 
-public class Torrents extends BaseAdapter implements DialogInterface.OnDismissListener, MainActivity.TorrentFragmentInterface {
+public class Torrents extends BaseAdapter implements DialogInterface.OnDismissListener,
+        MainActivity.TorrentFragmentInterface, UnreadCountDrawable.UnreadCount,
+        MainActivity.NavigatorInterface {
     static final int TYPE_COLLAPSED = 0;
     static final int TYPE_EXPANDED = 1;
     static final int TYPE_DELETED = 2;
@@ -50,6 +55,7 @@ public class Torrents extends BaseAdapter implements DialogInterface.OnDismissLi
     PopupShareActionProvider shareProvider;
     MainActivity.TorrentFragmentInterface dialog;
     ListView list;
+    Map<Storage.Torrent, Boolean> unread = new HashMap<>();
 
     public static class Tag {
         public int tag;
@@ -121,6 +127,7 @@ public class Torrents extends BaseAdapter implements DialogInterface.OnDismissLi
     @Override
     public void onDismiss(DialogInterface dialog) {
         this.dialog = null;
+        main.updateUnread();
         notifyDataSetChanged();
     }
 
@@ -160,6 +167,10 @@ public class Torrents extends BaseAdapter implements DialogInterface.OnDismissLi
         }
 
         final Storage.Torrent t = getItem(position);
+
+        Boolean u = unread.get(t);
+        if (u != null && u)
+            convertView.setBackgroundColor(ThemeUtils.getThemeColor(getContext(), R.attr.unreadColor));
 
         TextView title = (TextView) convertView.findViewById(R.id.torrent_title);
         title.setText(t.name());
@@ -446,9 +457,28 @@ public class Torrents extends BaseAdapter implements DialogInterface.OnDismissLi
         return selected;
     }
 
+    public void install(ListView list) {
+        unread.clear();
+
+        list.setAdapter(this);
+        Storage s = getStorage();
+        for (int i = 0; i < s.count(); i++) {
+            Storage.Torrent t = s.torrent(i);
+            unread.put(t, t.message);
+        }
+    }
+
+    public void remove(ListView list) {
+    }
+
     public void showDetails(Long f) {
         TorrentDialogFragment d = TorrentDialogFragment.create(f);
         dialog = d;
         d.show(main.getSupportFragmentManager(), "");
+    }
+
+    @Override
+    public int getUnreadCount() {
+        return getStorage().getUnreadCount();
     }
 }
