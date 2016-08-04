@@ -106,12 +106,11 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
     String lastSearch; // last search request
     String lastLogin;// last login user name
 
-    String message;
+    ArrayList<String> message = new ArrayList<>();
 
     View header;
     View login_header;
-    View message_panel;
-    TextView message_text;
+    ViewGroup message_panel;
     View message_close;
     ProgressBar progress;
     View stop;
@@ -209,7 +208,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         return "";
     }
 
-    public void install(ListView list) {
+    public void install(final ListView list) {
         list.setAdapter(null);
 
         LayoutInflater inflater = LayoutInflater.from(context);
@@ -217,25 +216,37 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         login_header = inflater.inflate(R.layout.search_login, null, false);
         header = inflater.inflate(R.layout.search_header, null, false);
 
-        message_panel = header.findViewById(R.id.search_header_message_panel);
-        message_close = header.findViewById(R.id.search_header_message_close);
-        message_text = (TextView) header.findViewById(R.id.search_header_message_text);
+        message_panel = (ViewGroup) header.findViewById(R.id.search_header_message_panel);
 
-        if (message == null) {
+        if (message.size() == 0) {
             message_panel.setVisibility(View.GONE);
         } else {
             message_panel.setVisibility(View.VISIBLE);
-            message_text.setText(message);
-        }
+            message_panel.removeAllViews();
+            for (int i = 0; i < message.size(); i++) {
+                final String msg = message.get(i);
 
-        message_panel.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                message_panel.setVisibility(View.GONE);
-                message = null;
-                main.updateUnread();
+                final View v = inflater.inflate(R.layout.search_message, null);
+                message_panel.addView(v);
+                TextView text = (TextView) v.findViewById(R.id.search_header_message_text);
+                text.setText(msg);
+
+                message_close = v.findViewById(R.id.search_header_message_close);
+                message_close.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View vv) {
+                        message.remove(msg);
+                        message_panel.removeView(v);
+                        main.updateUnread();
+                        notifyDataSetChanged();
+
+                        if (message.size() == 0) {
+                            message_panel.setVisibility(View.GONE);
+                        }
+                    }
+                });
             }
-        });
+        }
 
         searchText = (TextView) header.findViewById(R.id.search_header_text);
         search = header.findViewById(R.id.search_header_search);
@@ -343,20 +354,20 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
             threadLooper = null;
             i = true;
         }
-        Thread thread = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                if (request != null) {
+        if (request != null) {
+            Thread thread = new Thread(new Runnable() {
+                @Override
+                public void run() {
                     request.abort();
                     request = null;
                 }
+            });
+            thread.start();
+            try {
+                thread.join();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
             }
-        });
-        thread.start();
-        try {
-            thread.join();
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
         }
         if (i)
             Log.d(TAG, "interrupt");
@@ -949,7 +960,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
                 if (main.active(Search.this)) {
                     main.post(e);
                 } else {
-                    message = e.getMessage();
+                    message.add(e.getMessage());
                     main.updateUnread();
                 }
             }
@@ -960,21 +971,13 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         if (main.active(this)) {
             main.post(msg);
         } else {
-            message = msg;
-            handler.post(new Runnable() {
-                @Override
-                public void run() {
-                    main.updateUnread();
-                }
-            });
+            message.add(msg);
+            main.updateUnread();
         }
     }
 
     @Override
     public int getUnreadCount() {
-        int count = 0;
-        if (message != null)
-            count++;
-        return count;
+        return message.size();
     }
 }
