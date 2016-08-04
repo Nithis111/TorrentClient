@@ -41,6 +41,7 @@ import com.github.axet.torrentclient.app.MainApplication;
 import com.github.axet.torrentclient.app.SearchEngine;
 import com.github.axet.torrentclient.dialogs.LoginDialogFragment;
 import com.github.axet.torrentclient.dialogs.BrowserDialogFragment;
+import com.github.axet.torrentclient.widgets.UnreadCountDrawable;
 
 import org.apache.commons.io.IOUtils;
 import org.jsoup.Jsoup;
@@ -84,7 +85,8 @@ import cz.msebera.android.httpclient.impl.cookie.BasicClientCookie;
 import cz.msebera.android.httpclient.message.BasicNameValuePair;
 import cz.msebera.android.httpclient.util.EntityUtils;
 
-public class Search extends BaseAdapter implements DialogInterface.OnDismissListener {
+public class Search extends BaseAdapter implements DialogInterface.OnDismissListener,
+        UnreadCountDrawable.UnreadCount, MainActivity.NavigatorInterface {
     public static final String TAG = Search.class.getSimpleName();
 
     Context context;
@@ -104,9 +106,13 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
     String lastSearch; // last search request
     String lastLogin;// last login user name
 
-    FrameLayout header;
-    View search_header;
+    String message;
+
+    View header;
     View login_header;
+    View message_panel;
+    TextView message_text;
+    View message_close;
     ProgressBar progress;
     View stop;
     View search;
@@ -208,14 +214,33 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
 
         LayoutInflater inflater = LayoutInflater.from(context);
 
-        header = new FrameLayout(context);
-        login_header = inflater.inflate(R.layout.search_login, header, false);
-        search_header = inflater.inflate(R.layout.search_header, header, false);
+        login_header = inflater.inflate(R.layout.search_login, null, false);
+        header = inflater.inflate(R.layout.search_header, null, false);
 
-        searchText = (TextView) search_header.findViewById(R.id.search_header_text);
-        search = search_header.findViewById(R.id.search_header_search);
-        progress = (ProgressBar) search_header.findViewById(R.id.search_header_progress);
-        stop = search_header.findViewById(R.id.search_header_stop);
+        message_panel = header.findViewById(R.id.search_header_message_panel);
+        message_close = header.findViewById(R.id.search_header_message_close);
+        message_text = (TextView) header.findViewById(R.id.search_header_message_text);
+
+        if (message == null) {
+            message_panel.setVisibility(View.GONE);
+        } else {
+            message_panel.setVisibility(View.VISIBLE);
+            message_text.setText(message);
+        }
+
+        message_panel.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                message_panel.setVisibility(View.GONE);
+                message = null;
+                main.updateUnread();
+            }
+        });
+
+        searchText = (TextView) header.findViewById(R.id.search_header_text);
+        search = header.findViewById(R.id.search_header_search);
+        progress = (ProgressBar) header.findViewById(R.id.search_header_progress);
+        stop = header.findViewById(R.id.search_header_stop);
 
         searchText.setText(lastSearch);
 
@@ -261,7 +286,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
             }
         });
 
-        View login = search_header.findViewById(R.id.search_header_login);
+        View login = header.findViewById(R.id.search_header_login);
         login.setVisibility(engine.getMap("login") == null ? View.GONE : View.VISIBLE);
         login.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -291,9 +316,6 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
                 }
             }
         });
-
-        header.removeAllViews();
-        header.addView(search_header);
 
         list.addHeaderView(header);
 
@@ -352,7 +374,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
                     Looper.loop();
                 } catch (final RuntimeException e) {
                     if (thread != null) // ignore errors on abort()
-                        main.post(e);
+                        error(e);
                 } finally {
                     handler.post(new Runnable() {
                         @Override
@@ -405,7 +427,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
                 if (!setCookies2Apache(url)) {
                     // can return false only if cookes are empty
                     if (!l.clear) // did user clear? no error
-                        main.Error("Cookies are empty");
+                        error("Cookies are empty");
                 }
             } else if (l.ok) {
                 request(new Runnable() {
@@ -625,12 +647,12 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
                 Log.d(TAG, msg);
 
                 if (sourceID == null || sourceID.isEmpty())
-                    main.post(msg);
+                    error(msg);
             }
 
             @Override
             public boolean onJsAlert(WebView view, String url, final String message, JsResult result) {
-                main.post(message);
+                error(message);
                 result.confirm();
                 return true;//super.onJsAlert(view, url, message, result);
             }
@@ -782,7 +804,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
                             try {
                                 searchList(s, html);
                             } catch (final RuntimeException e) {
-                                main.post(e);
+                                error(e);
                             } finally {
                                 if (done != null)
                                     done.run();
@@ -915,4 +937,39 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         return html;
     }
 
+    public void error(Throwable e) {
+        if (main.active(this)) {
+            main.post(e);
+        } else {
+            message = e.getMessage();
+            handler.post(new Runnable() {
+                @Override
+                public void run() {
+                    main.updateUnread();
+                }
+            });
+        }
+    }
+
+    public void error(String msg) {
+        if (main.active(this)) {
+            main.post(msg);
+        } else {
+            message = msg;
+            handler.post(new Runnable() {
+                @Override
+                public void run() {
+                    main.updateUnread();
+                }
+            });
+        }
+    }
+
+    @Override
+    public int getUnreadCount() {
+        int count = 0;
+        if (message != null)
+            count++;
+        return count;
+    }
 }

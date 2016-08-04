@@ -11,6 +11,7 @@
         <item name="dialogTheme">@style/AppThemeDialogLight</item>
         <item name="alertDialogTheme">@style/AppThemeDialogLight</item>
         <item name="side_nav_bar">@drawable/side_nav_bar_light</item>
+        <item name="unreadColor">@color/unreadLight</item>
     </style>
 
     <style name="AppThemeDialogLight" parent="@style/Theme.AppCompat.Light.Dialog.Alert">
@@ -42,6 +43,7 @@
         <item name="dialogTheme">@style/AppThemeDialogDark</item>
         <item name="alertDialogTheme">@style/AppThemeDialogDark</item>
         <item name="side_nav_bar">@drawable/side_nav_bar_dark</item>
+        <item name="unreadColor">@color/unreadDark</item>
     </style>
 
     <style name="AppThemeDialogDark" parent="@style/Theme.AppCompat.Dialog.Alert">

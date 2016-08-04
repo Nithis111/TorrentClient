@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <attr name="unreadColor" format="color" />
     <attr name="titleColor" format="color" />
     <attr name="secondBackground" format="color" />
     <attr name="menu_labels_style" format="reference" />

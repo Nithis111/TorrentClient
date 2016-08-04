@@ -80,15 +80,17 @@ public class Storage {
     public static class Torrent {
         public long t;
         public String path;
+        public boolean message;
         Context context;
 
         SpeedInfo downloaded = new SpeedInfo();
         SpeedInfo uploaded = new SpeedInfo();
 
-        public Torrent(Context context, long t, String path) {
+        public Torrent(Context context, long t, String path, boolean message) {
             this.context = context;
             this.t = t;
             this.path = path;
+            this.message = message;
         }
 
         public String name() {
@@ -263,6 +265,8 @@ public class Storage {
 
             int status = shared.getInt("TORRENT_" + i + "_STATUS", 0);
 
+            boolean message = shared.getBoolean("TORRENT_" + i + "_MESSAGE", false);
+
             byte[] b = Base64.decode(state, Base64.DEFAULT);
 
             long t = Libtorrent.LoadTorrent(path, b);
@@ -270,7 +274,7 @@ public class Storage {
                 Log.d(TAG, Libtorrent.Error());
                 continue;
             }
-            Torrent tt = new Torrent(context, t, path);
+            Torrent tt = new Torrent(context, t, path, message);
             torrents.add(tt);
 
             if (status != Libtorrent.StatusPaused) {
@@ -310,6 +314,7 @@ public class Storage {
         edit.putInt("TORRENT_" + i + "_STATUS", Libtorrent.TorrentStatus(t.t));
         edit.putString("TORRENT_" + i + "_STATE", state);
         edit.putString("TORRENT_" + i + "_PATH", t.path);
+        edit.putBoolean("TORRENT_" + i + "_MESSAGE", t.message);
     }
 
     public void create() {
@@ -847,7 +852,7 @@ public class Storage {
         if (t == -1) {
             throw new RuntimeException(Libtorrent.Error());
         }
-        Torrent tt = new Storage.Torrent(context, t, p);
+        Torrent tt = new Storage.Torrent(context, t, p, true);
         add(tt);
         return tt;
     }
@@ -858,7 +863,7 @@ public class Storage {
         if (t == -1) {
             throw new RuntimeException(Libtorrent.Error());
         }
-        Torrent tt = new Storage.Torrent(context, t, s);
+        Torrent tt = new Storage.Torrent(context, t, s, true);
         add(tt);
         return tt;
     }
@@ -869,7 +874,7 @@ public class Storage {
         if (t == -1) {
             throw new RuntimeException(Libtorrent.Error());
         }
-        add(new Storage.Torrent(context, t, s));
+        add(new Storage.Torrent(context, t, s, true));
     }
 
     public boolean isConnectedWifi() {
@@ -893,5 +898,20 @@ public class Storage {
         t.stop();
 
         saveUpdate();
+    }
+
+    public int getUnreadCount() {
+        int count = 0;
+        for (int i = 0; i < torrents.size(); i++) {
+            if (torrents.get(i).message)
+                count++;
+        }
+        return count;
+    }
+
+    public void clearUnreadCount() {
+        for (int i = 0; i < torrents.size(); i++) {
+            torrents.get(i).message = false;
+        }
     }
 }

@@ -1,6 +1,8 @@
 package com.github.axet.torrentclient.activities;
 
 import android.Manifest;
+import android.annotation.TargetApi;
+import android.app.Activity;
 import android.app.KeyguardManager;
 import android.app.ProgressDialog;
 import android.content.BroadcastReceiver;
@@ -11,10 +13,19 @@ import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
+import android.content.res.ColorStateList;
 import android.content.res.Configuration;
+import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.ColorFilter;
+import android.graphics.PorterDuff;
+import android.graphics.Rect;
+import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.ColorDrawable;
+import android.graphics.drawable.Drawable;
+import android.graphics.drawable.LayerDrawable;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
@@ -27,6 +38,7 @@ import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.graphics.drawable.DrawerArrowDrawable;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -58,12 +70,12 @@ import com.github.axet.torrentclient.dialogs.CreateDialogFragment;
 import com.github.axet.torrentclient.dialogs.OpenIntentDialogFragment;
 import com.github.axet.torrentclient.navigators.Search;
 import com.github.axet.torrentclient.navigators.Torrents;
+import com.github.axet.torrentclient.widgets.UnreadCountDrawable;
 import com.google.android.gms.appindexing.Action;
 import com.google.android.gms.appindexing.AppIndex;
 import com.google.android.gms.common.api.GoogleApiClient;
 
 import java.io.File;
-import java.io.InterruptedIOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -73,7 +85,7 @@ import go.libtorrent.Libtorrent;
 
 public class MainActivity extends AppCompatActivity implements AbsListView.OnScrollListener,
         DialogInterface.OnDismissListener, SharedPreferences.OnSharedPreferenceChangeListener,
-        NavigationView.OnNavigationItemSelectedListener {
+        NavigationView.OnNavigationItemSelectedListener, UnreadCountDrawable.UnreadCount {
     public final static String TAG = MainActivity.class.getSimpleName();
 
     static final long INFO_MANUAL_REFRESH = 5 * 1000;
@@ -102,6 +114,7 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
     DrawerLayout drawerLayout;
     View navigationHeader;
     DrawerLayout drawer;
+    UnreadCountDrawable unread;
 
     Thread infoThread;
     List<String> infoOld;
@@ -137,6 +150,42 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
     public interface TorrentFragmentInterface {
         void update();
     }
+
+    public interface NavigatorInterface {
+        void install(ListView list);
+
+        void remove(ListView list);
+    }
+
+    static interface DrawerToggle {
+
+        public void setPosition(float position);
+
+        public float getPosition();
+    }
+
+    static class DrawerArrowDrawableToggle extends DrawerArrowDrawable implements DrawerToggle {
+        private final Activity mActivity;
+
+        public DrawerArrowDrawableToggle(Activity activity, Context themedContext) {
+            super(themedContext);
+            mActivity = activity;
+        }
+
+        public void setPosition(float position) {
+            if (position == 1f) {
+                setVerticalMirror(true);
+            } else if (position == 0f) {
+                setVerticalMirror(false);
+            }
+            setProgress(position);
+        }
+
+        public float getPosition() {
+            return getProgress();
+        }
+    }
+
 
     public void checkTorrent(long t) {
         if (Libtorrent.TorrentStatus(t) == Libtorrent.StatusChecking) {
@@ -194,13 +243,22 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
         // See https://g.co/AppIndexing/AndroidStudio for more information.
         client = new GoogleApiClient.Builder(this).addApi(AppIndex.API).build();
 
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        final Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         toolbar.setBackground(new ColorDrawable(MainApplication.getActionbarColor(this)));
         setSupportActionBar(toolbar);
 
         drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
-                this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
+                this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close) {
+            @Override
+            public void syncState() {
+                super.syncState();
+                Drawable navigationIcon = toolbar.getNavigationIcon();
+                unread = new UnreadCountDrawable(MainActivity.this, navigationIcon, MainActivity.this);
+                toolbar.setNavigationIcon(unread);
+                unread.setPadding(ThemeUtils.dp2px(MainActivity.this, 15));
+            }
+        };
         drawer.setDrawerListener(toggle);
         toggle.syncState();
 
@@ -208,7 +266,6 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
         navigationView.setNavigationItemSelectedListener(this);
 
         manager = new EnginesManager(this);
-        updateManager();
 
         drawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
         drawerLayout.addDrawerListener(new DrawerLayout.DrawerListener() {
@@ -431,6 +488,7 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
 
         delayedIntent = getIntent();
 
+        // UI thread
         delayedInit = new Runnable() {
             @Override
             public void run() {
@@ -462,6 +520,11 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
                     create.setVisibility(View.GONE);
                     add.setVisibility(View.GONE);
                 }
+
+                // update unread icon after torrents created
+                unread.update();
+
+                updateManager();
 
                 if (delayedIntent != null) {
                     openIntent(delayedIntent);
@@ -1009,6 +1072,7 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
                 }
 
                 addTorrentDialog(t, p);
+                return;
             } else {
                 for (String s : m) {
                     if (!manager.addManget(s)) {
@@ -1021,15 +1085,7 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
             Error(e);
         }
         torrents.notifyDataSetChanged();
-    }
-
-    public void addTorrentFromURL(String p) {
-        try {
-            getStorage().addTorrentFromURL(p);
-        } catch (RuntimeException e) {
-            Error(e);
-        }
-        torrents.notifyDataSetChanged();
+        updateUnread();
     }
 
     public void addTorrentFromBytes(byte[] buf) {
@@ -1054,6 +1110,7 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
             Error(e);
         }
         torrents.notifyDataSetChanged();
+        updateUnread();
     }
 
     void addTorrentDialog(long t, String path) {
@@ -1094,8 +1151,9 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
         if (shared.getBoolean(MainApplication.PREFERENCE_DIALOG, false)) {
             createTorrentDialog(t, pp);
         } else {
-            getStorage().add(new Storage.Torrent(this, t, pp));
+            getStorage().add(new Storage.Torrent(this, t, pp, true));
             torrents.notifyDataSetChanged();
+            updateUnread();
         }
     }
 
@@ -1110,15 +1168,17 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
         if (a != null && a instanceof HeaderViewListAdapter) {
             a = ((HeaderViewListAdapter) a).getWrappedAdapter();
         }
-        if (a != null && a instanceof Search) {
-            ((Search) a).remove(list);
+        if (a != null && a instanceof NavigatorInterface) {
+            ((NavigatorInterface) a).remove(list);
         }
 
         if (id == R.id.nav_torrents) {
             empty.setVisibility(View.GONE);
             list.setEmptyView(empty);
 
-            list.setAdapter(torrents);
+            torrents.install(list);
+
+            getStorage().clearUnreadCount();
         }
         if (id > 0 && id < 0x00ffffff) {
             empty.setVisibility(View.GONE);
@@ -1202,6 +1262,13 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
             }
         }
 
+        if (torrents != null) {
+            MenuItem torrents = menu.findItem(R.id.nav_torrents);
+            UnreadCountDrawable unread = new UnreadCountDrawable(this, R.drawable.ic_storage_black_24dp, this.torrents);
+            unread.setTintList(navigationView.getItemIconTintList());
+            torrents.setIcon(unread);
+        }
+
         LayoutInflater inflater = LayoutInflater.from(this);
 
         for (int i = 0; i < manager.getCount(); i++) {
@@ -1210,7 +1277,9 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
             // save to set < 0x00ffffff. check View.generateViewId()
             int id = i + 1;
             MenuItem item = menu.add(R.id.group_torrents, id, Menu.NONE, engine.getName());
-            item.setIcon(R.drawable.share);
+            UnreadCountDrawable unread = new UnreadCountDrawable(this, R.drawable.share, search);
+            unread.setTintList(navigationView.getItemIconTintList());
+            item.setIcon(unread);
             final View view = inflater.inflate(R.layout.search_engine, null);
             final View release = view.findViewById(R.id.search_engine_new);
             View progress = view.findViewById(R.id.search_engine_progress);
@@ -1389,5 +1458,34 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
             }
         }, "Engines Update");
         update.start();
+    }
+
+    public boolean active(Search s) {
+        Adapter a = list.getAdapter();
+        if (a != null && a instanceof HeaderViewListAdapter) {
+            a = ((HeaderViewListAdapter) a).getWrappedAdapter();
+        }
+        if (a != null && a instanceof Search) {
+            return s == a;
+        }
+        return false;
+    }
+
+    @Override
+    public int getUnreadCount() {
+        int count = 0;
+        if (torrents != null)
+            count += torrents.getUnreadCount();
+        if (manager != null) {
+            for (int i = 0; i < manager.getCount(); i++) {
+                count += manager.get(i).getUnreadCount();
+            }
+        }
+        return count;
+    }
+
+    public void updateUnread() {
+        unread.update();
+        updateManager();
     }
 }
