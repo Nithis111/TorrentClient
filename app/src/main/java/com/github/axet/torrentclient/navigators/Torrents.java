@@ -11,6 +11,7 @@ import android.graphics.drawable.Drawable;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.widget.PopupMenu;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -44,6 +45,8 @@ import go.libtorrent.Libtorrent;
 public class Torrents extends BaseAdapter implements DialogInterface.OnDismissListener,
         MainActivity.TorrentFragmentInterface, UnreadCountDrawable.UnreadCount,
         MainActivity.NavigatorInterface {
+    public static final String TAG = Torrents.class.getSimpleName();
+
     static final int TYPE_COLLAPSED = 0;
     static final int TYPE_EXPANDED = 1;
     static final int TYPE_DELETED = 2;
@@ -210,6 +213,7 @@ public class Torrents extends BaseAdapter implements DialogInterface.OnDismissLi
                                     getStorage().remove(t);
                                     Tag.setTag(view, TYPE_DELETED, -1);
                                     select(-1);
+                                    main.updateUnread();
                                 }
                             });
                         }
@@ -226,6 +230,7 @@ public class Torrents extends BaseAdapter implements DialogInterface.OnDismissLi
                                 getStorage().remove(t);
                                 Tag.setTag(view, TYPE_DELETED, -1);
                                 select(-1);
+                                main.updateUnread();
                             }
                         });
                     }
@@ -410,6 +415,10 @@ public class Torrents extends BaseAdapter implements DialogInterface.OnDismissLi
             @Override
             public void onClick(View view) {
                 if (dialog == null) { // prevent double dialogs
+                    if (t.t != -1) {
+                        Log.d(TAG, "show deleted torrent");
+                        return;
+                    }
                     showDetails(t.t);
                 }
             }
