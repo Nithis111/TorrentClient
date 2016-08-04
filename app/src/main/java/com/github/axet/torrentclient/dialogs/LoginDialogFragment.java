@@ -2,6 +2,7 @@ package com.github.axet.torrentclient.dialogs;
 
 import android.app.Dialog;
 import android.content.DialogInterface;
+import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.view.ViewPager;
@@ -9,6 +10,7 @@ import android.support.v7.app.AlertDialog;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.webkit.CookieManager;
 import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.TextView;
@@ -92,29 +94,40 @@ public class LoginDialogFragment extends BrowserDialogFragment {
                 .setView(createViewLogin(LayoutInflater.from(getContext()), null, savedInstanceState))
                 .create();
 
-        d.setOnShowListener(new DialogInterface.OnShowListener() {
-            @Override
-            public void onShow(DialogInterface dialog) {
-                Button b = d.getButton(AlertDialog.BUTTON_NEUTRAL);
-                b.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View view) {
-                        browserMode(savedInstanceState);
-                    }
-                });
-
-                if (getArguments().getBoolean("browser")) {
-                    browserMode(savedInstanceState);
+        if (getArguments().getBoolean("browser")) {
+            browserMode(savedInstanceState);
+            d.setOnShowListener(new DialogInterface.OnShowListener() {
+                @Override
+                public void onShow(DialogInterface dialog) {
+                    browserButtons();
                 }
-            }
-        });
+            });
+        } else {
+            d.setOnShowListener(new DialogInterface.OnShowListener() {
+                @Override
+                public void onShow(DialogInterface dialog) {
+                    Button b = d.getButton(AlertDialog.BUTTON_NEUTRAL);
+                    b.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View view) {
+                            browserMode(savedInstanceState);
+                            browserButtons();
+                        }
+                    });
+                }
+            });
+        }
 
         return d;
     }
 
     public void browserMode(final Bundle savedInstanceState) {
         result.browser = true;
+        v.removeAllViews();
+        createView(LayoutInflater.from(getContext()), v, savedInstanceState);
+    }
 
+    void browserButtons() {
         AlertDialog d = (AlertDialog) getDialog();
 
         Button b = d.getButton(AlertDialog.BUTTON_NEUTRAL);
@@ -123,7 +136,11 @@ public class LoginDialogFragment extends BrowserDialogFragment {
             public void onClick(View v) {
                 result.clear = true;
 
-                clearCookies();
+                if (Build.VERSION.SDK_INT >= 21)
+                    CookieManager.getInstance().removeAllCookies(null);
+                else
+                    CookieManager.getInstance().removeAllCookie();
+
                 Toast.makeText(getContext(), R.string.cookies_cleared, Toast.LENGTH_SHORT).show();
             }
         });
@@ -134,9 +151,6 @@ public class LoginDialogFragment extends BrowserDialogFragment {
 
         Button b2 = d.getButton(AlertDialog.BUTTON_POSITIVE);
         b2.setText(R.string.close);
-
-        v.removeAllViews();
-        View vv = createView(LayoutInflater.from(getContext()), v, savedInstanceState);
     }
 
     @Nullable

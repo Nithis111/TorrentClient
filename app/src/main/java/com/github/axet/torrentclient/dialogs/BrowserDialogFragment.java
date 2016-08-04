@@ -372,6 +372,7 @@ public class BrowserDialogFragment extends DialogFragment implements MainActivit
         }
     }
 
+    // not working. use removeAllCookies() then add ones you need.
     public void clearCookies() {
         String url = getArguments().getString("url");
 

@@ -402,7 +402,11 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
                         store.clear();
                 }
                 String url = engine.getMap("login").get("details");
-                setCookies2Apache(url);
+                if (!setCookies2Apache(url)) {
+                    // can return false only if cookes are empty
+                    if (!l.clear) // did user clear? no error
+                        main.Error("Cookies are empty");
+                }
             } else if (l.ok) {
                 request(new Runnable() {
                     @Override
@@ -516,12 +520,11 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         return convertView;
     }
 
-    void setCookies2Apache(String url) {
+    boolean setCookies2Apache(String url) {
         // longer url better, domain only can return null
         String cookies = CookieManager.getInstance().getCookie(url);
         if (cookies == null || cookies.isEmpty()) {
-            main.Error("Cookies are empty");
-            return;
+            return false;
         }
 
         String[] cc = cookies.split(";");
@@ -552,6 +555,8 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
             // cookie.setPath(uri.getPath());
             cookieStore.addCookie(cookie);
         }
+
+        return true;
     }
 
     void setCookies2WebView() {
