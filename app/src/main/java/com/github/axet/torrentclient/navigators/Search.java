@@ -270,12 +270,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
                             search(searchText.getText().toString(), new Runnable() {
                                 @Override
                                 public void run() {
-                                    handler.post(new Runnable() {
-                                        @Override
-                                        public void run() {
-                                            requestCancel();
-                                        }
-                                    });
+                                    requestCancel();
                                 }
                             });
                         } catch (IOException e) {
@@ -348,10 +343,20 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
             threadLooper = null;
             i = true;
         }
-        if (request != null) {
-            request.abort();
-            request = null;
-            i = true;
+        Thread thread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                if (request != null) {
+                    request.abort();
+                    request = null;
+                }
+            }
+        });
+        thread.start();
+        try {
+            thread.join();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
         }
         if (i)
             Log.d(TAG, "interrupt");
@@ -937,18 +942,18 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         return html;
     }
 
-    public void error(Throwable e) {
-        if (main.active(this)) {
-            main.post(e);
-        } else {
-            message = e.getMessage();
-            handler.post(new Runnable() {
-                @Override
-                public void run() {
+    public void error(final Throwable e) {
+        handler.post(new Runnable() {
+            @Override
+            public void run() {
+                if (main.active(Search.this)) {
+                    main.post(e);
+                } else {
+                    message = e.getMessage();
                     main.updateUnread();
                 }
-            });
-        }
+            }
+        });
     }
 
     public void error(String msg) {
