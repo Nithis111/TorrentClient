@@ -517,6 +517,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
     }
 
     void setCookies2Apache(String url) {
+        // longer url better, domain only can return null
         String cookies = CookieManager.getInstance().getCookie(url);
         if (cookies == null || cookies.isEmpty()) {
             main.Error("Cookies are empty");
@@ -542,7 +543,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
             if (vv.length > 1)
                 v = vv[1].trim();
             BasicClientCookie cookie = new BasicClientCookie(n, v);
-            // TODO it may cause troubles. Cookie maybe set for domain, www.domain or www.domain/path
+            // TODO it may cause troubles. Cookie maybe set for domain, .domain, www.domain or www.domain/path
             // and since we have to cut all www/path same name cookies with different paths will override.
             // need to check if returned cookie sting can contains DOMAIN/PATH values. Until then use domain only.
             String domain = uri.getAuthority();
@@ -563,7 +564,12 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
             List<Cookie> list = cookieStore.getCookies();
             for (int i = 0; i < list.size(); i++) {
                 Cookie c = list.get(i);
-                Uri.Builder b = new Uri.Builder().scheme("http").authority(c.getDomain());
+                Uri.Builder b = new Uri.Builder();
+                if (c.isSecure())
+                    b.scheme("https");
+                else
+                    b.scheme("http");
+                b.authority(c.getDomain());
                 if (c.getPath() != null) {
                     b.appendPath(c.getPath());
                 }

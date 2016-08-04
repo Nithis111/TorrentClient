@@ -2,7 +2,6 @@ package com.github.axet.torrentclient.dialogs;
 
 import android.app.Dialog;
 import android.content.DialogInterface;
-import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.view.ViewPager;
@@ -10,17 +9,13 @@ import android.support.v7.app.AlertDialog;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.webkit.CookieManager;
-import android.webkit.CookieSyncManager;
 import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.github.axet.torrentclient.R;
 import com.github.axet.torrentclient.activities.MainActivity;
-
-import cz.msebera.android.httpclient.client.CookieStore;
-import cz.msebera.android.httpclient.impl.client.BasicCookieStore;
 
 public class LoginDialogFragment extends BrowserDialogFragment {
     ViewPager pager;
@@ -128,23 +123,8 @@ public class LoginDialogFragment extends BrowserDialogFragment {
             public void onClick(View v) {
                 result.clear = true;
 
-                String url = getArguments().getString("url");
-
-                String domain = Uri.parse(url).getAuthority();
-
-                CookieManager inst = CookieManager.getInstance();
-
-                String cookies = inst.getCookie(domain);
-
-                if (cookies != null) {
-                    CookieSyncManager.createInstance(getContext());
-                    String[] cc = cookies.split(";");
-                    for (String c : cc) {
-                        String[] vv = c.split("=");
-                        inst.setCookie(domain, vv[0].trim() + "=; " + "expires=Thu, 01 Jan 1970 03:00:00 GMT");
-                    }
-                    CookieSyncManager.getInstance().sync();
-                }
+                clearCookies();
+                Toast.makeText(getContext(), R.string.cookies_cleared, Toast.LENGTH_SHORT).show();
             }
         });
         b.setText(R.string.clear_cookies);

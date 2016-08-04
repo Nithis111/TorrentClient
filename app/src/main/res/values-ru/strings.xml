@@ -137,4 +137,5 @@
     <string name="browser">Браузер</string>
     <string name="password">Пароль:</string>
     <string name="login">Логин:</string>
+    <string name="cookies_cleared">Cookies удалены</string>
 </resources>
