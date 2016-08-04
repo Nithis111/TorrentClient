@@ -271,8 +271,24 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
                 String url = login.get("details");
                 setCookies2WebView();
 
-                LoginDialogFragment d = LoginDialogFragment.create(lastLogin, url);
-                d.show(main.getSupportFragmentManager(), "");
+                String l = null;
+                String p = null;
+
+                if (login.get("post") != null) {
+                    l = login.get("post_login");
+                    p = login.get("post_password");
+                }
+
+                String js = login.get("js");
+                String js_post = login.get("js_post");
+
+                if (l == null && p == null) {
+                    LoginDialogFragment d = LoginDialogFragment.create(url);
+                    d.show(main.getSupportFragmentManager(), "");
+                } else {
+                    LoginDialogFragment d = LoginDialogFragment.create(url, lastLogin);
+                    d.show(main.getSupportFragmentManager(), "");
+                }
             }
         });
 
@@ -386,7 +402,11 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
                         store.clear();
                 }
                 String url = engine.getMap("login").get("details");
-                setCookies2Apache(url);
+                if (!setCookies2Apache(url)) {
+                    // can return false only if cookes are empty
+                    if (!l.clear) // did user clear? no error
+                        main.Error("Cookies are empty");
+                }
             } else if (l.ok) {
                 request(new Runnable() {
                     @Override
@@ -500,11 +520,11 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         return convertView;
     }
 
-    void setCookies2Apache(String url) {
+    boolean setCookies2Apache(String url) {
+        // longer url better, domain only can return null
         String cookies = CookieManager.getInstance().getCookie(url);
         if (cookies == null || cookies.isEmpty()) {
-            main.Error("Cookies are empty");
-            return;
+            return false;
         }
 
         String[] cc = cookies.split(";");
@@ -526,7 +546,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
             if (vv.length > 1)
                 v = vv[1].trim();
             BasicClientCookie cookie = new BasicClientCookie(n, v);
-            // TODO it may cause troubles. Cookie maybe set for domain, www.domain or www.domain/path
+            // TODO it may cause troubles. Cookie maybe set for domain, .domain, www.domain or www.domain/path
             // and since we have to cut all www/path same name cookies with different paths will override.
             // need to check if returned cookie sting can contains DOMAIN/PATH values. Until then use domain only.
             String domain = uri.getAuthority();
@@ -535,6 +555,8 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
             // cookie.setPath(uri.getPath());
             cookieStore.addCookie(cookie);
         }
+
+        return true;
     }
 
     void setCookies2WebView() {
@@ -547,7 +569,12 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
             List<Cookie> list = cookieStore.getCookies();
             for (int i = 0; i < list.size(); i++) {
                 Cookie c = list.get(i);
-                Uri.Builder b = new Uri.Builder().scheme("http").authority(c.getDomain());
+                Uri.Builder b = new Uri.Builder();
+                if (c.isSecure())
+                    b.scheme("https");
+                else
+                    b.scheme("http");
+                b.authority(c.getDomain());
                 if (c.getPath() != null) {
                     b.appendPath(c.getPath());
                 }
@@ -683,8 +710,10 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
             String p = s.get("post_password");
             String pp = s.get("post_params");
             HashMap<String, String> map = new HashMap<>();
-            map.put(l, login);
-            map.put(p, pass);
+            if (l != null)
+                map.put(l, login);
+            if (p != null)
+                map.put(p, pass);
             String[] params = pp.split(";");
             for (String param : params) {
                 String[] m = param.split("=");

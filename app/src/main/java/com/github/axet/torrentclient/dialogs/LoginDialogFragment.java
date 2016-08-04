@@ -2,7 +2,7 @@ package com.github.axet.torrentclient.dialogs;
 
 import android.app.Dialog;
 import android.content.DialogInterface;
-import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.view.ViewPager;
@@ -11,16 +11,13 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.webkit.CookieManager;
-import android.webkit.CookieSyncManager;
 import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.github.axet.torrentclient.R;
 import com.github.axet.torrentclient.activities.MainActivity;
-
-import cz.msebera.android.httpclient.client.CookieStore;
-import cz.msebera.android.httpclient.impl.client.BasicCookieStore;
 
 public class LoginDialogFragment extends BrowserDialogFragment {
     ViewPager pager;
@@ -46,11 +43,20 @@ public class LoginDialogFragment extends BrowserDialogFragment {
         }
     }
 
-    public static LoginDialogFragment create(String login, String url) {
+    public static LoginDialogFragment create(String url, String lastlogin) {
         LoginDialogFragment f = new LoginDialogFragment();
         Bundle args = new Bundle();
         args.putString("url", url);
-        args.putString("login", login);
+        args.putString("login", lastlogin);
+        f.setArguments(args);
+        return f;
+    }
+
+    public static LoginDialogFragment create(String url) {
+        LoginDialogFragment f = new LoginDialogFragment();
+        Bundle args = new Bundle();
+        args.putString("url", url);
+        args.putBoolean("browser", true);
         f.setArguments(args);
         return f;
     }
@@ -88,25 +94,40 @@ public class LoginDialogFragment extends BrowserDialogFragment {
                 .setView(createViewLogin(LayoutInflater.from(getContext()), null, savedInstanceState))
                 .create();
 
-        d.setOnShowListener(new DialogInterface.OnShowListener() {
-            @Override
-            public void onShow(DialogInterface dialog) {
-                Button b = d.getButton(AlertDialog.BUTTON_NEUTRAL);
-                b.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View view) {
-                        browserMode(savedInstanceState);
-                    }
-                });
-            }
-        });
+        if (getArguments().getBoolean("browser")) {
+            browserMode(savedInstanceState);
+            d.setOnShowListener(new DialogInterface.OnShowListener() {
+                @Override
+                public void onShow(DialogInterface dialog) {
+                    browserButtons();
+                }
+            });
+        } else {
+            d.setOnShowListener(new DialogInterface.OnShowListener() {
+                @Override
+                public void onShow(DialogInterface dialog) {
+                    Button b = d.getButton(AlertDialog.BUTTON_NEUTRAL);
+                    b.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View view) {
+                            browserMode(savedInstanceState);
+                            browserButtons();
+                        }
+                    });
+                }
+            });
+        }
 
         return d;
     }
 
     public void browserMode(final Bundle savedInstanceState) {
         result.browser = true;
+        v.removeAllViews();
+        createView(LayoutInflater.from(getContext()), v, savedInstanceState);
+    }
 
+    void browserButtons() {
         AlertDialog d = (AlertDialog) getDialog();
 
         Button b = d.getButton(AlertDialog.BUTTON_NEUTRAL);
@@ -115,23 +136,12 @@ public class LoginDialogFragment extends BrowserDialogFragment {
             public void onClick(View v) {
                 result.clear = true;
 
-                String url = getArguments().getString("url");
+                if (Build.VERSION.SDK_INT >= 21)
+                    CookieManager.getInstance().removeAllCookies(null);
+                else
+                    CookieManager.getInstance().removeAllCookie();
 
-                String domain = Uri.parse(url).getAuthority();
-
-                CookieManager inst = CookieManager.getInstance();
-
-                String cookies = inst.getCookie(domain);
-
-                if (cookies != null) {
-                    CookieSyncManager.createInstance(getContext());
-                    String[] cc = cookies.split(";");
-                    for (String c : cc) {
-                        String[] vv = c.split("=");
-                        inst.setCookie(domain, vv[0].trim() + "=; Expires=Thu, 1 Jan 1970 03:00:00 GMT");
-                    }
-                    CookieSyncManager.getInstance().sync();
-                }
+                Toast.makeText(getContext(), R.string.cookies_cleared, Toast.LENGTH_SHORT).show();
             }
         });
         b.setText(R.string.clear_cookies);
@@ -141,9 +151,6 @@ public class LoginDialogFragment extends BrowserDialogFragment {
 
         Button b2 = d.getButton(AlertDialog.BUTTON_POSITIVE);
         b2.setText(R.string.close);
-
-        v.removeAllViews();
-        View vv = createView(LayoutInflater.from(getContext()), v, savedInstanceState);
     }
 
     @Nullable

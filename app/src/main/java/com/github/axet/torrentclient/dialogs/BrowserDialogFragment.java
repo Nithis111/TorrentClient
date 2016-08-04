@@ -6,6 +6,7 @@ import android.app.Dialog;
 import android.content.DialogInterface;
 import android.graphics.Bitmap;
 import android.graphics.Color;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -20,6 +21,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.webkit.ConsoleMessage;
 import android.webkit.CookieManager;
+import android.webkit.CookieSyncManager;
 import android.webkit.DownloadListener;
 import android.webkit.JavascriptInterface;
 import android.webkit.JsResult;
@@ -39,9 +41,15 @@ import com.github.axet.torrentclient.activities.MainActivity;
 
 import org.apache.commons.io.IOUtils;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.net.URLConnection;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.Locale;
+import java.util.TimeZone;
 
 public class BrowserDialogFragment extends DialogFragment implements MainActivity.TorrentFragmentInterface {
     public static String TAG = BrowserDialogFragment.class.getSimpleName();
@@ -361,6 +369,61 @@ public class BrowserDialogFragment extends DialogFragment implements MainActivit
         } else {
             forward.setColorFilter(Color.GRAY);
             forward.setEnabled(false);
+        }
+    }
+
+    // not working. use removeAllCookies() then add ones you need.
+    public void clearCookies() {
+        String url = getArguments().getString("url");
+
+        CookieManager inst = CookieManager.getInstance();
+        // longer url better, domain only can return null
+        String cookies = inst.getCookie(url);
+
+        Uri uri = Uri.parse(url);
+        String domain = uri.getAuthority();
+
+        if (cookies != null) {
+            // we need to set expires, otherwise WebView will keep deleted cookies forever ("name=")
+            String expires = "expires=Thu, 01 Jan 1970 03:00:00 GMT"; // # date -r 0 +%a,\ %d\ %b\ %Y\ %H:%M:%S\ GMT
+
+            SimpleDateFormat rfc1123 = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss z", Locale.US);
+            rfc1123.setTimeZone(TimeZone.getTimeZone("GMT"));
+            Calendar cal = Calendar.getInstance();
+            cal.add(Calendar.MINUTE, 1);
+            expires = "expires=" + rfc1123.format(cal.getTime());
+
+            if (Build.VERSION.SDK_INT < 21) {
+                CookieSyncManager.createInstance(getContext());
+                CookieSyncManager.getInstance().startSync();
+            }
+            String[] cc = cookies.split(";");
+            for (String c : cc) {
+                String[] vv = c.split("=");
+                for (File f = new File(uri.getPath()); f != null; f = f.getParentFile()) {
+                    String p;
+                    String path;
+                    if (f.equals(new File(File.separator))) {
+                        p = "";
+                        path = "";
+                    } else {
+                        p = f.getPath();
+                        path = "; path=" + p;
+                    }
+                    String cookie = vv[0].trim() + "=" + "; domain=" + uri.getAuthority() + path + "; " + expires;
+                    String u = new Uri.Builder().scheme("http").authority(domain).path(p).build().toString();
+                    inst.setCookie(u, cookie);
+                }
+            }
+            if (Build.VERSION.SDK_INT < 21) {
+                CookieSyncManager.getInstance().stopSync();
+                CookieSyncManager.getInstance().sync();
+                inst.removeSessionCookie();
+                inst.removeExpiredCookie();
+            } else {
+                inst.flush();
+                inst.removeSessionCookies(null);
+            }
         }
     }
 }
