@@ -516,6 +516,8 @@ public class Storage {
 
         Libtorrent.RemoveTorrent(t.t);
 
+        t.t = -1;
+
         save();
     }
 

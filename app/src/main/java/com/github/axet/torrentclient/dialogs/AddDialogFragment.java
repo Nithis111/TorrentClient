@@ -56,6 +56,21 @@ public class AddDialogFragment extends DialogFragment implements MainActivity.To
 
     String torrentName;
 
+    Result result = new Result();
+
+    public static class Result implements DialogInterface {
+        public long t;
+        public boolean ok;
+
+        @Override
+        public void cancel() {
+        }
+
+        @Override
+        public void dismiss() {
+        }
+    }
+
     static class TorFile {
         public long index;
         public Libtorrent.File file;
@@ -222,7 +237,7 @@ public class AddDialogFragment extends DialogFragment implements MainActivity.To
 
         final Activity activity = getActivity();
         if (activity instanceof DialogInterface.OnDismissListener) {
-            ((DialogInterface.OnDismissListener) activity).onDismiss(dialog);
+            ((DialogInterface.OnDismissListener) activity).onDismiss(result);
         }
     }
 
@@ -236,6 +251,8 @@ public class AddDialogFragment extends DialogFragment implements MainActivity.To
                                 String path = getArguments().getString("path");
                                 getArguments().putLong("torrent", -1);
                                 getApp().getStorage().add(new Storage.Torrent(getContext(), t, path, true));
+                                result.t = t;
+                                result.ok = true;
                                 dialog.dismiss();
                                 onDismiss(dialog);
                             }

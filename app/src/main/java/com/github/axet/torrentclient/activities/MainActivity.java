@@ -932,6 +932,13 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
 
     @Override
     public void onDismiss(DialogInterface dialogInterface) {
+        if (dialogInterface instanceof AddDialogFragment.Result) {
+            AddDialogFragment.Result r = (AddDialogFragment.Result) dialogInterface;
+            if (r.ok) {
+                updateUnread();
+            }
+        }
+
         dialog = null;
         ListAdapter a = list.getAdapter();
         if (a != null && a instanceof HeaderViewListAdapter) {
