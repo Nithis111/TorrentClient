@@ -414,7 +414,7 @@ public class Torrents extends BaseAdapter implements DialogInterface.OnDismissLi
             @Override
             public void onClick(View view) {
                 if (dialog == null) { // prevent double dialogs
-                    if (t.t != -1) {
+                    if (t.t == -1) {
                         Log.d(TAG, "show deleted torrent");
                         return;
                     }
