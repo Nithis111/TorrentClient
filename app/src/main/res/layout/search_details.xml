@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/search_details_base"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
@@ -69,16 +70,16 @@
             android:id="@+id/status_details_status"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:textSize="10dp"
-            android:text="status..." />
+            android:text="status..."
+            android:textSize="10dp" />
     </com.github.axet.androidlibrary.widgets.PathMax>
 
-    <WebView
-        android:id="@+id/webview"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_above="@id/status_details_status_group"
-        android:layout_below="@id/search_details_toolbar"
-        android:orientation="vertical"
-        android:padding="5dp"></WebView>
+    <!--<WebView-->
+    <!--android:id="@+id/webview"-->
+    <!--android:layout_width="match_parent"-->
+    <!--android:layout_height="match_parent"-->
+    <!--android:layout_above="@id/status_details_status_group"-->
+    <!--android:layout_below="@id/search_details_toolbar"-->
+    <!--android:orientation="vertical"-->
+    <!--android:padding="5dp"></WebView>-->
 </RelativeLayout>

@@ -117,6 +117,12 @@ public class TorrentDialogFragment extends DialogFragment implements MainActivit
         }
     }
 
+    @Override
+    public void dismiss() {
+        super.dismiss();
+        pager = null;
+    }
+
     public void update() {
         // dialog maybe created but onCreateView not yet called
         if (pager == null)
