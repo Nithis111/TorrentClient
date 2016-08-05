@@ -43,6 +43,8 @@
     "details": "a.tLink:regex(.*href=[\"'](.*)[\"'].*)",
     // optional. js to execute after page shown
     "details_js": "aa=document.querySelectorAll('a.dl-stub');for(i=0;i<aa.length;i++){a=aa[i];h=a.getAttribute('href');a.setAttribute('href','#');id=h.split('t=')[1];function c(){location.href=h};a.onclick=c}",
+    // next page url
+    "next" :""
     // optional. torrent magnet url
     "magnet": "a[href^=magnet]:regex(.*href=[\"']([^'^\"]*).*)",
     // optional. torrent file url

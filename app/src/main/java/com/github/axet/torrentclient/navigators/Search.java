@@ -109,6 +109,8 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
     ArrayList<String> message = new ArrayList<>();
 
     View header;
+    View footer;
+    View footer_next;
     View login_header;
     ViewGroup message_panel;
     View message_close;
@@ -116,6 +118,8 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
     View stop;
     View search;
     TextView searchText;
+    String next;
+    ArrayList<String> nextLast = new ArrayList<>();
 
     public static class SearchItem {
         public String title;
@@ -209,12 +213,41 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
     }
 
     public void install(final ListView list) {
-        list.setAdapter(null);
+        list.setAdapter(null); // old phones crash to addHeader
 
         LayoutInflater inflater = LayoutInflater.from(context);
 
         login_header = inflater.inflate(R.layout.search_login, null, false);
         header = inflater.inflate(R.layout.search_header, null, false);
+        footer = inflater.inflate(R.layout.search_footer, null, false);
+
+        footer_next = footer.findViewById(R.id.search_footer_next);
+        footer_next.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                request(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            Map<String, String> s = engine.getMap("search");
+
+                            String url = next;
+                            String html = get(url);
+
+                            search(s, url, html, new Runnable() {
+                                @Override
+                                public void run() {
+                                    requestCancel();
+                                }
+                            });
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+                    }
+                });
+            }
+        });
+        footer_next.setVisibility(View.GONE);
 
         message_panel = (ViewGroup) header.findViewById(R.id.search_header_message_panel);
 
@@ -274,6 +307,10 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         search.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                Search.this.list.clear();
+                Search.this.nextLast.clear();
+                footer_next.setVisibility(View.GONE);
+
                 request(new Runnable() {
                     @Override
                     public void run() {
@@ -321,6 +358,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         });
 
         list.addHeaderView(header);
+        list.addFooterView(footer);
 
         list.setAdapter(this);
 
@@ -337,6 +375,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
     public void remove(ListView list) {
         lastSearch = searchText.getText().toString();
         list.removeHeaderView(header);
+        list.removeFooterView(footer);
     }
 
     void requestCancel() {
@@ -753,8 +792,13 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
                             @JavascriptInterface
                             public void result(String html) {
                                 super.result(html);
-                                if (done != null)
-                                    done.run();
+                                handler.post(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        if (done != null)
+                                            done.run();
+                                    }
+                                });
                             }
                         });
                     }
@@ -767,10 +811,8 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
             done.run();
     }
 
-    public void search(String search, final Runnable done) throws IOException {
-        this.list.clear();
-
-        final Map<String, String> s = engine.getMap("search");
+    public void search(String search, Runnable done) throws IOException {
+        Map<String, String> s = engine.getMap("search");
 
         String url = null;
         String html = null;
@@ -789,37 +831,56 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
             html = get(url);
         }
 
+        search(s, url, html, done);
+    }
+
+    public void search(final Map<String, String> s, final String url, final String html, final Runnable done) {
+        this.nextLast.add(url);
+
         final String js = s.get("js");
         if (js != null) {
-            final String u = url;
-            final String h = html;
             handler.post(new Runnable() {
                 @Override
                 public void run() {
-                    inject(u, h, js, new Inject() {
+                    inject(url, html, js, new Inject() {
                         @JavascriptInterface
-                        public void result(String html) {
+                        public void result(final String html) {
                             super.result(html);
-                            try {
-                                searchList(s, html);
-                            } catch (final RuntimeException e) {
-                                error(e);
-                            } finally {
-                                if (done != null)
-                                    done.run();
-                            }
+                            handler.post(new Runnable() {
+                                @Override
+                                public void run() {
+                                    try {
+                                        searchList(s, url, html);
+                                    } catch (final RuntimeException e) {
+                                        error(e);
+                                    } finally {
+                                        if (done != null)
+                                            done.run();
+                                    }
+                                }
+                            });
                         }
                     });
                 }
             });
             return;
         }
-        searchList(s, html);
-        if (done != null)
-            done.run();
+        handler.post(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    searchList(s, url, html);
+                } catch (final RuntimeException e) {
+                    error(e);
+                } finally {
+                    if (done != null)
+                        done.run();
+                }
+            }
+        });
     }
 
-    void searchList(Map<String, String> s, String html) {
+    void searchList(Map<String, String> s, String url, String html) {
         Document doc = Jsoup.parse(html);
         Elements list = doc.select(s.get("list"));
         for (int i = 0; i < list.size(); i++) {
@@ -827,46 +888,99 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
             item.html = list.get(i).outerHtml();
             item.title = matcher(item.html, s.get("title"));
             item.magnet = matcher(item.html, s.get("magnet"));
-            item.torrent = matcher(item.html, s.get("torrent"));
+            item.torrent = matcher(url, item.html, s.get("torrent"));
             item.size = matcher(item.html, s.get("size"));
             item.seed = matcher(item.html, s.get("seed"));
             item.leech = matcher(item.html, s.get("leech"));
-            item.details = matcher(item.html, s.get("details"));
+            item.details = matcher(url, item.html, s.get("details"));
             this.list.add(item);
         }
 
-        if (list.size() > 0) {
-            handler.post(new Runnable() {
-                @Override
-                public void run() {
-                    // hide keyboard on search sucecful completed
-                    InputMethodManager imm = (InputMethodManager) context.getSystemService(Context.INPUT_METHOD_SERVICE);
-                    imm.hideSoftInputFromWindow(searchText.getWindowToken(), 0);
+        String next = matcher(url, html, s.get("next"));
+        if (next != null) {
+            for (String last : nextLast) {
+                if (next.equals(last)) {
+                    next = null;
+                    break;
                 }
-            });
+            }
         }
+        this.next = next;
+
+        if (list.size() > 0) {
+            // hide keyboard on search sucecful completed
+            InputMethodManager imm = (InputMethodManager) context.getSystemService(Context.INPUT_METHOD_SERVICE);
+            imm.hideSoftInputFromWindow(searchText.getWindowToken(), 0);
+        }
+
+        if (this.next != null) {
+            footer_next.setVisibility(View.VISIBLE);
+        } else {
+            footer_next.setVisibility(View.GONE);
+        }
+
+        notifyDataSetChanged();
+    }
+
+    String matcher(String url, String html, String q) {
+        String m = matcher(html, q);
+
+        if (m != null) {
+            if (m.isEmpty()) {
+                return null;
+            } else {
+                try {
+                    URL u = new URL(url);
+                    u = new URL(u, m);
+                    m = u.toString();
+                } catch (MalformedURLException e) {
+                }
+            }
+        }
+
+        return m;
     }
 
     String matcher(String html, String q) {
         if (q == null)
             return null;
 
-        String base = "regex\\((.*)\\)";
+        String all = "(.*)";
+        String regex = "regex\\((.*)\\)";
+        String child = "nth-child\\((.*)\\)";
+        String last = "last";
 
+        Boolean l = false;
+        Integer e = null;
         String r = null;
-        Pattern p = Pattern.compile("(.*):" + base, Pattern.DOTALL);
+        Pattern p = Pattern.compile(all + ":" + last + ":" + regex, Pattern.DOTALL);
         Matcher m = p.matcher(q);
-        if (m.matches()) {
+        if (m.matches()) { // first we look for q:last:regex
             q = m.group(1);
+            l = true;
             r = m.group(2);
-        }
-
-        // check for regex only
-        p = Pattern.compile(base, Pattern.DOTALL);
-        m = p.matcher(q);
-        if (m.matches()) {
-            q = null;
-            r = m.group(1);
+        } else { // then we look for q:nth-child:regex
+            p = Pattern.compile(all + ":" + child + ":" + regex, Pattern.DOTALL);
+            m = p.matcher(q);
+            if (m.matches()) {
+                q = m.group(1);
+                e = Integer.parseInt(m.group(2));
+                r = m.group(3);
+            } else { // then we look for q:regex
+                p = Pattern.compile(all + ":" + regex, Pattern.DOTALL);
+                m = p.matcher(q);
+                if (m.matches()) {
+                    q = m.group(1);
+                    r = m.group(2);
+                } else { // then for regex only
+                    p = Pattern.compile(regex, Pattern.DOTALL);
+                    m = p.matcher(q);
+                    if (m.matches()) {
+                        q = null;
+                        r = m.group(1);
+                    }
+                }
+            }
         }
 
         String a = "";
@@ -877,7 +991,12 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
             Document doc1 = Jsoup.parse(html, "", Parser.xmlParser());
             Elements list1 = doc1.select(q);
             if (list1.size() > 0) {
-                a = list1.get(0).outerHtml();
+                if (l)
+                    a = list1.get(list1.size() - 1).outerHtml();
+                else if (e != null)
+                    a = list1.get(e - 1).outerHtml();
+                else
+                    a = list1.get(0).outerHtml();
             }
         }
 

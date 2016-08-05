@@ -1,18 +1,18 @@
 {
-  "version": 2,
+  "version": 3,
   "name": "thepiratebay.org",
   "home": {
     "get": "https://thepiratebay.org/"
   },
   "search": {
-    "get": "https://thepiratebay.org/search/%s/0/99/0",
+    "get": "https://thepiratebay.org/search/%s/0/7//",
     "list": "tbody tr",
-    "js": "ee=document.querySelectorAll('tbody tr a.detLink');for(i=0;i<ee.length;i++){e=ee[i];h=e.getAttribute('href');h='https://thepiratebay.org/'+h;e.setAttribute('href',h);}",
     "title": "a.detLink:regex(<a[^>]*>(.*)</a>)",
     "details": "a.detLink:regex(.*href=[\"'](.*)[\"'].*)",
     "magnet": "a[href^=magnet]:regex(.*href=[\"']([^'^\"]*).*)",
     "size": "font.detDesc:regex(.*Size ([^,]*).*)",
-    "seed": "regex(.*<td.*</td>.*<td.*</td>.*<td[^>]*>(.*)</td>.*<td.*</td>.*)",
-    "leech": "regex(.*<td.*</td>.*<td.*</td>.*<td.*</td>.*<td[^>]*>(.*)</td>.*)"
+    "seed": "td:nth-child(3):regex((.*))",
+    "leech": "td:nth-child(4):regex((.*))",
+    "next": "#content a[href^='/search']:last:regex(.*href=[\"']([^'^\"]*).*next.*)"
   }
 }
