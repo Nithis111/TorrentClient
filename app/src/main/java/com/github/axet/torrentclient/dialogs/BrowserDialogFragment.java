@@ -15,6 +15,7 @@ import android.support.annotation.Nullable;
 import android.support.v4.app.DialogFragment;
 import android.support.v4.view.ViewPager;
 import android.support.v7.app.AlertDialog;
+import android.util.AttributeSet;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -34,6 +35,7 @@ import android.webkit.WebViewClient;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import com.github.axet.torrentclient.R;
@@ -137,7 +139,21 @@ public class BrowserDialogFragment extends DialogFragment implements MainActivit
     public View createView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         v = inflater.inflate(R.layout.search_details, container);
 
-        web = (WebView) v.findViewById(R.id.webview);
+        RelativeLayout r = (RelativeLayout) v.findViewById(R.id.search_details_base);
+
+        web = new WebView(getContext()) {
+            @Override
+            public void postUrl(String url, byte[] postData) {
+                super.postUrl(url, postData);
+                Log.d(TAG, "post() " + url);
+            }
+        };
+
+        RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.MATCH_PARENT);
+        params.addRule(RelativeLayout.BELOW, R.id.search_details_toolbar);
+        params.addRule(RelativeLayout.ABOVE, R.id.status_details_status_group);
+        web.setLayoutParams(params);
+        r.addView(web);
 
         final ProgressBar progress = (ProgressBar) v.findViewById(R.id.search_details_process);
         final ImageView stop = (ImageView) v.findViewById(R.id.search_details_stop);
@@ -269,7 +285,6 @@ public class BrowserDialogFragment extends DialogFragment implements MainActivit
             @Override
             public void onLoadResource(WebView view, String url) {
                 super.onLoadResource(view, url);
-
                 status.setText(url);
             }
 

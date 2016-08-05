@@ -1271,8 +1271,6 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
         if (torrents != null) {
             MenuItem torrents = menu.findItem(R.id.nav_torrents);
             UnreadCountDrawable unread = new UnreadCountDrawable(this, R.drawable.ic_storage_black_24dp, this.torrents);
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
-                unread.setTintList(navigationView.getItemIconTintList());
             torrents.setIcon(unread);
         }
 
@@ -1285,8 +1283,6 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
             int id = i + 1;
             MenuItem item = menu.add(R.id.group_torrents, id, Menu.NONE, engine.getName());
             UnreadCountDrawable unread = new UnreadCountDrawable(this, R.drawable.share, search);
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
-                unread.setTintList(navigationView.getItemIconTintList());
             item.setIcon(unread);
             final View view = inflater.inflate(R.layout.search_engine, null);
             final View release = view.findViewById(R.id.search_engine_new);
