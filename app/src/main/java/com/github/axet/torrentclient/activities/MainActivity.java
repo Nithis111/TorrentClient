@@ -505,7 +505,8 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
                 shared.registerOnSharedPreferenceChangeListener(MainActivity.this);
 
                 torrents = new Torrents(MainActivity.this, list);
-                list.setAdapter(torrents);
+                torrents.install(list);
+
                 navigationView.setCheckedItem(R.id.nav_torrents);
 
                 if (permitted()) {
@@ -1184,8 +1185,6 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
             list.setEmptyView(empty);
 
             torrents.install(list);
-
-            getStorage().clearUnreadCount();
         }
         if (id > 0 && id < 0x00ffffff) {
             empty.setVisibility(View.GONE);
