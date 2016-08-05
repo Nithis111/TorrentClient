@@ -255,8 +255,8 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
                 super.syncState();
                 Drawable navigationIcon = toolbar.getNavigationIcon();
                 unread = new UnreadCountDrawable(MainActivity.this, navigationIcon, MainActivity.this);
-                toolbar.setNavigationIcon(unread);
                 unread.setPadding(ThemeUtils.dp2px(MainActivity.this, 15));
+                toolbar.setNavigationIcon(unread);
             }
         };
         drawer.setDrawerListener(toggle);
