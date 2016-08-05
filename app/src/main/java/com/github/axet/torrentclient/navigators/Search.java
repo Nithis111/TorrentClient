@@ -733,6 +733,8 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
             apacheStore.addCookie(c);
         }
 
+        // since we have duplicates, (same cookies with different path. one set by setCookies2WebView
+        // another set by WebView server call. drop them all.
         if (dups.size() != 0) {
             if (Build.VERSION.SDK_INT >= 21)
                 CookieManager.getInstance().removeAllCookies(null);
