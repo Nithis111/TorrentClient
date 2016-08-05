@@ -56,7 +56,7 @@ public class Torrents extends BaseAdapter implements DialogInterface.OnDismissLi
     Context context;
     MainActivity main;
     PopupShareActionProvider shareProvider;
-    MainActivity.TorrentFragmentInterface dialog;
+    TorrentDialogFragment dialog;
     ListView list;
     Map<Storage.Torrent, Boolean> unread = new HashMap<>();
 
@@ -206,6 +206,9 @@ public class Torrents extends BaseAdapter implements DialogInterface.OnDismissLi
                             RemoveItemAnimation.apply(list, base, new Runnable() {
                                 @Override
                                 public void run() {
+                                    if (Torrents.this.dialog != null) { // prevent showing deleted torrent
+                                        Torrents.this.dialog.dismiss();
+                                    }
                                     t.stop();
                                     File f = new File(t.path, t.name());
                                     FileUtils.deleteQuietly(f);
@@ -225,6 +228,9 @@ public class Torrents extends BaseAdapter implements DialogInterface.OnDismissLi
                         RemoveItemAnimation.apply(list, base, new Runnable() {
                             @Override
                             public void run() {
+                                if (Torrents.this.dialog != null) { // prevent showing deleted torrent
+                                    Torrents.this.dialog.dismiss();
+                                }
                                 t.stop();
                                 getStorage().remove(t);
                                 Tag.setTag(view, TYPE_DELETED, -1);
