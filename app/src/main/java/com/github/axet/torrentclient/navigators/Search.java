@@ -53,14 +53,18 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.lang.reflect.Array;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -654,11 +658,18 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
 
         String[] cc = cookies.split(";");
 
-        CookieStore cookieStore = httpClientContext.getCookieStore();
-        if (cookieStore == null) {
-            cookieStore = new BasicCookieStore();
-            httpClientContext.setCookieStore(cookieStore);
+        CookieStore apacheStore = httpClientContext.getCookieStore();
+        if (apacheStore == null) {
+            apacheStore = new BasicCookieStore();
+            httpClientContext.setCookieStore(apacheStore);
         }
+
+        // check if we have cookies with same name. if yes. then webview set cookie for a different URL.
+        // then we have to remove old cookie from apache store (check value apache==webview) and
+        // replace it with new cookie from webview. This is come from WebView restriction, when we do not know
+        // exact cookie domain/path. and only can call getCookie(url)
+
+        ArrayList<BasicClientCookie> webviewStore = new ArrayList<>();
 
         Uri uri = Uri.parse(url);
 
@@ -670,15 +681,63 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
             String v = null;
             if (vv.length > 1)
                 v = vv[1].trim();
+            if (n == null)
+                continue;
             BasicClientCookie cookie = new BasicClientCookie(n, v);
             // TODO it may cause troubles. Cookie maybe set for domain, .domain, www.domain or www.domain/path
             // and since we have to cut all www/path same name cookies with different paths will override.
             // need to check if returned cookie sting can contains DOMAIN/PATH values. Until then use domain only.
-            String domain = uri.getAuthority();
-            cookie.setDomain(domain);
-            // we do not know if cookie set for just domain, ignore path
-            // cookie.setPath(uri.getPath());
-            cookieStore.addCookie(cookie);
+            cookie.setDomain(uri.getAuthority());
+            webviewStore.add(cookie);
+        }
+
+        Set<String> dups = new TreeSet<>();
+
+        for (int i = 0; i < webviewStore.size(); i++) {
+            for (int k = 0; k < webviewStore.size(); k++) {
+                if (k == i)
+                    continue;
+                String n1 = webviewStore.get(i).getName();
+                if (n1.equals(webviewStore.get(k).getName()))
+                    dups.add(n1);
+            }
+        }
+
+        // find dups in Apache store. delete same cookie by values from WebView store
+        List<Cookie> list = apacheStore.getCookies();
+        for (String d : dups) {
+            for (int i = list.size() - 1; i >= 0; i--) {
+                Cookie c = list.get(i);
+                String n = c.getName();
+                if (n.equals(d)) {
+                    String v = c.getValue();
+                    // remove WebView cookies, which name&&value == apache store
+                    for (int k = webviewStore.size() - 1; k >= 0; k--) {
+                        Cookie cw = webviewStore.get(k);
+                        if (cw.getName().equals(n) && cw.getValue().equals(v)) {
+                            webviewStore.remove(k);
+                        }
+                    }
+                    // remove from apache store
+                    BasicClientCookie rm = new BasicClientCookie(n, v);
+                    rm.setPath(c.getPath());
+                    rm.setDomain(c.getDomain());
+                    rm.setExpiryDate(new Date(0));
+                    apacheStore.addCookie(rm);
+                }
+            }
+        }
+
+        // add remaining cookies from WebView store to Apache store
+        for (BasicClientCookie c : webviewStore) {
+            apacheStore.addCookie(c);
+        }
+
+        if (dups.size() != 0) {
+            if (Build.VERSION.SDK_INT >= 21)
+                CookieManager.getInstance().removeAllCookies(null);
+            else
+                CookieManager.getInstance().removeAllCookie();
         }
 
         return true;
