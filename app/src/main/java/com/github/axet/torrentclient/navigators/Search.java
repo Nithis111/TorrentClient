@@ -119,6 +119,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
     View search;
     TextView searchText;
     String next;
+    ArrayList<String> nextLast = new ArrayList<>();
 
     public static class SearchItem {
         public String title;
@@ -307,6 +308,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
             @Override
             public void onClick(View v) {
                 Search.this.list.clear();
+                Search.this.nextLast.clear();
                 footer_next.setVisibility(View.GONE);
 
                 request(new Runnable() {
@@ -790,8 +792,13 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
                             @JavascriptInterface
                             public void result(String html) {
                                 super.result(html);
-                                if (done != null)
-                                    done.run();
+                                handler.post(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        if (done != null)
+                                            done.run();
+                                    }
+                                });
                             }
                         });
                     }
@@ -828,6 +835,8 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
     }
 
     public void search(final Map<String, String> s, final String url, final String html, final Runnable done) {
+        this.nextLast.add(url);
+
         final String js = s.get("js");
         if (js != null) {
             handler.post(new Runnable() {
@@ -835,16 +844,21 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
                 public void run() {
                     inject(url, html, js, new Inject() {
                         @JavascriptInterface
-                        public void result(String html) {
+                        public void result(final String html) {
                             super.result(html);
-                            try {
-                                searchList(s, url, html);
-                            } catch (final RuntimeException e) {
-                                error(e);
-                            } finally {
-                                if (done != null)
-                                    done.run();
-                            }
+                            handler.post(new Runnable() {
+                                @Override
+                                public void run() {
+                                    try {
+                                        searchList(s, url, html);
+                                    } catch (final RuntimeException e) {
+                                        error(e);
+                                    } finally {
+                                        if (done != null)
+                                            done.run();
+                                    }
+                                }
+                            });
                         }
                     });
                 }
@@ -882,7 +896,16 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
             this.list.add(item);
         }
 
-        this.next = matcher(url, html, s.get("next"));
+        String next = matcher(url, html, s.get("next"));
+        if (next != null) {
+            for (String last : nextLast) {
+                if (next.equals(last)) {
+                    next = null;
+                    break;
+                }
+            }
+        }
+        this.next = next;
 
         if (list.size() > 0) {
             // hide keyboard on search sucecful completed
@@ -895,6 +918,8 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         } else {
             footer_next.setVisibility(View.GONE);
         }
+
+        notifyDataSetChanged();
     }
 
     String matcher(String url, String html, String q) {

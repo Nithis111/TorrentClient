@@ -1,5 +1,5 @@
 {
-  "version": 3,
+  "version": 4,
   "name": "google.com",
   "home": {
     "get": "https://google.com"
