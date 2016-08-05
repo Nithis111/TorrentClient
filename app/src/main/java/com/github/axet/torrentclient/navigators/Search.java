@@ -251,7 +251,9 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
                             search(s, url, html, new Runnable() {
                                 @Override
                                 public void run() {
+                                    // on success clear thread
                                     requestCancel();
+                                    // update buttons
                                     updateLoadNext();
                                 }
                             });
@@ -259,7 +261,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
                             handler.post(new Runnable() {
                                 @Override
                                 public void run() {
-                                    requestCancel();
+                                    // thread will be cleared by request()
                                     updateLoadNext();
                                 }
                             });
@@ -329,15 +331,8 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
                 requestCancel();
             }
         });
-        if (thread == null) {
-            header_progress.setVisibility(View.GONE);
-            header_stop.setVisibility(View.GONE);
-            header_search.setVisibility(View.VISIBLE);
-        } else {
-            header_progress.setVisibility(View.VISIBLE);
-            header_stop.setVisibility(View.VISIBLE);
-            header_search.setVisibility(View.GONE);
-        }
+
+        updateHeaderButtons(thread);
 
         header_search.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -353,10 +348,20 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
                             search(searchText.getText().toString(), new Runnable() {
                                 @Override
                                 public void run() {
+                                    // clear thread
                                     requestCancel();
+                                    // update buttons
+                                    updateHeaderButtons(null);
                                 }
                             });
                         } catch (IOException e) {
+                            handler.post(new Runnable() {
+                                @Override
+                                public void run() {
+                                    // thread will be cleared by request()
+                                    updateHeaderButtons(null);
+                                }
+                            });
                             throw new RuntimeException(e);
                         }
                     }
@@ -411,6 +416,18 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         lastSearch = searchText.getText().toString();
         list.removeHeaderView(header);
         list.removeFooterView(footer);
+    }
+
+    void updateHeaderButtons(Thread thread) {
+        if (thread == null) {
+            header_progress.setVisibility(View.GONE);
+            header_stop.setVisibility(View.GONE);
+            header_search.setVisibility(View.VISIBLE);
+        } else {
+            header_progress.setVisibility(View.VISIBLE);
+            header_stop.setVisibility(View.VISIBLE);
+            header_search.setVisibility(View.GONE);
+        }
     }
 
     void updateLoadNext() {
@@ -486,10 +503,6 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
                             thread = null;
                             threadLooper = null;
                             request = null;
-
-                            header_progress.setVisibility(View.GONE);
-                            header_stop.setVisibility(View.GONE);
-                            header_search.setVisibility(View.VISIBLE);
                         }
                     });
                     Log.d(TAG, "Thread Exit");
