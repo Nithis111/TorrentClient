@@ -28,7 +28,6 @@ import android.webkit.WebResourceResponse;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.BaseAdapter;
-import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.ProgressBar;
@@ -108,16 +107,22 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
 
     ArrayList<String> message = new ArrayList<>();
 
+    // search header
     View header;
-    View footer;
-    View footer_next;
-    View login_header;
     ViewGroup message_panel;
     View message_close;
-    ProgressBar progress;
-    View stop;
-    View search;
+    ProgressBar header_progress; // progressbar / button
+    View header_stop; // stop image
+    View header_search; // search button
     TextView searchText;
+
+    // footer data
+    View footer;
+    View footer_next; // load next button
+    ProgressBar footer_progress; // progress bar / button
+    View footer_stop; // stop image
+
+    // load next data
     String next;
     ArrayList<String> nextLast = new ArrayList<>();
 
@@ -138,6 +143,10 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         public void result(String html) {
             Log.d(TAG, "result()");
         }
+    }
+
+    public static boolean isEmpty(String s) {
+        return s == null || s.isEmpty();
     }
 
     public Search(MainActivity m) {
@@ -217,14 +226,19 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
 
         LayoutInflater inflater = LayoutInflater.from(context);
 
-        login_header = inflater.inflate(R.layout.search_login, null, false);
         header = inflater.inflate(R.layout.search_header, null, false);
         footer = inflater.inflate(R.layout.search_footer, null, false);
 
+        footer_progress = (ProgressBar) footer.findViewById(R.id.search_footer_progress);
+        footer_stop = footer.findViewById(R.id.search_footer_stop);
         footer_next = footer.findViewById(R.id.search_footer_next);
         footer_next.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                footer_progress.setVisibility(View.VISIBLE);
+                footer_stop.setVisibility(View.VISIBLE);
+                footer_next.setVisibility(View.GONE);
+
                 request(new Runnable() {
                     @Override
                     public void run() {
@@ -238,16 +252,37 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
                                 @Override
                                 public void run() {
                                     requestCancel();
+                                    updateLoadNext();
                                 }
                             });
                         } catch (IOException e) {
+                            handler.post(new Runnable() {
+                                @Override
+                                public void run() {
+                                    requestCancel();
+                                    updateLoadNext();
+                                }
+                            });
                             throw new RuntimeException(e);
                         }
                     }
                 });
             }
         });
+        footer_progress.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                requestCancel();
+            }
+        });
         footer_next.setVisibility(View.GONE);
+        if (thread == null) {
+            footer_progress.setVisibility(View.GONE);
+            footer_stop.setVisibility(View.GONE);
+        } else {
+            footer_progress.setVisibility(View.VISIBLE);
+            footer_stop.setVisibility(View.VISIBLE);
+        }
 
         message_panel = (ViewGroup) header.findViewById(R.id.search_header_message_panel);
 
@@ -282,29 +317,29 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         }
 
         searchText = (TextView) header.findViewById(R.id.search_header_text);
-        search = header.findViewById(R.id.search_header_search);
-        progress = (ProgressBar) header.findViewById(R.id.search_header_progress);
-        stop = header.findViewById(R.id.search_header_stop);
+        header_search = header.findViewById(R.id.search_header_search);
+        header_progress = (ProgressBar) header.findViewById(R.id.search_header_progress);
+        header_stop = header.findViewById(R.id.search_header_stop);
 
         searchText.setText(lastSearch);
 
-        progress.setOnClickListener(new View.OnClickListener() {
+        header_progress.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 requestCancel();
             }
         });
         if (thread == null) {
-            progress.setVisibility(View.GONE);
-            stop.setVisibility(View.GONE);
-            search.setVisibility(View.VISIBLE);
+            header_progress.setVisibility(View.GONE);
+            header_stop.setVisibility(View.GONE);
+            header_search.setVisibility(View.VISIBLE);
         } else {
-            progress.setVisibility(View.VISIBLE);
-            stop.setVisibility(View.VISIBLE);
-            search.setVisibility(View.GONE);
+            header_progress.setVisibility(View.VISIBLE);
+            header_stop.setVisibility(View.VISIBLE);
+            header_search.setVisibility(View.GONE);
         }
 
-        search.setOnClickListener(new View.OnClickListener() {
+        header_search.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 Search.this.list.clear();
@@ -378,6 +413,16 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         list.removeFooterView(footer);
     }
 
+    void updateLoadNext() {
+        if (Search.this.next != null) {
+            footer_next.setVisibility(View.VISIBLE);
+        } else {
+            footer_next.setVisibility(View.GONE);
+        }
+        footer_progress.setVisibility(View.GONE);
+        footer_stop.setVisibility(View.GONE);
+    }
+
     void requestCancel() {
         boolean i = false;
         if (thread != null) {
@@ -412,9 +457,9 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
     void request(final Runnable run) {
         requestCancel();
 
-        progress.setVisibility(View.VISIBLE);
-        stop.setVisibility(View.VISIBLE);
-        search.setVisibility(View.GONE);
+        header_progress.setVisibility(View.VISIBLE);
+        header_stop.setVisibility(View.VISIBLE);
+        header_search.setVisibility(View.GONE);
 
         thread = new Thread(new Runnable() {
             @Override
@@ -442,9 +487,9 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
                             threadLooper = null;
                             request = null;
 
-                            progress.setVisibility(View.GONE);
-                            stop.setVisibility(View.GONE);
-                            search.setVisibility(View.VISIBLE);
+                            header_progress.setVisibility(View.GONE);
+                            header_stop.setVisibility(View.GONE);
+                            header_search.setVisibility(View.VISIBLE);
                         }
                     });
                     Log.d(TAG, "Thread Exit");
@@ -893,6 +938,11 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
             item.seed = matcher(item.html, s.get("seed"));
             item.leech = matcher(item.html, s.get("leech"));
             item.details = matcher(url, item.html, s.get("details"));
+
+            // do not empty items
+            if (isEmpty(item.title) && isEmpty(item.magnet) && isEmpty(item.torrent) && isEmpty(item.details))
+                continue;
+
             this.list.add(item);
         }
 
@@ -907,16 +957,12 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         }
         this.next = next;
 
+        updateLoadNext();
+
         if (list.size() > 0) {
             // hide keyboard on search sucecful completed
             InputMethodManager imm = (InputMethodManager) context.getSystemService(Context.INPUT_METHOD_SERVICE);
             imm.hideSoftInputFromWindow(searchText.getWindowToken(), 0);
-        }
-
-        if (this.next != null) {
-            footer_next.setVisibility(View.VISIBLE);
-        } else {
-            footer_next.setVisibility(View.GONE);
         }
 
         notifyDataSetChanged();
@@ -993,9 +1039,12 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
             if (list1.size() > 0) {
                 if (l)
                     a = list1.get(list1.size() - 1).outerHtml();
-                else if (e != null)
-                    a = list1.get(e - 1).outerHtml();
-                else
+                else if (e != null) {
+                    int i = e - 1;
+                    if (i < list1.size()) { // ignore offset
+                        a = list1.get(i).outerHtml();
+                    }
+                } else
                     a = list1.get(0).outerHtml();
             }
         }

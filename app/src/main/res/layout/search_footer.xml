@@ -3,11 +3,27 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content">
 
+
     <Button
         android:id="@+id/search_footer_next"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
         android:text="Load More" />
+
+    <ProgressBar
+        android:id="@+id/search_footer_progress"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:indeterminateOnly="true" />
+
+    <ImageView
+        android:id="@+id/search_footer_stop"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:src="@drawable/ic_stop_black_24dp"
+        android:tint="?attr/colorAccent" />
 
 </FrameLayout>
