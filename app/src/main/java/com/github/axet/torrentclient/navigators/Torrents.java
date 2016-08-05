@@ -130,7 +130,6 @@ public class Torrents extends BaseAdapter implements DialogInterface.OnDismissLi
     @Override
     public void onDismiss(DialogInterface dialog) {
         this.dialog = null;
-        main.updateUnread();
         notifyDataSetChanged();
     }
 
@@ -475,6 +474,8 @@ public class Torrents extends BaseAdapter implements DialogInterface.OnDismissLi
             Storage.Torrent t = s.torrent(i);
             unread.put(t, t.message);
         }
+
+        getStorage().clearUnreadCount();
     }
 
     public void remove(ListView list) {

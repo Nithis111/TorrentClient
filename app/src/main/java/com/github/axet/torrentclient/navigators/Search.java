@@ -251,20 +251,19 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
                             search(s, url, html, new Runnable() {
                                 @Override
                                 public void run() {
+                                    // destory looper thread
                                     requestCancel();
-                                    updateLoadNext();
                                 }
                             });
                         } catch (IOException e) {
-                            handler.post(new Runnable() {
-                                @Override
-                                public void run() {
-                                    requestCancel();
-                                    updateLoadNext();
-                                }
-                            });
                             throw new RuntimeException(e);
                         }
+                    }
+                }, new Runnable() {
+                    @Override
+                    public void run() {
+                        // thread will be cleared by request()
+                        updateLoadNext();
                     }
                 });
             }
@@ -329,15 +328,8 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
                 requestCancel();
             }
         });
-        if (thread == null) {
-            header_progress.setVisibility(View.GONE);
-            header_stop.setVisibility(View.GONE);
-            header_search.setVisibility(View.VISIBLE);
-        } else {
-            header_progress.setVisibility(View.VISIBLE);
-            header_stop.setVisibility(View.VISIBLE);
-            header_search.setVisibility(View.GONE);
-        }
+
+        updateHeaderButtons();
 
         header_search.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -345,6 +337,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
                 Search.this.list.clear();
                 Search.this.nextLast.clear();
                 footer_next.setVisibility(View.GONE);
+                notifyDataSetChanged();
 
                 request(new Runnable() {
                     @Override
@@ -353,6 +346,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
                             search(searchText.getText().toString(), new Runnable() {
                                 @Override
                                 public void run() {
+                                    // destory looper thread
                                     requestCancel();
                                 }
                             });
@@ -360,7 +354,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
                             throw new RuntimeException(e);
                         }
                     }
-                });
+                }, null);
             }
         });
 
@@ -413,6 +407,18 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         list.removeFooterView(footer);
     }
 
+    void updateHeaderButtons() {
+        if (thread == null) {
+            header_progress.setVisibility(View.GONE);
+            header_stop.setVisibility(View.GONE);
+            header_search.setVisibility(View.VISIBLE);
+        } else {
+            header_progress.setVisibility(View.VISIBLE);
+            header_stop.setVisibility(View.VISIBLE);
+            header_search.setVisibility(View.GONE);
+        }
+    }
+
     void updateLoadNext() {
         if (Search.this.next != null) {
             footer_next.setVisibility(View.VISIBLE);
@@ -454,7 +460,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
             Log.d(TAG, "interrupt");
     }
 
-    void request(final Runnable run) {
+    void request(final Runnable run, final Runnable done) {
         requestCancel();
 
         header_progress.setVisibility(View.VISIBLE);
@@ -487,9 +493,10 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
                             threadLooper = null;
                             request = null;
 
-                            header_progress.setVisibility(View.GONE);
-                            header_stop.setVisibility(View.GONE);
-                            header_search.setVisibility(View.VISIBLE);
+                            updateHeaderButtons();
+
+                            if (done != null)
+                                done.run();
                         }
                     });
                     Log.d(TAG, "Thread Exit");
@@ -542,7 +549,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
                             throw new RuntimeException(e);
                         }
                     }
-                });
+                }, null);
             }
         }
         notifyDataSetChanged();
