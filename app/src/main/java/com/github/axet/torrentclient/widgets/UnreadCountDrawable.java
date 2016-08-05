@@ -56,7 +56,20 @@ public class UnreadCountDrawable extends Drawable implements Drawable.Callback {
 
     public void setPadding(int px) {
         this.padding = px;
-        background.setCallback(this);
+    }
+
+    @Override
+    public void jumpToCurrentState() {
+        // backgroundCallback may be cleared by reuse call
+        if (backgroundCallback != null)
+            background.setCallback(this);
+
+        background.jumpToCurrentState();
+    }
+
+    @Override
+    public Drawable getCurrent() {
+        return super.getCurrent();
     }
 
     public void update() {
@@ -88,6 +101,7 @@ public class UnreadCountDrawable extends Drawable implements Drawable.Callback {
     @Override
     public void setBounds(int left, int top, int right, int bottom) {
         super.setBounds(left, top, right, bottom);
+
         background.setBounds(left, top, right, bottom);
 
         rect = new Rect(left, top, right, bottom);
