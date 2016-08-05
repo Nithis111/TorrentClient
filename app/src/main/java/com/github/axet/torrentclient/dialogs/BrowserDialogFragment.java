@@ -63,12 +63,11 @@ public class BrowserDialogFragment extends DialogFragment implements MainActivit
     Thread thread;
     int load;
 
-    public static BrowserDialogFragment create(String url, String js, String js_post) {
+    public static BrowserDialogFragment create(String url, String js) {
         BrowserDialogFragment f = new BrowserDialogFragment();
         Bundle args = new Bundle();
         args.putString("url", url);
         args.putString("js", js);
-        args.putString("js_post", js_post);
         f.setArguments(args);
         return f;
     }
@@ -185,25 +184,15 @@ public class BrowserDialogFragment extends DialogFragment implements MainActivit
         String url = getArguments().getString("url");
 
         String js = getArguments().getString("js");
-        String js_post = getArguments().getString("js_post");
 
         String result = ";\n\ntorrentclient.result()";
 
         String script = null;
         if (js != null) {
-            script = js;
-            // only call .result() once
-            if (js_post == null) {
-                script += result;
-            }
+            script = js + result;
         }
 
-        String script_post = null;
-        if (js_post != null)
-            script_post = js_post + result;
-
         final String inject = script;
-        final String inject_post = script_post;
 
         web.setWebChromeClient(new WebChromeClient() {
             @Override
@@ -254,8 +243,8 @@ public class BrowserDialogFragment extends DialogFragment implements MainActivit
             public void onPageFinished(WebView view, String url) {
                 super.onPageFinished(view, url);
                 updateButtons();
-                if (inject_post != null) {
-                    web.loadUrl("javascript:" + inject_post);
+                if (inject != null) {
+                    web.loadUrl("javascript:" + inject);
                 }
             }
 
@@ -269,9 +258,6 @@ public class BrowserDialogFragment extends DialogFragment implements MainActivit
             public void onPageCommitVisible(WebView view, String url) {
                 super.onPageCommitVisible(view, url);
                 updateButtons();
-                if (inject != null) {
-                    web.loadUrl("javascript:" + inject);
-                }
             }
 
             @Override
@@ -344,7 +330,7 @@ public class BrowserDialogFragment extends DialogFragment implements MainActivit
             }
         });
 
-        if (inject != null || inject_post != null)
+        if (inject != null)
             web.addJavascriptInterface(new Inject(), "torrentclient");
 
         web.loadUrl(url);

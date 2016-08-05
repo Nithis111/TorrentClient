@@ -310,9 +310,6 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
                     p = login.get("post_password");
                 }
 
-                String js = login.get("js");
-                String js_post = login.get("js_post");
-
                 if (l == null && p == null) {
                     LoginDialogFragment d = LoginDialogFragment.create(url);
                     d.show(main.getSupportFragmentManager(), "");
@@ -547,9 +544,8 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
 
                     final Map<String, String> s = engine.getMap("search");
                     String js = s.get("details_js");
-                    String js_post = s.get("details_js_post");
 
-                    BrowserDialogFragment d = BrowserDialogFragment.create(url, js, js_post);
+                    BrowserDialogFragment d = BrowserDialogFragment.create(url, js);
                     d.show(main.getSupportFragmentManager(), "");
                 }
             });
@@ -623,26 +619,17 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         }
     }
 
-    public void inject(String url, String html, String js, String js_post, final Inject exec) {
+    public void inject(String url, String html, String js, final Inject exec) {
         Log.d(TAG, "inject()");
 
         String result = ";\n\ntorrentclient.result(document.documentElement.outerHTML)";
 
         String script = null;
         if (js != null) {
-            script = js;
-            // only call .result once
-            if (js_post == null) {
-                script += result;
-            }
+            script = js + result;
         }
 
         final String inject = script;
-
-        String script_post = null;
-        if (js_post != null)
-            script_post = js_post + result;
-        final String inject_post = script_post;
 
         if (web != null) {
             web.destroy();
@@ -716,8 +703,6 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
             public void onPageCommitVisible(WebView view, String url) {
                 super.onPageCommitVisible(view, url);
                 Log.d(TAG, "onPageCommitVisible");
-                if (inject != null)
-                    web.loadUrl("javascript:" + inject);
             }
 
             @Override
@@ -729,8 +714,8 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
             public void onPageFinished(WebView view, String url) {
                 super.onPageFinished(view, url);
                 Log.d(TAG, "onPageFinished");
-                if (inject_post != null)
-                    web.loadUrl("javascript:" + inject_post);
+                if (inject != null)
+                    web.loadUrl("javascript:" + inject);
             }
         });
         web.addJavascriptInterface(exec, "torrentclient");
@@ -760,12 +745,11 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
             final String html = post(post, map);
 
             final String js = s.get("js");
-            final String js_post = s.get("js_post");
-            if (js != null || js_post != null) {
+            if (js != null) {
                 handler.post(new Runnable() {
                     @Override
                     public void run() {
-                        inject(post, html, js, js_post, new Inject() {
+                        inject(post, html, js, new Inject() {
                             @JavascriptInterface
                             public void result(String html) {
                                 super.result(html);
@@ -806,14 +790,13 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         }
 
         final String js = s.get("js");
-        final String js_post = s.get("js_post");
-        if (js != null || js_post != null) {
+        if (js != null) {
             final String u = url;
             final String h = html;
             handler.post(new Runnable() {
                 @Override
                 public void run() {
-                    inject(u, h, js, js_post, new Inject() {
+                    inject(u, h, js, new Inject() {
                         @JavascriptInterface
                         public void result(String html) {
                             super.result(html);
