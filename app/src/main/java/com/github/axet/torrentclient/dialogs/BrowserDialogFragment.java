@@ -1,37 +1,27 @@
 package com.github.axet.torrentclient.dialogs;
 
-import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.Dialog;
 import android.content.DialogInterface;
 import android.graphics.Bitmap;
 import android.graphics.Color;
-import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
-import android.os.Message;
 import android.support.annotation.Nullable;
 import android.support.v4.app.DialogFragment;
 import android.support.v4.view.ViewPager;
 import android.support.v7.app.AlertDialog;
-import android.util.AttributeSet;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.webkit.ConsoleMessage;
 import android.webkit.CookieManager;
-import android.webkit.CookieSyncManager;
 import android.webkit.DownloadListener;
 import android.webkit.JavascriptInterface;
 import android.webkit.JsResult;
-import android.webkit.WebChromeClient;
-import android.webkit.WebResourceError;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebResourceResponse;
 import android.webkit.WebView;
-import android.webkit.WebViewClient;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
@@ -40,18 +30,13 @@ import android.widget.TextView;
 
 import com.github.axet.torrentclient.R;
 import com.github.axet.torrentclient.activities.MainActivity;
+import com.github.axet.torrentclient.widgets.WebViewCustom;
 
 import org.apache.commons.io.IOUtils;
 
-import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.net.URLConnection;
-import java.text.SimpleDateFormat;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.Locale;
-import java.util.TimeZone;
 
 public class BrowserDialogFragment extends DialogFragment implements MainActivity.TorrentFragmentInterface {
     public static String TAG = BrowserDialogFragment.class.getSimpleName();
@@ -139,78 +124,23 @@ public class BrowserDialogFragment extends DialogFragment implements MainActivit
     public View createView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         v = inflater.inflate(R.layout.search_details, container);
 
-        RelativeLayout r = (RelativeLayout) v.findViewById(R.id.search_details_base);
-
-        web = new WebView(getContext()) {
-            @Override
-            public void postUrl(String url, byte[] postData) {
-                super.postUrl(url, postData);
-                Log.d(TAG, "post() " + url);
-            }
-        };
-
-        RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.MATCH_PARENT);
-        params.addRule(RelativeLayout.BELOW, R.id.search_details_toolbar);
-        params.addRule(RelativeLayout.ABOVE, R.id.status_details_status_group);
-        web.setLayoutParams(params);
-        r.addView(web);
-
         final ProgressBar progress = (ProgressBar) v.findViewById(R.id.search_details_process);
         final ImageView stop = (ImageView) v.findViewById(R.id.search_details_stop);
         final ImageView refresh = (ImageView) v.findViewById(R.id.search_details_refresh);
         final TextView status = (TextView) v.findViewById(R.id.status_details_status);
 
-        progress.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (load < 100) {
-                    web.stopLoading();
-                    load = 100;
-                    return;
-                }
-                web.reload();
-            }
-        });
-
-        web.getSettings().setSupportMultipleWindows(true);
-        web.getSettings().setDomStorageEnabled(true);
-        web.getSettings().setJavaScriptEnabled(true);
-        web.getSettings().setLoadWithOverviewMode(true);
-        web.getSettings().setUseWideViewPort(true);
-        web.getSettings().setBuiltInZoomControls(true);
-        web.getSettings().setDisplayZoomControls(true);
-
-        back = (ImageButton) v.findViewById(R.id.search_details_back);
-        forward = (ImageButton) v.findViewById(R.id.search_details_forward);
-        back.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                web.goBack();
-            }
-        });
-        forward.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                web.goForward();
-            }
-        });
-
-        updateButtons();
+        RelativeLayout r = (RelativeLayout) v.findViewById(R.id.search_details_base);
 
         String url = getArguments().getString("url");
-
         String js = getArguments().getString("js");
-
         String result = ";\n\ntorrentclient.result()";
-
         String script = null;
         if (js != null) {
             script = js + result;
         }
-
         final String inject = script;
 
-        web.setWebChromeClient(new WebChromeClient() {
+        web = new WebViewCustom(getContext()) {
             @Override
             public void onProgressChanged(WebView view, int newProgress) {
                 super.onProgressChanged(view, newProgress);
@@ -227,34 +157,16 @@ public class BrowserDialogFragment extends DialogFragment implements MainActivit
             }
 
             @Override
-            public boolean onCreateWindow(WebView view, boolean isDialog, boolean isUserGesture, Message resultMsg) {
-                return true;
-            }
-
-            @Override
-            public boolean onConsoleMessage(final ConsoleMessage consoleMessage) {
-                onConsoleMessage(consoleMessage.message(), consoleMessage.lineNumber(), consoleMessage.sourceId());
-                return true;//super.onConsoleMessage(consoleMessage);
-            }
-
-            @Override
             public void onConsoleMessage(String msg, int lineNumber, String sourceID) {
-                Log.d(TAG, msg);
-
                 if (sourceID == null || sourceID.isEmpty())
                     getMainActivity().post(msg);
             }
 
             @Override
-            public boolean onJsAlert(WebView view, String url, final String message, JsResult result) {
+            public void onJsAlert(WebView view, String url, final String message, JsResult result) {
                 getMainActivity().post(message);
-                result.confirm();
-                return true;//super.onJsAlert(view, url, message, result);
             }
 
-        });
-
-        web.setWebViewClient(new WebViewClient() {
             @Override
             public void onPageFinished(WebView view, String url) {
                 super.onPageFinished(view, url);
@@ -277,8 +189,8 @@ public class BrowserDialogFragment extends DialogFragment implements MainActivit
             }
 
             @Override
-            public void onReceivedError(WebView view, WebResourceRequest request, WebResourceError error) {
-                super.onReceivedError(view, request, error);
+            public void onReceivedError(WebView view, String message, String url) {
+                super.onReceivedError(view, message, url);
                 updateButtons();
             }
 
@@ -302,21 +214,44 @@ public class BrowserDialogFragment extends DialogFragment implements MainActivit
                 }
                 return super.shouldOverrideUrlLoading(view, url);
             }
+        };
 
-            @TargetApi(Build.VERSION_CODES.LOLLIPOP)
-            @Override
-            public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
-                return super.shouldInterceptRequest(view, request);
-            }
+        RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.MATCH_PARENT);
+        params.addRule(RelativeLayout.BELOW, R.id.search_details_toolbar);
+        params.addRule(RelativeLayout.ABOVE, R.id.status_details_status_group);
+        web.setLayoutParams(params);
+        r.addView(web);
 
+        progress.setOnClickListener(new View.OnClickListener() {
             @Override
-            public WebResourceResponse shouldInterceptRequest(WebView view, String url) {
-                return super.shouldInterceptRequest(view, url);
+            public void onClick(View v) {
+                if (load < 100) {
+                    web.stopLoading();
+                    load = 100;
+                    return;
+                }
+                web.reload();
             }
         });
 
-        final String cookieURL = url;
+        back = (ImageButton) v.findViewById(R.id.search_details_back);
+        forward = (ImageButton) v.findViewById(R.id.search_details_forward);
+        back.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                web.goBack();
+            }
+        });
+        forward.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                web.goForward();
+            }
+        });
 
+        updateButtons();
+
+        final String cookieURL = url;
         web.setDownloadListener(new DownloadListener() {
             @Override
             public void onDownloadStart(final String url, String userAgent, String contentDisposition, String mimetype, long contentLength) {
@@ -356,7 +291,6 @@ public class BrowserDialogFragment extends DialogFragment implements MainActivit
     void updateButtons() {
         if (web == null) // called from on onReceivedHttpError
             return;
-
         if (web.canGoBack()) {
             back.setColorFilter(Color.BLACK);
             back.setEnabled(true);
@@ -370,61 +304,6 @@ public class BrowserDialogFragment extends DialogFragment implements MainActivit
         } else {
             forward.setColorFilter(Color.GRAY);
             forward.setEnabled(false);
-        }
-    }
-
-    // not working. use removeAllCookies() then add ones you need.
-    public void clearCookies() {
-        String url = getArguments().getString("url");
-
-        CookieManager inst = CookieManager.getInstance();
-        // longer url better, domain only can return null
-        String cookies = inst.getCookie(url);
-
-        Uri uri = Uri.parse(url);
-        String domain = uri.getAuthority();
-
-        if (cookies != null) {
-            // we need to set expires, otherwise WebView will keep deleted cookies forever ("name=")
-            String expires = "expires=Thu, 01 Jan 1970 03:00:00 GMT"; // # date -r 0 +%a,\ %d\ %b\ %Y\ %H:%M:%S\ GMT
-
-            SimpleDateFormat rfc1123 = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss z", Locale.US);
-            rfc1123.setTimeZone(TimeZone.getTimeZone("GMT"));
-            Calendar cal = Calendar.getInstance();
-            cal.add(Calendar.MINUTE, 1);
-            expires = "expires=" + rfc1123.format(cal.getTime());
-
-            if (Build.VERSION.SDK_INT < 21) {
-                CookieSyncManager.createInstance(getContext());
-                CookieSyncManager.getInstance().startSync();
-            }
-            String[] cc = cookies.split(";");
-            for (String c : cc) {
-                String[] vv = c.split("=");
-                for (File f = new File(uri.getPath()); f != null; f = f.getParentFile()) {
-                    String p;
-                    String path;
-                    if (f.equals(new File(File.separator))) {
-                        p = "";
-                        path = "";
-                    } else {
-                        p = f.getPath();
-                        path = "; path=" + p;
-                    }
-                    String cookie = vv[0].trim() + "=" + "; domain=" + uri.getAuthority() + path + "; " + expires;
-                    String u = new Uri.Builder().scheme("http").authority(domain).path(p).build().toString();
-                    inst.setCookie(u, cookie);
-                }
-            }
-            if (Build.VERSION.SDK_INT < 21) {
-                CookieSyncManager.getInstance().stopSync();
-                CookieSyncManager.getInstance().sync();
-                inst.removeSessionCookie();
-                inst.removeExpiredCookie();
-            } else {
-                inst.flush();
-                inst.removeSessionCookies(null);
-            }
         }
     }
 }

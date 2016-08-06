@@ -1,9 +1,7 @@
 package com.github.axet.torrentclient.navigators;
 
-import android.annotation.TargetApi;
 import android.content.Context;
 import android.content.DialogInterface;
-import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.Build;
@@ -16,17 +14,11 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.inputmethod.InputMethodManager;
-import android.webkit.ConsoleMessage;
 import android.webkit.CookieManager;
 import android.webkit.CookieSyncManager;
 import android.webkit.JavascriptInterface;
 import android.webkit.JsResult;
-import android.webkit.WebChromeClient;
-import android.webkit.WebResourceError;
-import android.webkit.WebResourceRequest;
-import android.webkit.WebResourceResponse;
 import android.webkit.WebView;
-import android.webkit.WebViewClient;
 import android.widget.BaseAdapter;
 import android.widget.ImageView;
 import android.widget.ListView;
@@ -36,13 +28,14 @@ import android.widget.TextView;
 import com.github.axet.androidlibrary.widgets.ThemeUtils;
 import com.github.axet.torrentclient.R;
 import com.github.axet.torrentclient.activities.MainActivity;
+import com.github.axet.torrentclient.app.ApacheHttp;
 import com.github.axet.torrentclient.app.MainApplication;
 import com.github.axet.torrentclient.app.SearchEngine;
-import com.github.axet.torrentclient.dialogs.LoginDialogFragment;
 import com.github.axet.torrentclient.dialogs.BrowserDialogFragment;
+import com.github.axet.torrentclient.dialogs.LoginDialogFragment;
 import com.github.axet.torrentclient.widgets.UnreadCountDrawable;
+import com.github.axet.torrentclient.widgets.WebViewCustom;
 
-import org.apache.commons.io.IOUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.parser.Parser;
@@ -53,7 +46,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.lang.reflect.Array;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLDecoder;
@@ -68,25 +60,10 @@ import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import cz.msebera.android.httpclient.HttpEntity;
-import cz.msebera.android.httpclient.NameValuePair;
 import cz.msebera.android.httpclient.client.CookieStore;
-import cz.msebera.android.httpclient.client.config.RequestConfig;
-import cz.msebera.android.httpclient.client.entity.UrlEncodedFormEntity;
-import cz.msebera.android.httpclient.client.methods.AbstractExecutionAwareRequest;
-import cz.msebera.android.httpclient.client.methods.CloseableHttpResponse;
-import cz.msebera.android.httpclient.client.methods.HttpGet;
-import cz.msebera.android.httpclient.client.methods.HttpPost;
-import cz.msebera.android.httpclient.client.protocol.HttpClientContext;
 import cz.msebera.android.httpclient.cookie.Cookie;
-import cz.msebera.android.httpclient.entity.ContentType;
 import cz.msebera.android.httpclient.impl.client.BasicCookieStore;
-import cz.msebera.android.httpclient.impl.client.CloseableHttpClient;
-import cz.msebera.android.httpclient.impl.client.HttpClientBuilder;
-import cz.msebera.android.httpclient.impl.client.LaxRedirectStrategy;
 import cz.msebera.android.httpclient.impl.cookie.BasicClientCookie;
-import cz.msebera.android.httpclient.message.BasicNameValuePair;
-import cz.msebera.android.httpclient.util.EntityUtils;
 
 public class Search extends BaseAdapter implements DialogInterface.OnDismissListener,
         UnreadCountDrawable.UnreadCount, MainActivity.NavigatorInterface {
@@ -95,13 +72,11 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
     Context context;
     MainActivity main;
     ArrayList<SearchItem> list = new ArrayList<>();
-    CloseableHttpClient httpclient;
-    HttpClientContext httpClientContext = HttpClientContext.create();
 
     Thread thread;
     Looper threadLooper;
-    AbstractExecutionAwareRequest request;
 
+    ApacheHttp apache;
     WebView web;
     SearchEngine engine;
     Handler handler;
@@ -158,14 +133,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         this.context = m;
         this.handler = new Handler();
 
-        RequestConfig.Builder requestBuilder = RequestConfig.custom();
-        requestBuilder = requestBuilder.setConnectTimeout(MainApplication.CONNECTION_TIMEOUT);
-        requestBuilder = requestBuilder.setConnectionRequestTimeout(MainApplication.CONNECTION_TIMEOUT);
-
-        this.httpclient = HttpClientBuilder.create()
-                .setDefaultRequestConfig(requestBuilder.build())
-                .setRedirectStrategy(new LaxRedirectStrategy())
-                .build();
+        apache = new ApacheHttp();
     }
 
     public void setEngine(SearchEngine engine) {
@@ -177,10 +145,10 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
     }
 
     public void load(String state) {
-        CookieStore cookieStore = httpClientContext.getCookieStore();
+        CookieStore cookieStore = apache.getCookieStore();
         if (cookieStore == null) {
             cookieStore = new BasicCookieStore();
-            httpClientContext.setCookieStore(cookieStore);
+            apache.setCookieStore(cookieStore);
         }
         cookieStore.clear();
 
@@ -204,7 +172,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
     }
 
     public String save() {
-        CookieStore cookieStore = httpClientContext.getCookieStore();
+        CookieStore cookieStore = apache.getCookieStore();
         // do not save cookies between restarts for non login
         if (cookieStore != null && engine.getMap("login") != null) {
             List<Cookie> cookies = cookieStore.getCookies();
@@ -250,7 +218,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
                             Map<String, String> s = engine.getMap("search");
 
                             String url = next;
-                            String html = get(url);
+                            String html = apache.get(url);
 
                             search(s, url, html, new Runnable() {
                                 @Override
@@ -445,12 +413,11 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
             threadLooper = null;
             i = true;
         }
-        if (request != null) {
+        if (apache.getRequest() != null) {
             Thread thread = new Thread(new Runnable() {
                 @Override
                 public void run() {
-                    request.abort();
-                    request = null;
+                    apache.abort();
                 }
             });
             thread.start();
@@ -495,7 +462,6 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
                             // we are this thread, clear it
                             thread = null;
                             threadLooper = null;
-                            request = null;
 
                             updateHeaderButtons();
 
@@ -527,7 +493,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
             final LoginDialogFragment.Result l = (LoginDialogFragment.Result) dialog;
             if (l.browser) {
                 if (l.clear) {
-                    CookieStore store = httpClientContext.getCookieStore();
+                    CookieStore store = apache.getCookieStore();
                     if (store != null)
                         store.clear();
                 }
@@ -658,10 +624,10 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
 
         String[] cc = cookies.split(";");
 
-        CookieStore apacheStore = httpClientContext.getCookieStore();
+        CookieStore apacheStore = apache.getCookieStore();
         if (apacheStore == null) {
             apacheStore = new BasicCookieStore();
-            httpClientContext.setCookieStore(apacheStore);
+            apache.setCookieStore(apacheStore);
         }
 
         // check if we have cookies with same name. if yes. then webview set cookie for a different URL.
@@ -746,7 +712,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
     }
 
     void setCookies2WebView() {
-        CookieStore cookieStore = httpClientContext.getCookieStore();
+        CookieStore cookieStore = apache.getCookieStore();
 
         // share cookies back (Apache --> WebView)
         if (cookieStore != null) {
@@ -787,89 +753,26 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
             web.destroy();
         }
 
-        web = new WebView(context);
-        web.getSettings().setDomStorageEnabled(true);
-        web.getSettings().setJavaScriptEnabled(true);
-        web.setWebChromeClient(new WebChromeClient() {
-            @Override
-            public boolean onConsoleMessage(final ConsoleMessage consoleMessage) {
-                onConsoleMessage(consoleMessage.message(), consoleMessage.lineNumber(), consoleMessage.sourceId());
-                return true;//super.onConsoleMessage(consoleMessage);
-            }
-
+        web = new WebViewCustom(context) {
             @Override
             public void onConsoleMessage(String msg, int lineNumber, String sourceID) {
-                Log.d(TAG, msg);
-
                 if (sourceID == null || sourceID.isEmpty())
                     error(msg);
             }
 
             @Override
-            public boolean onJsAlert(WebView view, String url, final String message, JsResult result) {
+            public void onJsAlert(WebView view, String url, String message, JsResult result) {
+                super.onJsAlert(view, url, message, result);
                 error(message);
-                result.confirm();
-                return true;//super.onJsAlert(view, url, message, result);
-            }
-        });
-        web.setWebViewClient(new WebViewClient() {
-            @Override
-            public boolean shouldOverrideUrlLoading(WebView view, String url) {
-                return super.shouldOverrideUrlLoading(view, url);
-            }
-
-            @Override
-            public void onLoadResource(WebView view, String url) {
-                super.onLoadResource(view, url);
-            }
-
-            @TargetApi(Build.VERSION_CODES.M)
-            @Override
-            public void onReceivedError(WebView view, WebResourceRequest request, WebResourceError error) {
-                super.onReceivedError(view, request, error);
-                String str = error.getDescription().toString();
-                Log.d(TAG, str);
-            }
-
-            @Override
-            public void onReceivedError(WebView view, int errorCode, String description, String failingUrl) {
-                super.onReceivedError(view, errorCode, description, failingUrl);
-                // on M will becalled above method
-                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
-                    Log.d(TAG, description);
-                }
-            }
-
-            @TargetApi(Build.VERSION_CODES.LOLLIPOP)
-            @Override
-            public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
-                return super.shouldInterceptRequest(view, request);
-            }
-
-            @Override
-            public WebResourceResponse shouldInterceptRequest(WebView view, String url) {
-                return super.shouldInterceptRequest(view, url);
-            }
-
-            @Override
-            public void onPageCommitVisible(WebView view, String url) {
-                super.onPageCommitVisible(view, url);
-                Log.d(TAG, "onPageCommitVisible");
-            }
-
-            @Override
-            public void onPageStarted(WebView view, String url, Bitmap favicon) {
-                super.onPageStarted(view, url, favicon);
             }
 
             @Override
             public void onPageFinished(WebView view, String url) {
                 super.onPageFinished(view, url);
-                Log.d(TAG, "onPageFinished");
                 if (inject != null)
                     web.loadUrl("javascript:" + inject);
             }
-        });
+        };
         web.addJavascriptInterface(exec, "torrentclient");
         // Uncaught SecurityError: Failed to read the 'cookie' property from 'Document': Cookies are disabled inside 'data:' URLs.
         // called when page loaded with loadData()
@@ -894,7 +797,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
                 String[] m = param.split("=");
                 map.put(URLDecoder.decode(m[0].trim(), MainApplication.UTF8), URLDecoder.decode(m[1].trim(), MainApplication.UTF8));
             }
-            final String html = post(post, map);
+            final String html = apache.post(post, map);
 
             final String js = s.get("js");
             if (js != null) {
@@ -934,14 +837,14 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         if (post != null) {
             String t = s.get("post_search");
             url = post;
-            html = post(url, new String[][]{{t, search}});
+            html = apache.post(url, new String[][]{{t, search}});
         }
 
         String get = s.get("get");
         if (get != null) {
             String query = URLEncoder.encode(search, MainApplication.UTF8);
             url = String.format(get, query);
-            html = get(url);
+            html = apache.get(url);
         }
 
         search(s, url, html, done);
@@ -1128,48 +1031,6 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         }
 
         return Html.fromHtml(a).toString();
-    }
-
-    String get(String url) throws IOException {
-        HttpGet httpGet = new HttpGet(url);
-        request = httpGet;
-        CloseableHttpResponse response = httpclient.execute(httpGet, httpClientContext);
-        Log.d(TAG, response.getStatusLine().toString());
-        HttpEntity entity = response.getEntity();
-        ContentType contentType = ContentType.getOrDefault(entity);
-        String html = IOUtils.toString(entity.getContent(), contentType.getCharset());
-        EntityUtils.consume(entity);
-        response.close();
-        request = null;
-        return html;
-    }
-
-    String post(String url, String[][] map) throws IOException {
-        Map<String, String> m = new HashMap<>();
-        for (int i = 0; i < map.length; i++) {
-            m.put(map[i][0], map[i][1]);
-        }
-        return post(url, m);
-    }
-
-    String post(String url, Map<String, String> map) throws IOException {
-        HttpPost httpPost = new HttpPost(url);
-        request = httpPost;
-        List<NameValuePair> nvps = new ArrayList<>();
-        for (String key : map.keySet()) {
-            String value = map.get(key);
-            nvps.add(new BasicNameValuePair(key, value));
-        }
-        httpPost.setEntity(new UrlEncodedFormEntity(nvps));
-        CloseableHttpResponse response = httpclient.execute(httpPost, httpClientContext);
-        Log.d(TAG, response.getStatusLine().toString());
-        HttpEntity entity = response.getEntity();
-        ContentType contentType = ContentType.getOrDefault(entity);
-        String html = IOUtils.toString(entity.getContent(), contentType.getCharset());
-        EntityUtils.consume(entity);
-        response.close();
-        request = null;
-        return html;
     }
 
     public void error(final Throwable e) {
