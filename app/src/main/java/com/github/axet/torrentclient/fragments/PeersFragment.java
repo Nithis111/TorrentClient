@@ -15,7 +15,6 @@ import com.github.axet.torrentclient.app.MainApplication;
 import com.github.axet.torrentclient.app.SpeedInfo;
 
 import java.io.File;
-import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.HashMap;
 

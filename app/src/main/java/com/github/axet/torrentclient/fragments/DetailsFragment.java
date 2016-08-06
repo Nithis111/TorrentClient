@@ -20,7 +20,6 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.github.axet.androidlibrary.animations.RemoveItemAnimation;
 import com.github.axet.androidlibrary.widgets.ThemeUtils;
 import com.github.axet.torrentclient.R;
 import com.github.axet.torrentclient.activities.MainActivity;
@@ -28,11 +27,7 @@ import com.github.axet.torrentclient.app.MainApplication;
 import com.github.axet.torrentclient.app.Storage;
 import com.github.axet.torrentclient.widgets.Pieces;
 
-import org.apache.commons.io.FileUtils;
-
 import java.io.File;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 
 import go.libtorrent.Libtorrent;
 

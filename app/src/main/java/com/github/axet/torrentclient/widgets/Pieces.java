@@ -4,7 +4,6 @@ import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
-import android.graphics.PorterDuff;
 import android.util.AttributeSet;
 import android.view.View;
 
@@ -63,7 +62,7 @@ public class Pieces extends View {
     }
 
     public void setTorrent(long t) {
-        if(!Libtorrent.MetaTorrent(t))
+        if (!Libtorrent.MetaTorrent(t))
             return;
 
         cells = CELLS;

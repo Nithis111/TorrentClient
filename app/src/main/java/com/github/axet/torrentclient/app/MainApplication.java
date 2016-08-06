@@ -17,8 +17,6 @@ import com.github.axet.torrentclient.R;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-import go.libtorrent.Libtorrent;
-
 public class MainApplication extends Application {
     final String TAG = MainApplication.class.getSimpleName();
 
