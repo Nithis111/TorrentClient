@@ -1,5 +1,5 @@
 {
-  "version": 3,
+  "version": 4,
   "name": "thepiratebay.org",
   "home": {
     "get": "https://thepiratebay.org/"
@@ -8,11 +8,11 @@
     "get": "https://thepiratebay.org/search/%s/0/7//",
     "list": "tbody tr",
     "title": "a.detLink:regex(<a[^>]*>(.*)</a>)",
-    "details": "a.detLink:regex(.*href=[\"'](.*)[\"'].*)",
-    "magnet": "a[href^=magnet]:regex(.*href=[\"']([^'^\"]*).*)",
+    "details": "a.detLink:regex(.*href=\"([^\"]*)\".*)",
+    "magnet": "a[href^=magnet]:regex(.*href=\"([^\"]*)\".*)",
     "size": "font.detDesc:regex(.*Size ([^,]*).*)",
     "seed": "td:nth-child(3):regex((.*))",
     "leech": "td:nth-child(4):regex((.*))",
-    "next": "#content a[href^='/search']:last:regex(.*href=[\"']([^'^\"]*).*next.*)"
+    "next": "#content a[href^='/search']:last:regex(.*href=\"([^\"]*).*next.*)"
   }
 }

@@ -1,5 +1,5 @@
 {
-  "version": 9,
+  "version": 10,
   "name": "rutracker.org",
   "home": {
     "get": "http://rutracker.org"
@@ -16,6 +16,7 @@
     "post": "http://rutracker.org/forum/tracker.php",
     "post_search": "nm",
     "js": "if(document.querySelectorAll('a.logged-in-as-uname').length==0){alert('Not Logged In')}",
+    "js_post": "",
     "list": ".forumline.tablesorter tbody tr",
     "title": "a.tLink:regex(<a[^>]*>(.*)</a>)",
     "details": "a.tLink:regex(.*href=[\"'](.*)[\"'].*)",

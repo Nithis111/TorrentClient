@@ -15,7 +15,6 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.webkit.CookieManager;
 import android.webkit.DownloadListener;
 import android.webkit.JavascriptInterface;
 import android.webkit.JsResult;
@@ -30,13 +29,8 @@ import android.widget.TextView;
 
 import com.github.axet.torrentclient.R;
 import com.github.axet.torrentclient.activities.MainActivity;
+import com.github.axet.torrentclient.app.ApacheHttp;
 import com.github.axet.torrentclient.widgets.WebViewCustom;
-
-import org.apache.commons.io.IOUtils;
-
-import java.io.IOException;
-import java.net.URL;
-import java.net.URLConnection;
 
 public class BrowserDialogFragment extends DialogFragment implements MainActivity.TorrentFragmentInterface {
     public static String TAG = BrowserDialogFragment.class.getSimpleName();
@@ -46,15 +40,18 @@ public class BrowserDialogFragment extends DialogFragment implements MainActivit
     Handler handler = new Handler();
     ImageButton back;
     ImageButton forward;
-    WebView web;
+    WebViewCustom web;
+    ApacheHttp http;
     Thread thread;
     int load;
 
-    public static BrowserDialogFragment create(String url, String js) {
+    public static BrowserDialogFragment create(String url, String cookies, String js, String js_post) {
         BrowserDialogFragment f = new BrowserDialogFragment();
         Bundle args = new Bundle();
         args.putString("url", url);
         args.putString("js", js);
+        args.putString("js_post", js_post);
+        args.putString("cookies", cookies);
         f.setArguments(args);
         return f;
     }
@@ -131,14 +128,20 @@ public class BrowserDialogFragment extends DialogFragment implements MainActivit
 
         RelativeLayout r = (RelativeLayout) v.findViewById(R.id.search_details_base);
 
-        String url = getArguments().getString("url");
+        final String url = getArguments().getString("url");
         String js = getArguments().getString("js");
+        String js_post = getArguments().getString("js_post");
         String result = ";\n\ntorrentclient.result()";
         String script = null;
+        String script_post = null;
         if (js != null) {
-            script = js + result;
+            script = js;
+            if (js_post == null) // only execute result() once
+                script += result;
         }
-        final String inject = script;
+        if (js_post != null) {
+            script_post = js_post + result;
+        }
 
         web = new WebViewCustom(getContext()) {
             @Override
@@ -171,9 +174,6 @@ public class BrowserDialogFragment extends DialogFragment implements MainActivit
             public void onPageFinished(WebView view, String url) {
                 super.onPageFinished(view, url);
                 updateButtons();
-                if (inject != null) {
-                    web.loadUrl("javascript:" + inject);
-                }
             }
 
             @Override
@@ -215,6 +215,11 @@ public class BrowserDialogFragment extends DialogFragment implements MainActivit
                 return super.shouldOverrideUrlLoading(view, url);
             }
         };
+        web.setInject(script);
+        web.setInjectPost(script_post);
+
+        http = new ApacheHttp(getArguments().getString("cookies"));
+        web.setHttp(http);
 
         RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.MATCH_PARENT);
         params.addRule(RelativeLayout.BELOW, R.id.search_details_toolbar);
@@ -256,31 +261,23 @@ public class BrowserDialogFragment extends DialogFragment implements MainActivit
             @Override
             public void onDownloadStart(final String url, String userAgent, String contentDisposition, String mimetype, long contentLength) {
                 Log.d(TAG, "onDownloadStart " + url);
-                final String cookies = CookieManager.getInstance().getCookie(cookieURL);
                 thread = new Thread(new Runnable() {
                     @Override
                     public void run() {
-                        try {
-                            URL u = new URL(url);
-                            URLConnection conn = u.openConnection();
-                            conn.setRequestProperty("Cookie", cookies);
-                            final byte[] buf = IOUtils.toByteArray(conn);
-                            handler.post(new Runnable() {
-                                @Override
-                                public void run() {
-                                    getMainActivity().addTorrentFromBytes(buf);
-                                }
-                            });
-                        } catch (final IOException e) {
-                            getMainActivity().post(e);
-                        }
+                        final byte[] buf = http.getBytes(url);
+                        handler.post(new Runnable() {
+                            @Override
+                            public void run() {
+                                getMainActivity().addTorrentFromBytes(buf);
+                            }
+                        });
                     }
                 });
                 thread.start();
             }
         });
 
-        if (inject != null)
+        if (script != null || script_post != null)
             web.addJavascriptInterface(new Inject(), "torrentclient");
 
         web.loadUrl(url);

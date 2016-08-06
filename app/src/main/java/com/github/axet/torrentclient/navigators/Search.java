@@ -3,8 +3,6 @@ package com.github.axet.torrentclient.navigators;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.graphics.Color;
-import android.net.Uri;
-import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
 import android.text.Html;
@@ -14,8 +12,6 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.inputmethod.InputMethodManager;
-import android.webkit.CookieManager;
-import android.webkit.CookieSyncManager;
 import android.webkit.JavascriptInterface;
 import android.webkit.JsResult;
 import android.webkit.WebView;
@@ -51,19 +47,15 @@ import java.net.URL;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import cz.msebera.android.httpclient.client.CookieStore;
 import cz.msebera.android.httpclient.cookie.Cookie;
 import cz.msebera.android.httpclient.impl.client.BasicCookieStore;
-import cz.msebera.android.httpclient.impl.cookie.BasicClientCookie;
 
 public class Search extends BaseAdapter implements DialogInterface.OnDismissListener,
         UnreadCountDrawable.UnreadCount, MainActivity.NavigatorInterface {
@@ -73,11 +65,13 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
     MainActivity main;
     ArrayList<SearchItem> list = new ArrayList<>();
 
+    BrowserDialogFragment dialog;
+
     Thread thread;
     Looper threadLooper;
 
     ApacheHttp apache;
-    WebView web;
+    WebViewCustom web;
     SearchEngine engine;
     Handler handler;
 
@@ -214,22 +208,18 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
                 request(new Runnable() {
                     @Override
                     public void run() {
-                        try {
-                            Map<String, String> s = engine.getMap("search");
+                        Map<String, String> s = engine.getMap("search");
 
-                            String url = next;
-                            String html = apache.get(url);
+                        String url = next;
+                        String html = apache.get(url);
 
-                            search(s, url, html, new Runnable() {
-                                @Override
-                                public void run() {
-                                    // destory looper thread
-                                    requestCancel();
-                                }
-                            });
-                        } catch (IOException e) {
-                            throw new RuntimeException(e);
-                        }
+                        search(s, url, html, new Runnable() {
+                            @Override
+                            public void run() {
+                                // destory looper thread
+                                requestCancel();
+                            }
+                        });
                     }
                 }, new Runnable() {
                     @Override
@@ -335,10 +325,12 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         login.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                if (dialog != null)
+                    return;
+
                 Map<String, String> login = Search.this.engine.getMap("login");
 
                 String url = login.get("details");
-                setCookies2WebView();
 
                 String l = null;
                 String p = null;
@@ -348,11 +340,15 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
                     p = login.get("post_password");
                 }
 
+                // TODO get
+
                 if (l == null && p == null) {
-                    LoginDialogFragment d = LoginDialogFragment.create(url);
+                    LoginDialogFragment d = LoginDialogFragment.create(url, apache.getCookies());
+                    dialog = d;
                     d.show(main.getSupportFragmentManager(), "");
                 } else {
-                    LoginDialogFragment d = LoginDialogFragment.create(url, lastLogin);
+                    LoginDialogFragment d = LoginDialogFragment.create(url, apache.getCookies(), lastLogin);
+                    dialog = d;
                     d.show(main.getSupportFragmentManager(), "");
                 }
             }
@@ -489,20 +485,16 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
 
     @Override
     public void onDismiss(DialogInterface dialog) {
+        this.dialog = null;
+
         if (dialog instanceof LoginDialogFragment.Result) {
             final LoginDialogFragment.Result l = (LoginDialogFragment.Result) dialog;
             if (l.browser) {
                 if (l.clear) {
-                    CookieStore store = apache.getCookieStore();
-                    if (store != null)
-                        store.clear();
+                    apache.clearCookies();
                 }
-                String url = engine.getMap("login").get("details");
-                if (!setCookies2Apache(url)) {
-                    // can return false only if cookes are empty
-                    if (!l.clear) // did user clear? no error
-                        error("Cookies are empty");
-                }
+                if (l.cookies != null && !l.cookies.isEmpty())
+                    apache.addCookies(l.cookies);
             } else if (l.ok) {
                 request(new Runnable() {
                     @Override
@@ -599,14 +591,17 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
             convertView.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    String url = item.details;
+                    if (dialog != null)
+                        return;
 
-                    setCookies2WebView();
+                    String url = item.details;
 
                     final Map<String, String> s = engine.getMap("search");
                     String js = s.get("details_js");
+                    String js_post = s.get("details_js_post");
 
-                    BrowserDialogFragment d = BrowserDialogFragment.create(url, js);
+                    BrowserDialogFragment d = BrowserDialogFragment.create(url, apache.getCookies(), js, js_post);
+                    dialog = d;
                     d.show(main.getSupportFragmentManager(), "");
                 }
             });
@@ -615,139 +610,21 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         return convertView;
     }
 
-    boolean setCookies2Apache(String url) {
-        // longer url better, domain only can return null
-        String cookies = CookieManager.getInstance().getCookie(url);
-        if (cookies == null || cookies.isEmpty()) {
-            return false;
-        }
-
-        String[] cc = cookies.split(";");
-
-        CookieStore apacheStore = apache.getCookieStore();
-        if (apacheStore == null) {
-            apacheStore = new BasicCookieStore();
-            apache.setCookieStore(apacheStore);
-        }
-
-        // check if we have cookies with same name. if yes. then webview set cookie for a different URL.
-        // then we have to remove old cookie from apache store (check value apache==webview) and
-        // replace it with new cookie from webview. This is come from WebView restriction, when we do not know
-        // exact cookie domain/path. and only can call getCookie(url)
-
-        ArrayList<BasicClientCookie> webviewStore = new ArrayList<>();
-
-        Uri uri = Uri.parse(url);
-
-        for (String c : cc) {
-            String[] vv = c.split("=");
-            String n = null;
-            if (vv.length > 0)
-                n = vv[0].trim();
-            String v = null;
-            if (vv.length > 1)
-                v = vv[1].trim();
-            if (n == null)
-                continue;
-            BasicClientCookie cookie = new BasicClientCookie(n, v);
-            // TODO it may cause troubles. Cookie maybe set for domain, .domain, www.domain or www.domain/path
-            // and since we have to cut all www/path same name cookies with different paths will override.
-            // need to check if returned cookie sting can contains DOMAIN/PATH values. Until then use domain only.
-            cookie.setDomain(uri.getAuthority());
-            webviewStore.add(cookie);
-        }
-
-        Set<String> dups = new TreeSet<>();
-
-        for (int i = 0; i < webviewStore.size(); i++) {
-            for (int k = 0; k < webviewStore.size(); k++) {
-                if (k == i)
-                    continue;
-                String n1 = webviewStore.get(i).getName();
-                if (n1.equals(webviewStore.get(k).getName()))
-                    dups.add(n1);
-            }
-        }
-
-        // find dups in Apache store. delete same cookie by values from WebView store
-        List<Cookie> list = apacheStore.getCookies();
-        for (String d : dups) {
-            for (int i = list.size() - 1; i >= 0; i--) {
-                Cookie c = list.get(i);
-                String n = c.getName();
-                if (n.equals(d)) {
-                    String v = c.getValue();
-                    // remove WebView cookies, which name&&value == apache store
-                    for (int k = webviewStore.size() - 1; k >= 0; k--) {
-                        Cookie cw = webviewStore.get(k);
-                        if (cw.getName().equals(n) && cw.getValue().equals(v)) {
-                            webviewStore.remove(k);
-                        }
-                    }
-                    // remove from apache store
-                    BasicClientCookie rm = new BasicClientCookie(n, v);
-                    rm.setPath(c.getPath());
-                    rm.setDomain(c.getDomain());
-                    rm.setExpiryDate(new Date(0));
-                    apacheStore.addCookie(rm);
-                }
-            }
-        }
-
-        // add remaining cookies from WebView store to Apache store
-        for (BasicClientCookie c : webviewStore) {
-            apacheStore.addCookie(c);
-        }
-
-        // since we have duplicates, (same cookies with different path. one set by setCookies2WebView
-        // another set by WebView server call. drop them all.
-        if (dups.size() != 0) {
-            if (Build.VERSION.SDK_INT >= 21)
-                CookieManager.getInstance().removeAllCookies(null);
-            else
-                CookieManager.getInstance().removeAllCookie();
-        }
-
-        return true;
-    }
-
-    void setCookies2WebView() {
-        CookieStore cookieStore = apache.getCookieStore();
-
-        // share cookies back (Apache --> WebView)
-        if (cookieStore != null) {
-            CookieSyncManager.createInstance(getContext());
-            CookieManager m = CookieManager.getInstance();
-            List<Cookie> list = cookieStore.getCookies();
-            for (int i = 0; i < list.size(); i++) {
-                Cookie c = list.get(i);
-                Uri.Builder b = new Uri.Builder();
-                if (c.isSecure())
-                    b.scheme("https");
-                else
-                    b.scheme("http");
-                b.authority(c.getDomain());
-                if (c.getPath() != null) {
-                    b.appendPath(c.getPath());
-                }
-                String url = b.build().toString();
-                m.setCookie(url, c.getName() + "=" + c.getValue());
-            }
-            CookieSyncManager.getInstance().sync();
-        }
-    }
-
-    public void inject(String url, String html, String js, final Inject exec) {
+    public void inject(final String url, String html, String js, String js_post, final Inject exec) {
         Log.d(TAG, "inject()");
 
-        String result = ";\n\ntorrentclient.result(document.documentElement.outerHTML)";
+        String result = ";\n\ntorrentclient.result(document.documentElement.outerHTML);";
 
         String script = null;
         if (js != null) {
-            script = js + result;
+            script = js;
+            if (js_post == null) // add exec result() only once
+                script += result;
         }
-
-        final String inject = script;
+        String script_post = null;
+        if (js_post != null) {
+            script_post = js_post + result;
+        }
 
         if (web != null) {
             web.destroy();
@@ -765,18 +642,14 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
                 super.onJsAlert(view, url, message, result);
                 error(message);
             }
-
-            @Override
-            public void onPageFinished(WebView view, String url) {
-                super.onPageFinished(view, url);
-                if (inject != null)
-                    web.loadUrl("javascript:" + inject);
-            }
         };
+        web.setHttp(apache);
+        web.setInject(script);
+        web.setInjectPost(script_post);
         web.addJavascriptInterface(exec, "torrentclient");
         // Uncaught SecurityError: Failed to read the 'cookie' property from 'Document': Cookies are disabled inside 'data:' URLs.
         // called when page loaded with loadData()
-        web.loadDataWithBaseURL(url, html, "text/html", null, null);
+        web.loadDataWithBaseURL(url, html, "text/html", "UTF8", url);
     }
 
     public void login(String login, String pass, final Runnable done) throws IOException {
@@ -800,11 +673,12 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
             final String html = apache.post(post, map);
 
             final String js = s.get("js");
-            if (js != null) {
+            final String js_post = s.get("js_post");
+            if (js != null || js_post != null) {
                 handler.post(new Runnable() {
                     @Override
                     public void run() {
-                        inject(post, html, js, new Inject() {
+                        inject(post, html, js, js_post, new Inject() {
                             @JavascriptInterface
                             public void result(String html) {
                                 super.result(html);
@@ -822,6 +696,8 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
                 return;
             }
         }
+
+        // TODO get
 
         if (done != null)
             done.run();
@@ -854,11 +730,12 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         this.nextLast.add(url);
 
         final String js = s.get("js");
-        if (js != null) {
+        final String js_post = s.get("js_post");
+        if (js != null || js_post != null) {
             handler.post(new Runnable() {
                 @Override
                 public void run() {
-                    inject(url, html, js, new Inject() {
+                    inject(url, html, js, js_post, new Inject() {
                         @JavascriptInterface
                         public void result(final String html) {
                             super.result(html);

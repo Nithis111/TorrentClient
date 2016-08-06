@@ -2,7 +2,6 @@ package com.github.axet.torrentclient.dialogs;
 
 import android.app.Dialog;
 import android.content.DialogInterface;
-import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.view.ViewPager;
@@ -10,7 +9,6 @@ import android.support.v7.app.AlertDialog;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.webkit.CookieManager;
 import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.TextView;
@@ -31,6 +29,7 @@ public class LoginDialogFragment extends BrowserDialogFragment {
         public boolean ok;
         public boolean browser;
         public boolean clear;
+        public String cookies;
         public String login;
         public String pass;
 
@@ -43,19 +42,21 @@ public class LoginDialogFragment extends BrowserDialogFragment {
         }
     }
 
-    public static LoginDialogFragment create(String url, String lastlogin) {
+    public static LoginDialogFragment create(String url, String cookies, String lastlogin) {
         LoginDialogFragment f = new LoginDialogFragment();
         Bundle args = new Bundle();
         args.putString("url", url);
+        args.putString("cookies", cookies);
         args.putString("login", lastlogin);
         f.setArguments(args);
         return f;
     }
 
-    public static LoginDialogFragment create(String url) {
+    public static LoginDialogFragment create(String url, String cookies) {
         LoginDialogFragment f = new LoginDialogFragment();
         Bundle args = new Bundle();
         args.putString("url", url);
+        args.putString("cookies", cookies);
         args.putBoolean("browser", true);
         f.setArguments(args);
         return f;
@@ -85,6 +86,8 @@ public class LoginDialogFragment extends BrowserDialogFragment {
                         new DialogInterface.OnClickListener() {
                             public void onClick(DialogInterface dialog, int whichButton) {
                                 result.ok = true;
+                                if (http != null) // browser never showsup
+                                    result.cookies = http.getCookies();
                                 result.login = getLogin();
                                 result.pass = getPass();
                                 dialog.dismiss();
@@ -136,10 +139,7 @@ public class LoginDialogFragment extends BrowserDialogFragment {
             public void onClick(View v) {
                 result.clear = true;
 
-                if (Build.VERSION.SDK_INT >= 21)
-                    CookieManager.getInstance().removeAllCookies(null);
-                else
-                    CookieManager.getInstance().removeAllCookie();
+                web.removeAllCookies();
 
                 Toast.makeText(getContext(), R.string.cookies_cleared, Toast.LENGTH_SHORT).show();
             }
