@@ -47,7 +47,7 @@ public class GoogleProxy extends HttpClient {
     @Override
     public void create() {
         super.create();
-        setProxy("compress.googlezip.net", 80, "http");
+        //setProxy("compress.googlezip.net", 80, "http");
         setProxy("proxy.googlezip.net", 443, "https");
     }
 
@@ -60,8 +60,10 @@ public class GoogleProxy extends HttpClient {
         String value = "ps=" + timestamp + "-" + Integer.toString((int) (Math.random() * 1000000000))
                 + "-" + Integer.toString((int) (Math.random() * 1000000000))
                 + "-" + Integer.toString((int) (Math.random() * 1000000000))
-                + ", sid=" + sid + ", b=" + chromeVersion[2] + ", p=" + chromeVersion[3] + ", c=win";
+                + ", sid=" + sid + ", b=" + chromeVersion[2] + ", p=" + chromeVersion[3] + ", c=android";
         request.addHeader("Chrome-Proxy", value);
+        request.addHeader("Upgrade-Insecure-Requests","1");
+        request.addHeader("Save-Data", "on");
     }
 
     @Override
