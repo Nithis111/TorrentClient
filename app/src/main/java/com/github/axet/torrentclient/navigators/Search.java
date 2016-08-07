@@ -24,7 +24,8 @@ import android.widget.TextView;
 import com.github.axet.androidlibrary.widgets.ThemeUtils;
 import com.github.axet.torrentclient.R;
 import com.github.axet.torrentclient.activities.MainActivity;
-import com.github.axet.torrentclient.app.ApacheHttp;
+import com.github.axet.torrentclient.app.GoogleProxy;
+import com.github.axet.torrentclient.app.HttpClient;
 import com.github.axet.torrentclient.app.MainApplication;
 import com.github.axet.torrentclient.app.SearchEngine;
 import com.github.axet.torrentclient.dialogs.BrowserDialogFragment;
@@ -70,7 +71,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
     Thread thread;
     Looper threadLooper;
 
-    ApacheHttp apache;
+    HttpClient apache;
     WebViewCustom web;
     SearchEngine engine;
     Handler handler;
@@ -127,7 +128,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         this.context = m;
         this.handler = new Handler();
 
-        apache = new ApacheHttp();
+        apache = new GoogleProxy();
     }
 
     public void setEngine(SearchEngine engine) {
@@ -211,7 +212,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
                         Map<String, String> s = engine.getMap("search");
 
                         String url = next;
-                        String html = apache.get(url);
+                        String html = apache.get(null, url);
 
                         search(s, url, html, new Runnable() {
                             @Override
@@ -320,8 +321,24 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
             }
         });
 
+        View home = header.findViewById(R.id.search_header_home);
+        home.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (dialog != null)
+                    return;
+
+                Map<String, String> home = Search.this.engine.getMap("home");
+
+                String url = home.get("get");
+
+                BrowserDialogFragment d = BrowserDialogFragment.create(url, apache.getCookies(), null, null);
+                dialog = d;
+                d.show(main.getSupportFragmentManager(), "");
+            }
+        });
+
         View login = header.findViewById(R.id.search_header_login);
-        login.setVisibility(engine.getMap("login") == null ? View.GONE : View.VISIBLE);
         login.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -353,6 +370,18 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
                 }
             }
         });
+
+        if (engine.getMap("login") == null) {
+            login.setVisibility(View.GONE);
+            Map<String, String> h = Search.this.engine.getMap("home");
+            if (h != null)
+                home.setVisibility(View.VISIBLE);
+            else
+                home.setVisibility(View.GONE);
+        } else {
+            login.setVisibility(View.VISIBLE);
+            home.setVisibility(View.GONE);
+        }
 
         list.addHeaderView(header);
         list.addFooterView(footer);
@@ -643,7 +672,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
                 error(message);
             }
         };
-        web.setHttp(apache);
+        web.setHttpClient(apache);
         web.setInject(script);
         web.setInjectPost(script_post);
         web.addJavascriptInterface(exec, "torrentclient");
@@ -670,7 +699,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
                 String[] m = param.split("=");
                 map.put(URLDecoder.decode(m[0].trim(), MainApplication.UTF8), URLDecoder.decode(m[1].trim(), MainApplication.UTF8));
             }
-            final String html = apache.post(post, map);
+            final String html = apache.post(null, post, map);
 
             final String js = s.get("js");
             final String js_post = s.get("js_post");
@@ -713,14 +742,14 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         if (post != null) {
             String t = s.get("post_search");
             url = post;
-            html = apache.post(url, new String[][]{{t, search}});
+            html = apache.post(null, url, new String[][]{{t, search}});
         }
 
         String get = s.get("get");
         if (get != null) {
             String query = URLEncoder.encode(search, MainApplication.UTF8);
             url = String.format(get, query);
-            html = apache.get(url);
+            html = apache.get(null, url);
         }
 
         search(s, url, html, done);

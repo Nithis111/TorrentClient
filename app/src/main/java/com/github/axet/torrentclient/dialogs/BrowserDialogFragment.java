@@ -29,7 +29,8 @@ import android.widget.TextView;
 
 import com.github.axet.torrentclient.R;
 import com.github.axet.torrentclient.activities.MainActivity;
-import com.github.axet.torrentclient.app.ApacheHttp;
+import com.github.axet.torrentclient.app.GoogleProxy;
+import com.github.axet.torrentclient.app.HttpClient;
 import com.github.axet.torrentclient.widgets.WebViewCustom;
 
 public class BrowserDialogFragment extends DialogFragment implements MainActivity.TorrentFragmentInterface {
@@ -41,7 +42,7 @@ public class BrowserDialogFragment extends DialogFragment implements MainActivit
     ImageButton back;
     ImageButton forward;
     WebViewCustom web;
-    ApacheHttp http;
+    HttpClient http;
     Thread thread;
     int load;
 
@@ -218,8 +219,8 @@ public class BrowserDialogFragment extends DialogFragment implements MainActivit
         web.setInject(script);
         web.setInjectPost(script_post);
 
-        http = new ApacheHttp(getArguments().getString("cookies"));
-        web.setHttp(http);
+        http = new GoogleProxy(getArguments().getString("cookies"));
+        web.setHttpClient(http);
 
         RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.MATCH_PARENT);
         params.addRule(RelativeLayout.BELOW, R.id.search_details_toolbar);
@@ -256,6 +257,8 @@ public class BrowserDialogFragment extends DialogFragment implements MainActivit
 
         updateButtons();
 
+        final String base = url;
+
         web.setDownloadListener(new DownloadListener() {
             @Override
             public void onDownloadStart(final String url, String userAgent, String contentDisposition, String mimetype, long contentLength) {
@@ -263,7 +266,7 @@ public class BrowserDialogFragment extends DialogFragment implements MainActivit
                 thread = new Thread(new Runnable() {
                     @Override
                     public void run() {
-                        final byte[] buf = http.getBytes(url);
+                        final byte[] buf = http.getBytes(base, url);
                         handler.post(new Runnable() {
                             @Override
                             public void run() {

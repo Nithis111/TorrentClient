@@ -365,6 +365,7 @@ public class WebViewCustom extends WebView {
         if (base == null) {
             base = url;
             HttpClient.DownloadResponse w = http.getResponse(base, url);
+            w.downloadText();
             w.setHtml(loadBase(w.getHtml()));
             return w;
         } else {
@@ -537,7 +538,9 @@ public class WebViewCustom extends WebView {
         updateCookies(url);
 
         try {
-            return http.getResponse(base, url);
+            HttpClient.DownloadResponse w = http.getResponse(base, url);
+            w.downloadText();
+            return w;
         } catch (final RuntimeException e) {
             logIO(url, e);
             handler.post(new Runnable() {

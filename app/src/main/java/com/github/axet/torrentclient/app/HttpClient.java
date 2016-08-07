@@ -17,6 +17,7 @@ import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.HttpCookie;
 import java.nio.charset.Charset;
+import java.nio.charset.UnsupportedCharsetException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -27,6 +28,7 @@ import cz.msebera.android.httpclient.Header;
 import cz.msebera.android.httpclient.HttpEntity;
 import cz.msebera.android.httpclient.HttpHost;
 import cz.msebera.android.httpclient.NameValuePair;
+import cz.msebera.android.httpclient.ParseException;
 import cz.msebera.android.httpclient.client.CookieStore;
 import cz.msebera.android.httpclient.client.config.RequestConfig;
 import cz.msebera.android.httpclient.client.entity.UrlEncodedFormEntity;
@@ -95,53 +97,27 @@ public class HttpClient {
 
     public static class DownloadResponse extends WebResourceResponse {
         public boolean downloaded;
+
         public String userAgent;
         public String contentDisposition;
         public long contentLength;
         byte[] buf;
 
-        public static DownloadResponse create(CloseableHttpResponse response) throws IOException {
-            HttpEntity entity = response.getEntity();
-            ContentType contentType = ContentType.getOrDefault(entity);
-            if (!directDownload(contentType.getMimeType())) {
-                byte[] buf = IOUtils.toByteArray(entity.getContent());
+        CloseableHttpResponse response;
+        HttpEntity entity;
 
-                String encoding;
-                Charset enc = contentType.getCharset();
-                if (enc == null) {
-                    Document doc = Jsoup.parse(new String(buf, Charset.defaultCharset()));
-                    Element e = doc.select("meta[http-equiv=Content-Type]").first();
-                    if (e != null) {
-                        String content = e.attr("content");
-                        contentType = ContentType.parse(content);
-                        enc = contentType.getCharset();
-                    } else {
-                        e = doc.select("meta[charset]").first();
-                        if (e != null) {
-                            String content = e.attr("content");
-                            contentType = ContentType.parse(content);
-                            enc = contentType.getCharset();
-                        }
-                    }
-                }
-                encoding = Charsets.toCharset(enc).name();
-                return new DownloadResponse(contentType.getMimeType(), encoding, buf);
-            } else {
-                Header ct = response.getFirstHeader("Content-Disposition");
-                String ctValue = null;
-                if (ct != null)
-                    ctValue = ct.getValue();
-                return new DownloadResponse(null, ctValue, contentType.getMimeType(), entity.getContentLength());
-            }
-        }
-
-        static boolean directDownload(String mimetype) {
+        static boolean download(String mimetype) {
             String[] types = new String[]{"application/x-bittorrent", "audio", "video"};
             for (String t : types) {
                 if (mimetype.startsWith(t))
-                    return true;
+                    return false;
             }
-            return false;
+            return true;
+        }
+
+        public DownloadResponse(CloseableHttpResponse response) {
+            super(null, null, null);
+            this.response = response;
         }
 
         public DownloadResponse(String userAgent, String contentDisposition, String mimetype, long contentLength) {
@@ -168,6 +144,10 @@ public class HttpClient {
             super(mimeType, encoding, statusCode, reasonPhrase, responseHeaders, data);
         }
 
+        public byte[] getBuf() {
+            return buf;
+        }
+
         public String getHtml() {
             try {
                 return new String(buf, getEncoding());
@@ -183,6 +163,72 @@ public class HttpClient {
             } catch (UnsupportedEncodingException e) {
                 throw new RuntimeException(e);
             }
+        }
+
+        public void download() throws IOException {
+            HttpEntity entity = response.getEntity();
+            ContentType contentType = ContentType.getOrDefault(entity);
+
+            buf = IOUtils.toByteArray(entity.getContent());
+
+            String encoding;
+            Charset enc = contentType.getCharset();
+            if (enc == null) {
+                Document doc = Jsoup.parse(new String(buf, Charset.defaultCharset()));
+                Element e = doc.select("meta[http-equiv=Content-Type]").first();
+                if (e != null) {
+                    String content = e.attr("content");
+                    try {
+                        contentType = ContentType.parse(content);
+                        enc = contentType.getCharset();
+                    } catch (ParseException ignore) {
+                    }
+                } else {
+                    e = doc.select("meta[charset]").first();
+                    if (e != null) {
+                        String content = e.attr("charset");
+                        try {
+                            enc = Charset.forName(content);
+                        } catch (UnsupportedCharsetException ignore) {
+                        }
+                    }
+                }
+            }
+            encoding = Charsets.toCharset(enc).name();
+            downloaded = true;
+
+            setMimeType(contentType.getMimeType());
+            setEncoding(encoding);
+            setData(new ByteArrayInputStream(buf));
+            consume();
+        }
+
+        public void downloadText() {
+            try {
+                HttpEntity entity = response.getEntity();
+                ContentType contentType = ContentType.getOrDefault(entity);
+
+                if (download(contentType.getMimeType())) {
+                    download();
+                } else {
+                    Header ct = response.getFirstHeader("Content-Disposition");
+                    String ctValue = null;
+                    if (ct != null)
+                        ctValue = ct.getValue();
+                    setMimeType(contentType.getMimeType());
+                    contentDisposition = ctValue;
+                    contentLength = entity.getContentLength();
+                    userAgent = USER_AGENT;
+                    consume();
+                }
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        public void consume() throws IOException {
+            EntityUtils.consume(entity);
+            response.close();
         }
     }
 
@@ -327,24 +373,27 @@ public class HttpClient {
         request = null;
     }
 
-    CloseableHttpResponse execute(HttpRequestBase request) throws IOException {
+    CloseableHttpResponse execute(String base, HttpRequestBase request) throws IOException {
         this.request = request;
+
+        if (config != null)
+            request.setConfig(config);
+        if (base != null) {
+            request.addHeader("Referer", base);
+            Uri u = Uri.parse(base);
+            request.addHeader("Origin", new Uri.Builder().scheme(u.getScheme()).authority(u.getAuthority()).toString());
+            request.addHeader("User-Agent", USER_AGENT);
+        }
+
+
         return httpclient.execute(request, httpClientContext);
     }
 
-    public String get(String url) {
+    public String get(String base, String url) {
         try {
-            HttpGet httpGet = new HttpGet(url);
-            if (config != null)
-                httpGet.setConfig(config);
-            CloseableHttpResponse response = execute(httpGet);
-            HttpEntity entity = response.getEntity();
-            ContentType contentType = ContentType.getOrDefault(entity);
-            String encoding = Charsets.toCharset(contentType.getCharset()).name();
-            String html = IOUtils.toString(entity.getContent(), encoding);
-            EntityUtils.consume(entity);
-            response.close();
-            return html;
+            DownloadResponse w = getResponse(base, url);
+            w.download();
+            return w.getHtml();
         } catch (IOException e) {
             throw new RuntimeException(e);
         } finally {
@@ -352,17 +401,11 @@ public class HttpClient {
         }
     }
 
-    public byte[] getBytes(String url) {
+    public byte[] getBytes(String base, String url) {
         try {
-            HttpGet httpGet = new HttpGet(url);
-            if (config != null)
-                httpGet.setConfig(config);
-            CloseableHttpResponse response = execute(httpGet);
-            HttpEntity entity = response.getEntity();
-            byte[] buf = IOUtils.toByteArray(entity.getContent());
-            EntityUtils.consume(entity);
-            response.close();
-            return buf;
+            DownloadResponse w = getResponse(base, url);
+            w.download();
+            return w.getBuf();
         } catch (IOException e) {
             throw new RuntimeException(e);
         } finally {
@@ -373,20 +416,8 @@ public class HttpClient {
     public DownloadResponse getResponse(String base, String url) {
         try {
             HttpGet httpGet = new HttpGet(url);
-            if (config != null)
-                httpGet.setConfig(config);
-            if (base != null) {
-                httpGet.addHeader("Referer", base);
-                Uri u = Uri.parse(base);
-                httpGet.addHeader("Origin", new Uri.Builder().scheme(u.getScheme()).authority(u.getAuthority()).toString());
-                httpGet.addHeader("User-Agent", USER_AGENT);
-            }
-            CloseableHttpResponse response = execute(httpGet);
-            HttpEntity entity = response.getEntity();
-            DownloadResponse w = DownloadResponse.create(response);
-            EntityUtils.consume(entity);
-            response.close();
-            return w;
+            CloseableHttpResponse response = execute(base, httpGet);
+            return new DownloadResponse(response);
         } catch (IOException e) {
             throw new RuntimeException(e);
         } finally {
@@ -394,31 +425,23 @@ public class HttpClient {
         }
     }
 
-    public String post(String url, String[][] map) {
+    public String post(String base, String url, String[][] map) {
         Map<String, String> m = new HashMap<>();
         for (int i = 0; i < map.length; i++) {
             m.put(map[i][0], map[i][1]);
         }
-        return post(url, m);
+        return post(base, url, m);
     }
 
-    public String post(String url, Map<String, String> map) {
-        return post(url, from(map));
+    public String post(String base, String url, Map<String, String> map) {
+        return post(base, url, from(map));
     }
 
-    public String post(String url, List<NameValuePair> nvps) {
+    public String post(String base, String url, List<NameValuePair> nvps) {
         try {
-            HttpPost httpPost = new HttpPost(url);
-            if (config != null)
-                httpPost.setConfig(config);
-            httpPost.setEntity(new UrlEncodedFormEntity(nvps));
-            CloseableHttpResponse response = execute(httpPost);
-            HttpEntity entity = response.getEntity();
-            ContentType contentType = ContentType.getOrDefault(entity);
-            String html = IOUtils.toString(entity.getContent(), contentType.getCharset());
-            EntityUtils.consume(entity);
-            response.close();
-            return html;
+            DownloadResponse w = postResponse(base, url, nvps);
+            w.download();
+            return w.getHtml();
         } catch (IOException e) {
             throw new RuntimeException(e);
         } finally {
@@ -433,21 +456,9 @@ public class HttpClient {
     public DownloadResponse postResponse(String base, String url, List<NameValuePair> nvps) {
         try {
             HttpPost httpPost = new HttpPost(url);
-            if (config != null)
-                httpPost.setConfig(config);
-            if (base != null) {
-                httpPost.addHeader("Referer", base);
-                Uri u = Uri.parse(base);
-                httpPost.addHeader("Origin", new Uri.Builder().scheme(u.getScheme()).authority(u.getAuthority()).toString());
-                httpPost.addHeader("User-Agent", USER_AGENT);
-            }
             httpPost.setEntity(new UrlEncodedFormEntity(nvps));
-            CloseableHttpResponse response = execute(httpPost);
-            HttpEntity entity = response.getEntity();
-            DownloadResponse w = DownloadResponse.create(response);
-            EntityUtils.consume(entity);
-            response.close();
-            return w;
+            CloseableHttpResponse response = execute(base, httpPost);
+            return new DownloadResponse(response);
         } catch (IOException e) {
             throw new RuntimeException(e);
         } finally {
