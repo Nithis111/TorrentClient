@@ -2,9 +2,11 @@ package com.github.axet.torrentclient.navigators;
 
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.os.Handler;
 import android.os.Looper;
+import android.preference.PreferenceManager;
 import android.text.Html;
 import android.util.Base64;
 import android.util.Log;
@@ -21,7 +23,6 @@ import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
-import com.github.axet.androidlibrary.net.HttpClient;
 import com.github.axet.androidlibrary.widgets.ThemeUtils;
 import com.github.axet.androidlibrary.widgets.WebViewCustom;
 import com.github.axet.torrentclient.R;
@@ -59,7 +60,8 @@ import cz.msebera.android.httpclient.cookie.Cookie;
 import cz.msebera.android.httpclient.impl.client.BasicCookieStore;
 
 public class Search extends BaseAdapter implements DialogInterface.OnDismissListener,
-        UnreadCountDrawable.UnreadCount, MainActivity.NavigatorInterface {
+        UnreadCountDrawable.UnreadCount, MainActivity.NavigatorInterface,
+        SharedPreferences.OnSharedPreferenceChangeListener {
     public static final String TAG = Search.class.getSimpleName();
 
     Context context;
@@ -71,7 +73,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
     Thread thread;
     Looper threadLooper;
 
-    HttpClient http;
+    GoogleProxy http;
     WebViewCustom web;
     SearchEngine engine;
     Handler handler;
@@ -128,7 +130,12 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         this.context = m;
         this.handler = new Handler();
 
-        http = new HttpClient();
+        final SharedPreferences shared = PreferenceManager.getDefaultSharedPreferences(context);
+
+        http = new GoogleProxy();
+        http.enabled = shared.getString(MainApplication.PREFERENCE_PROXY, "").equals("google");
+
+        shared.registerOnSharedPreferenceChangeListener(this);
     }
 
     public void setEngine(SearchEngine engine) {
@@ -510,6 +517,8 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
     }
 
     public void close() {
+        final SharedPreferences shared = PreferenceManager.getDefaultSharedPreferences(context);
+        shared.unregisterOnSharedPreferenceChangeListener(this);
     }
 
     @Override
@@ -965,5 +974,10 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
     @Override
     public int getUnreadCount() {
         return message.size();
+    }
+
+    @Override
+    public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
+        http.enabled = sharedPreferences.getString(MainApplication.PREFERENCE_PROXY, "").equals(GoogleProxy.NAME);
     }
 }

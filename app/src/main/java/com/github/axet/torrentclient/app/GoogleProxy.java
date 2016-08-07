@@ -13,6 +13,11 @@ import cz.msebera.android.httpclient.client.methods.HttpRequestBase;
 
 public class GoogleProxy extends HttpClient {
 
+    // TODO temporary. will be removed when multi proxy option available.
+    public boolean enabled;
+
+    public static final String NAME = "google";
+
     public static final String md5(final String s) {
         final String MD5 = "MD5";
         try {
@@ -47,51 +52,48 @@ public class GoogleProxy extends HttpClient {
     @Override
     public void create() {
         super.create();
+    }
+
+    void setProxy() {
         //setProxy("compress.googlezip.net", 80, "http");
+        //setProxy("proxy.googlezip.net", 80, "http");
         setProxy("proxy.googlezip.net", 443, "https");
     }
 
     void authHeader(HttpRequestBase request) {
         String authValue = "ac4500dd3b7579186c1b0620614fdb1f7d61f944";
         String timestamp = Long.toString(System.currentTimeMillis()).substring(0, 10);
-        String[] chromeVersion = {"52", "0", "2743", "82"};
         String sid = (timestamp + authValue + timestamp);
         sid = md5(sid);
-        String value = "ps=" + timestamp + "-" + Integer.toString((int) (Math.random() * 1000000000))
-                + "-" + Integer.toString((int) (Math.random() * 1000000000))
-                + "-" + Integer.toString((int) (Math.random() * 1000000000))
-                + ", sid=" + sid + ", b=" + chromeVersion[2] + ", p=" + chromeVersion[3] + ", c=android";
+        String value = "ps=" + timestamp + "-" + "0" + "-" + "0" + "-" + "0" + ", sid=" + sid + ", b=2214" + ", p=115" + ", c=win";
         request.addHeader("Chrome-Proxy", value);
-        request.addHeader("Upgrade-Insecure-Requests","1");
+        request.addHeader("Upgrade-Insecure-Requests", "1");
         request.addHeader("Save-Data", "on");
     }
 
     @Override
     public CloseableHttpResponse execute(String base, HttpRequestBase request) throws IOException {
-        authHeader(request);
-        return super.execute(base, request);
-    }
-
-    String google(String url) {
-        if (url == null)
-            return null;
-        while (url.endsWith("/")) {
-            url = url.substring(0, url.length() - 1);
+        if (enabled) {
+            // Goodle Data Saver plugin does not work for sites on https
+            if (request.getURI().getScheme().equals("https")) {
+                clearProxy();
+            } else {
+                authHeader(request);
+                setProxy();
+            }
+        }else {
+            clearProxy();
         }
-        return url;
+        return super.execute(base, request);
     }
 
     @Override
     public DownloadResponse getResponse(String base, String url) {
-        base = google(base);
-        url = google(url);
         return super.getResponse(base, url);
     }
 
     @Override
     public DownloadResponse postResponse(String base, String url, List<NameValuePair> nvps) {
-        base = google(base);
-        url = google(url);
         return super.postResponse(base, url, nvps);
     }
 }

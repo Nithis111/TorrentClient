@@ -3,10 +3,12 @@ package com.github.axet.torrentclient.dialogs;
 import android.app.Activity;
 import android.app.Dialog;
 import android.content.DialogInterface;
+import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
+import android.preference.PreferenceManager;
 import android.support.annotation.Nullable;
 import android.support.v4.app.DialogFragment;
 import android.support.v4.view.ViewPager;
@@ -27,11 +29,11 @@ import android.widget.ProgressBar;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
-import com.github.axet.androidlibrary.net.HttpClient;
 import com.github.axet.androidlibrary.widgets.WebViewCustom;
 import com.github.axet.torrentclient.R;
 import com.github.axet.torrentclient.activities.MainActivity;
 import com.github.axet.torrentclient.app.GoogleProxy;
+import com.github.axet.torrentclient.app.MainApplication;
 
 public class BrowserDialogFragment extends DialogFragment implements MainActivity.TorrentFragmentInterface {
     public static String TAG = BrowserDialogFragment.class.getSimpleName();
@@ -42,7 +44,7 @@ public class BrowserDialogFragment extends DialogFragment implements MainActivit
     ImageButton back;
     ImageButton forward;
     WebViewCustom web;
-    HttpClient http;
+    GoogleProxy http;
     Thread thread;
     int load;
 
@@ -219,7 +221,11 @@ public class BrowserDialogFragment extends DialogFragment implements MainActivit
         web.setInject(script);
         web.setInjectPost(script_post);
 
-        http = new HttpClient(getArguments().getString("cookies"));
+        final SharedPreferences shared = PreferenceManager.getDefaultSharedPreferences(getContext());
+
+        http = new GoogleProxy();
+        http.enabled = shared.getString(MainApplication.PREFERENCE_PROXY, "").equals(GoogleProxy.NAME);
+        http.addCookies(getArguments().getString("cookies"));
         web.setHttpClient(http);
 
         RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.MATCH_PARENT);

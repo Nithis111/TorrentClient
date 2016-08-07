@@ -11,6 +11,7 @@ import android.util.Log;
 import android.view.View;
 import android.widget.TextView;
 
+import com.github.axet.androidlibrary.net.HttpClient;
 import com.github.axet.androidlibrary.widgets.ThemeUtils;
 import com.github.axet.torrentclient.R;
 
@@ -30,6 +31,7 @@ public class MainApplication extends Application {
     public static final String PREFERENCE_LAST_PATH = "lastpath";
     public static final String PREFERENCE_DIALOG = "dialog";
     public static final String PREFERENCE_RUN = "run";
+    public static final String PREFERENCE_PROXY = "proxy";
 
     public static final String SAVE_STATE = MainApplication.class.getName() + ".SAVE_STATE";
 
@@ -107,7 +109,6 @@ public class MainApplication extends Application {
         super.onLowMemory();
         Log.d(TAG, "onLowMemory");
     }
-
 
     public static String onTrimString(int level) {
         switch (level) {
