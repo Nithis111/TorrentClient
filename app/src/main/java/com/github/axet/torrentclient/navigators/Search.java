@@ -71,7 +71,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
     Thread thread;
     Looper threadLooper;
 
-    HttpClient apache;
+    HttpClient http;
     WebViewCustom web;
     SearchEngine engine;
     Handler handler;
@@ -128,7 +128,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         this.context = m;
         this.handler = new Handler();
 
-        apache = new GoogleProxy();
+        http = new HttpClient();
     }
 
     public void setEngine(SearchEngine engine) {
@@ -140,10 +140,10 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
     }
 
     public void load(String state) {
-        CookieStore cookieStore = apache.getCookieStore();
+        CookieStore cookieStore = http.getCookieStore();
         if (cookieStore == null) {
             cookieStore = new BasicCookieStore();
-            apache.setCookieStore(cookieStore);
+            http.setCookieStore(cookieStore);
         }
         cookieStore.clear();
 
@@ -167,7 +167,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
     }
 
     public String save() {
-        CookieStore cookieStore = apache.getCookieStore();
+        CookieStore cookieStore = http.getCookieStore();
         // do not save cookies between restarts for non login
         if (cookieStore != null && engine.getMap("login") != null) {
             List<Cookie> cookies = cookieStore.getCookies();
@@ -212,7 +212,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
                         Map<String, String> s = engine.getMap("search");
 
                         String url = next;
-                        String html = apache.get(null, url);
+                        String html = http.get(null, url);
 
                         search(s, url, html, new Runnable() {
                             @Override
@@ -332,7 +332,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
 
                 String url = home.get("get");
 
-                BrowserDialogFragment d = BrowserDialogFragment.create(url, apache.getCookies(), null, null);
+                BrowserDialogFragment d = BrowserDialogFragment.create(url, http.getCookies(), null, null);
                 dialog = d;
                 d.show(main.getSupportFragmentManager(), "");
             }
@@ -360,11 +360,11 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
                 // TODO get
 
                 if (l == null && p == null) {
-                    LoginDialogFragment d = LoginDialogFragment.create(url, apache.getCookies());
+                    LoginDialogFragment d = LoginDialogFragment.create(url, http.getCookies());
                     dialog = d;
                     d.show(main.getSupportFragmentManager(), "");
                 } else {
-                    LoginDialogFragment d = LoginDialogFragment.create(url, apache.getCookies(), lastLogin);
+                    LoginDialogFragment d = LoginDialogFragment.create(url, http.getCookies(), lastLogin);
                     dialog = d;
                     d.show(main.getSupportFragmentManager(), "");
                 }
@@ -438,11 +438,11 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
             threadLooper = null;
             i = true;
         }
-        if (apache.getRequest() != null) {
+        if (http.getRequest() != null) {
             Thread thread = new Thread(new Runnable() {
                 @Override
                 public void run() {
-                    apache.abort();
+                    http.abort();
                 }
             });
             thread.start();
@@ -520,10 +520,10 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
             final LoginDialogFragment.Result l = (LoginDialogFragment.Result) dialog;
             if (l.browser) {
                 if (l.clear) {
-                    apache.clearCookies();
+                    http.clearCookies();
                 }
                 if (l.cookies != null && !l.cookies.isEmpty())
-                    apache.addCookies(l.cookies);
+                    http.addCookies(l.cookies);
             } else if (l.ok) {
                 request(new Runnable() {
                     @Override
@@ -629,7 +629,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
                     String js = s.get("details_js");
                     String js_post = s.get("details_js_post");
 
-                    BrowserDialogFragment d = BrowserDialogFragment.create(url, apache.getCookies(), js, js_post);
+                    BrowserDialogFragment d = BrowserDialogFragment.create(url, http.getCookies(), js, js_post);
                     dialog = d;
                     d.show(main.getSupportFragmentManager(), "");
                 }
@@ -672,7 +672,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
                 error(message);
             }
         };
-        web.setHttpClient(apache);
+        web.setHttpClient(http);
         web.setInject(script);
         web.setInjectPost(script_post);
         web.addJavascriptInterface(exec, "torrentclient");
@@ -699,7 +699,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
                 String[] m = param.split("=");
                 map.put(URLDecoder.decode(m[0].trim(), MainApplication.UTF8), URLDecoder.decode(m[1].trim(), MainApplication.UTF8));
             }
-            final String html = apache.post(null, post, map);
+            final String html = http.post(null, post, map);
 
             final String js = s.get("js");
             final String js_post = s.get("js_post");
@@ -742,14 +742,14 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         if (post != null) {
             String t = s.get("post_search");
             url = post;
-            html = apache.post(null, url, new String[][]{{t, search}});
+            html = http.post(null, url, new String[][]{{t, search}});
         }
 
         String get = s.get("get");
         if (get != null) {
             String query = URLEncoder.encode(search, MainApplication.UTF8);
             url = String.format(get, query);
-            html = apache.get(null, url);
+            html = http.get(null, url);
         }
 
         search(s, url, html, done);

@@ -47,6 +47,7 @@ public class GoogleProxy extends HttpClient {
     @Override
     public void create() {
         super.create();
+        setProxy("compress.googlezip.net", 80, "http");
         setProxy("proxy.googlezip.net", 443, "https");
     }
 

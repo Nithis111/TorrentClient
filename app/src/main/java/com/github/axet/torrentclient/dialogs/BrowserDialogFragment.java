@@ -219,7 +219,7 @@ public class BrowserDialogFragment extends DialogFragment implements MainActivit
         web.setInject(script);
         web.setInjectPost(script_post);
 
-        http = new GoogleProxy(getArguments().getString("cookies"));
+        http = new HttpClient(getArguments().getString("cookies"));
         web.setHttpClient(http);
 
         RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.MATCH_PARENT);
