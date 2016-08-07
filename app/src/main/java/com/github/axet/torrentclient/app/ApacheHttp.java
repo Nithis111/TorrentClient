@@ -91,7 +91,7 @@ public class ApacheHttp {
         }
 
         static boolean directDownload(String mimetype) {
-            String[] types = new String[]{"application", "audio", "video"};
+            String[] types = new String[]{"application/x-bittorrent", "audio", "video"};
             for (String t : types) {
                 if (mimetype.startsWith(t))
                     return true;

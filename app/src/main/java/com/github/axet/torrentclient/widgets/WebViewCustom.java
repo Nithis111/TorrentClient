@@ -121,7 +121,6 @@ public class WebViewCustom extends WebView {
                         String value = o.getString("value");
                         nvps.add(new BasicNameValuePair(key, value.toString()));
                     }
-                    updateCookies(url);
                     postUrl(url, nvps);
                 } catch (Exception e) {
                     logIO(url, e);
@@ -133,9 +132,21 @@ public class WebViewCustom extends WebView {
         }
 
         @JavascriptInterface
-        public void customAjax(String form, String body) {
-            Log.d(TAG, "result()");
-            // TODO do actual ajax request
+        public String customAjax(String method, String action, String user, String password, String body) {
+            Log.d(TAG, "customAjax()");
+            if (method.toUpperCase().equals("GET")) {
+                String url = null;
+                try {
+                    url = new URL(new URL(base), action).toString();
+                    ApacheHttp.DownloadResponse r = get(url);
+                    return r.getHtml();
+                } catch (Exception e) {
+                    logIO(url, e);
+                    onConsoleMessage(e.getMessage(), 0, "");
+                }
+            }
+            // TODO POST
+            return "";
         }
     }
 
@@ -319,9 +330,10 @@ public class WebViewCustom extends WebView {
             return;
         }
 
-        base = url;
-
         if (http != null) {
+            // make updateCookies() mecanics work
+            removeWebCookies();
+            base = url;
             request(new Runnable() {
                 @Override
                 public void run() {
@@ -333,10 +345,16 @@ public class WebViewCustom extends WebView {
         }
     }
 
-    WebResourceResponse getBase(String url) {
+    ApacheHttp.DownloadResponse getBase(String url) {
         if (url.startsWith("data")) {
             return null; // TODO load to ApacheHttp.DownloadResponse
         }
+
+        if (http != null) {
+            // make updateCookies() mecanics work
+            removeWebCookies();
+        }
+
         if (base == null) {
             base = url;
             ApacheHttp.DownloadResponse w = http.getResponse(base, url);
@@ -390,6 +408,8 @@ public class WebViewCustom extends WebView {
     @Override
     public void postUrl(String url, byte[] postData) {
         if (http != null) {
+            // make updateCookies() mecanics work
+            removeWebCookies();
             base = url;
             load(url, post(url, postData));
         } else {
@@ -398,9 +418,10 @@ public class WebViewCustom extends WebView {
     }
 
     public void postUrl(String url, List<NameValuePair> postData) {
-        if (http != null)
+        if (http != null) {
+            base = url;
             load(url, post(url, postData));
-        else // TODO postData -> string
+        } else // TODO postData -> string
             super.postUrl(url, null);
     }
 
@@ -431,16 +452,21 @@ public class WebViewCustom extends WebView {
 
     @Override
     public void loadDataWithBaseURL(String baseUrl, String data, String mimeType, String encoding, String historyUrl) {
-        base = baseUrl;
+        if (base != baseUrl) { // external call
+            // all inner calles already set url
+            if (http != null) {
+                // make updateCookies() mecanics work
+                removeWebCookies();
+            }
+
+            base = baseUrl;
+        }
+
         String html = loadBase(data);
         super.loadDataWithBaseURL(baseUrl, html, mimeType, encoding, historyUrl);
     }
 
     String loadBase(String data) {
-        if (http != null) {
-            // make updateCookies() mecanics work
-            removeWebCookies();
-        }
         Document doc = Jsoup.parse(data);
         Element head = doc.getElementsByTag("head").first();
         if (head != null) {
