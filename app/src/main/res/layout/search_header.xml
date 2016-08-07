@@ -10,15 +10,30 @@
         android:layout_height="wrap_content"
         android:orientation="horizontal">
 
-        <ImageButton
-            android:id="@+id/search_header_login"
+        <FrameLayout
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:layout_marginLeft="5dp"
-            android:layout_marginRight="5dp"
-            android:src="@drawable/ic_vpn_key_black_24dp"
-            android:tint="?attr/colorAccent" />
+            android:layout_height="wrap_content">
+
+            <ImageButton
+                android:id="@+id/search_header_login"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:layout_marginLeft="5dp"
+                android:layout_marginRight="5dp"
+                android:src="@drawable/ic_vpn_key_black_24dp"
+                android:tint="?attr/colorAccent" />
+
+            <ImageButton
+                android:id="@+id/search_header_home"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:layout_marginLeft="5dp"
+                android:layout_marginRight="5dp"
+                android:src="@drawable/ic_home_black_24dp"
+                android:tint="?attr/colorAccent" />
+        </FrameLayout>
 
         <EditText
             android:id="@+id/search_header_text"

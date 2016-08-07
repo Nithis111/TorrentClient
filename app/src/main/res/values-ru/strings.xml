@@ -138,4 +138,6 @@
     <string name="password">Пароль:</string>
     <string name="login">Логин:</string>
     <string name="cookies_cleared">Cookies удалены</string>
+
+    <string name="web_proxy_s">Web Прокси</string>
 </resources>

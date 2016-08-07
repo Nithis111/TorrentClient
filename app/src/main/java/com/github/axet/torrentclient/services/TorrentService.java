@@ -18,7 +18,6 @@ import android.widget.RemoteViews;
 import com.github.axet.torrentclient.R;
 import com.github.axet.torrentclient.activities.MainActivity;
 import com.github.axet.torrentclient.app.MainApplication;
-import com.github.axet.torrentclient.app.Storage;
 
 public class TorrentService extends Service {
     public static final String TAG = TorrentService.class.getSimpleName();

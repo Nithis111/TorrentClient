@@ -220,7 +220,7 @@ public class SettingsActivity extends AppCompatPreferenceActivity implements Sha
 
     @Override
     public void onBackPressed() {
-            super.onBackPressed();
+        super.onBackPressed();
     }
 
     /**

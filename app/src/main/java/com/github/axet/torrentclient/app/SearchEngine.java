@@ -3,17 +3,15 @@ package com.github.axet.torrentclient.app;
 import android.content.Context;
 import android.net.Uri;
 
-import com.github.axet.torrentclient.navigators.Search;
+import com.github.axet.androidlibrary.net.HttpClient;
 
 import org.apache.commons.io.IOUtils;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
-import java.net.URI;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.ArrayList;
@@ -84,8 +82,8 @@ public class SearchEngine {
             try {
                 URL u = new URL(url);
                 URLConnection conn = u.openConnection();
-                conn.setConnectTimeout(MainApplication.CONNECTION_TIMEOUT);
-                conn.setReadTimeout(MainApplication.CONNECTION_TIMEOUT);
+                conn.setConnectTimeout(HttpClient.CONNECTION_TIMEOUT);
+                conn.setReadTimeout(HttpClient.CONNECTION_TIMEOUT);
                 is = conn.getInputStream();
             } catch (MalformedURLException e) {
                 Uri uri = Uri.parse(url);

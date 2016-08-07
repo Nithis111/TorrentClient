@@ -8,7 +8,7 @@
         <item
             android:id="@+id/nav_torrents"
             android:icon="@drawable/ic_storage_black_24dp"
-            android:orderInCategory="0"
+            android:orderInCategory="1"
             android:title="@string/torrents" />
         <item
             android:id="@+id/nav_search"
@@ -19,7 +19,20 @@
     </group>
 
     <item
-        android:orderInCategory="1"
+        android:orderInCategory="2"
+        android:title="@string/web_proxy_s">
+        <menu>
+            <item
+                android:id="@+id/nav_google"
+                android:actionLayout="@layout/search_update"
+                android:icon="@drawable/ic_vpn_key_black_24dp"
+                android:title="Google Data Saver"
+                app:showAsAction="always" />
+        </menu>
+    </item>
+
+    <item
+        android:orderInCategory="3"
         android:title="@string/action_settings">
         <menu>
             <item

@@ -17,7 +17,6 @@ import android.widget.CheckBox;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.github.axet.androidlibrary.widgets.OpenFileDialog;
 import com.github.axet.torrentclient.R;

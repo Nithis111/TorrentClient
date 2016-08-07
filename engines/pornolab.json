@@ -1,5 +1,5 @@
 {
-  "version": 8,
+  "version": 10,
   "name": "pornolab.net",
   "home": {
     "get": "http://pornolab.net"
@@ -10,19 +10,19 @@
     "post_login": "login_username",
     "post_password": "login_password",
     "post_params": "login=вход",
-    "js": "if(document.querySelectorAll('a[href^=\\\\.\\\\/profile\\\\.php]').length==0){alert('Not Logged In')}"
+    "js": "if(document.querySelectorAll('a[href^=\\'./profile.php\\']').length==0){alert('Not Logged In')}"
   },
   "search": {
     "post": "http://pornolab.net/forum/tracker.php",
     "post_search": "nm",
-    "js": "if(document.querySelectorAll('a[href^=\\\\.\\\\/profile\\\\.php]').length==0){alert('Not Logged In')}",
+    "js": "if(document.querySelectorAll('a[href^=\\'./profile.php\\']').length==0){alert('Not Logged In')}",
+    "js_post": "",
     "list": ".forumline.tablesorter tbody tr",
     "title": "a.tLink:regex(<a[^>]*>(.*)</a>)",
-    "details": "a.tLink:regex(.*href=[\"'](.*)[\"'].*)",
-    "details_js": "aa=document.querySelectorAll('a.dl-stub');for(i=0;i<aa.length;i++){a=aa[i];h=a.getAttribute('href');a.setAttribute('href','#');id=h.split('t=')[1];function c(){t='bb_dl='+id;document.cookie=t;location.href=h};a.onclick=c}",
+    "details": "a.tLink:regex(.*href=\"([^\"]*)\".*)",
     "size": "a.dl-stub:regex(<a[^>]*>(.*)</a>)",
     "seed": "td.seedmed b:regex(<b[^>]*>(.*)</b>)",
     "leech": "td.leechmed b:regex(<b[^>]*>(.*)</b>)",
-    "next": "div.nav a.pg:last:regex(.*href=[\"']([^\"^']*)[\"'].*След.*)"
+    "next": "div.nav a.pg:last:regex(.*href=\"([^\"]*)\".*След.*)"
   }
 }

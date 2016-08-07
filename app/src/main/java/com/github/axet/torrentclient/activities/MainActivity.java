@@ -1,7 +1,6 @@
 package com.github.axet.torrentclient.activities;
 
 import android.Manifest;
-import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.KeyguardManager;
 import android.app.ProgressDialog;
@@ -13,19 +12,11 @@ import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
-import android.content.res.ColorStateList;
 import android.content.res.Configuration;
-import android.graphics.Canvas;
 import android.graphics.Color;
-import android.graphics.ColorFilter;
-import android.graphics.PorterDuff;
-import android.graphics.Rect;
-import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
-import android.graphics.drawable.LayerDrawable;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
@@ -53,6 +44,7 @@ import android.widget.ImageView;
 import android.widget.ListAdapter;
 import android.widget.ListView;
 import android.widget.ProgressBar;
+import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -62,6 +54,7 @@ import com.github.axet.androidlibrary.widgets.OpenFileDialog;
 import com.github.axet.androidlibrary.widgets.ThemeUtils;
 import com.github.axet.torrentclient.R;
 import com.github.axet.torrentclient.app.EnginesManager;
+import com.github.axet.torrentclient.app.GoogleProxy;
 import com.github.axet.torrentclient.app.MainApplication;
 import com.github.axet.torrentclient.app.SearchEngine;
 import com.github.axet.torrentclient.app.Storage;
@@ -1185,7 +1178,10 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
             list.setEmptyView(empty);
 
             torrents.install(list);
+            drawer.closeDrawer(GravityCompat.START);
+            return true;
         }
+
         if (id > 0 && id < 0x00ffffff) {
             empty.setVisibility(View.GONE);
             list.setEmptyView(null);
@@ -1194,7 +1190,10 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
 
             Search search = manager.get(pos);
             search.install(list);
+            drawer.closeDrawer(GravityCompat.START);
+            return true;
         }
+
         if (id == R.id.nav_add) {
             final OpenFileDialog f = new OpenFileDialog(MainActivity.this);
 
@@ -1228,7 +1227,6 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
             // prevent close drawer
             return true;
         }
-        drawer.closeDrawer(GravityCompat.START);
         return true;
     }
 
@@ -1281,7 +1279,8 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
             final SearchEngine engine = search.getEngine();
             // save to set < 0x00ffffff. check View.generateViewId()
             int id = i + 1;
-            MenuItem item = menu.add(R.id.group_torrents, id, Menu.NONE, engine.getName());
+            int order = 1;
+            MenuItem item = menu.add(R.id.group_torrents, id, order, engine.getName());
             UnreadCountDrawable unread = new UnreadCountDrawable(this, R.drawable.share, search);
             item.setIcon(unread);
             final View view = inflater.inflate(R.layout.search_engine, null);
@@ -1342,7 +1341,10 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
                             dialog.cancel();
+
                             manager.remove(search);
+                            search.close();
+
                             manager.save();
                             updateManager();
                         }
@@ -1396,7 +1398,6 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
         }
 
         MenuItem add = menu.findItem(R.id.nav_add);
-
         if (locked) {
             update.setOnClickListener(new View.OnClickListener() {
                 @Override
@@ -1409,8 +1410,36 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
             refresh.setColorFilter(ThemeUtils.getThemeColor(this, R.attr.colorAccent));
             add.setEnabled(true);
         }
-
         add.setActionView(update);
+
+        updateProxies();
+    }
+
+    void updateProxies() {
+        Menu menu = navigationView.getMenu();
+        LayoutInflater inflater = LayoutInflater.from(this);
+
+        final SharedPreferences shared = PreferenceManager.getDefaultSharedPreferences(this);
+        String proxy = shared.getString(MainApplication.PREFERENCE_PROXY, "");
+
+        MenuItem google = menu.findItem(R.id.nav_google);
+        View sw = inflater.inflate(R.layout.proxy_switch, null);
+        final Switch w = (Switch) sw.findViewById(R.id.proxy_switch);
+        w.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                SharedPreferences.Editor edit = shared.edit();
+                if (w.isChecked()) {
+                    edit.putString(MainApplication.PREFERENCE_PROXY, GoogleProxy.NAME);
+                } else {
+                    edit.putString(MainApplication.PREFERENCE_PROXY, "");
+                }
+                edit.commit();
+            }
+        });
+        w.setChecked(proxy.equals(GoogleProxy.NAME));
+        google.setEnabled(true);
+        google.setActionView(sw);
     }
 
     void refreshEngines(final boolean auto) {

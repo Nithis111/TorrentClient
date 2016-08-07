@@ -1,26 +1,18 @@
 package com.github.axet.torrentclient.widgets;
 
-import android.app.Activity;
 import android.content.Context;
 import android.content.DialogInterface;
-import android.content.SharedPreferences;
 import android.content.res.TypedArray;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Parcelable;
 import android.preference.DialogPreference;
-import android.preference.PreferenceManager;
-import android.support.design.widget.TabLayout;
-import android.support.v4.app.DialogFragment;
-import android.support.v4.view.ViewPager;
 import android.support.v7.app.AlertDialog;
-import android.support.v7.app.AppCompatDialog;
 import android.text.TextUtils;
 import android.util.AttributeSet;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.Window;
 import android.widget.BaseAdapter;
 import android.widget.Button;
 import android.widget.ListView;
@@ -29,11 +21,8 @@ import android.widget.TextView;
 import com.github.axet.androidlibrary.widgets.OpenFileDialog;
 import com.github.axet.torrentclient.R;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
-
-import go.libtorrent.Libtorrent;
 
 public class MultiEditListPreference extends DialogPreference {
     public String mText;

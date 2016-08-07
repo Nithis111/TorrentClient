@@ -1,7 +1,6 @@
 package com.github.axet.torrentclient.dialogs;
 
 import android.app.Activity;
-import android.app.Dialog;
 import android.content.DialogInterface;
 import android.net.Uri;
 import android.os.Bundle;

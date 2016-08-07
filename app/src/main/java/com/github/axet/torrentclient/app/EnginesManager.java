@@ -14,29 +14,17 @@ import com.github.axet.torrentclient.activities.MainActivity;
 import com.github.axet.torrentclient.navigators.Search;
 
 import org.apache.commons.io.IOUtils;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.MalformedURLException;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 import cz.msebera.android.httpclient.NameValuePair;
 import cz.msebera.android.httpclient.client.utils.URLEncodedUtils;
-import cz.msebera.android.httpclient.impl.cookie.BasicClientCookie;
-import cz.msebera.android.httpclient.message.BasicNameValuePair;
 
 public class EnginesManager {
     public static final String TAG = EnginesManager.class.getSimpleName();

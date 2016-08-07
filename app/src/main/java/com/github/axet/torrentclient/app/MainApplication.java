@@ -11,13 +11,12 @@ import android.util.Log;
 import android.view.View;
 import android.widget.TextView;
 
+import com.github.axet.androidlibrary.net.HttpClient;
 import com.github.axet.androidlibrary.widgets.ThemeUtils;
 import com.github.axet.torrentclient.R;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
-
-import go.libtorrent.Libtorrent;
 
 public class MainApplication extends Application {
     final String TAG = MainApplication.class.getSimpleName();
@@ -32,10 +31,9 @@ public class MainApplication extends Application {
     public static final String PREFERENCE_LAST_PATH = "lastpath";
     public static final String PREFERENCE_DIALOG = "dialog";
     public static final String PREFERENCE_RUN = "run";
+    public static final String PREFERENCE_PROXY = "proxy";
 
     public static final String SAVE_STATE = MainApplication.class.getName() + ".SAVE_STATE";
-
-    public static final int CONNECTION_TIMEOUT = 10 * 1000;
 
     Storage storage;
 
@@ -111,7 +109,6 @@ public class MainApplication extends Application {
         super.onLowMemory();
         Log.d(TAG, "onLowMemory");
     }
-
 
     public static String onTrimString(int level) {
         switch (level) {
