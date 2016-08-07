@@ -25,6 +25,7 @@ import java.util.Map;
 
 import cz.msebera.android.httpclient.Header;
 import cz.msebera.android.httpclient.HttpEntity;
+import cz.msebera.android.httpclient.HttpHost;
 import cz.msebera.android.httpclient.NameValuePair;
 import cz.msebera.android.httpclient.client.CookieStore;
 import cz.msebera.android.httpclient.client.config.RequestConfig;
@@ -33,6 +34,7 @@ import cz.msebera.android.httpclient.client.methods.AbstractExecutionAwareReques
 import cz.msebera.android.httpclient.client.methods.CloseableHttpResponse;
 import cz.msebera.android.httpclient.client.methods.HttpGet;
 import cz.msebera.android.httpclient.client.methods.HttpPost;
+import cz.msebera.android.httpclient.client.methods.HttpRequestBase;
 import cz.msebera.android.httpclient.client.protocol.HttpClientContext;
 import cz.msebera.android.httpclient.cookie.Cookie;
 import cz.msebera.android.httpclient.entity.ContentType;
@@ -44,16 +46,52 @@ import cz.msebera.android.httpclient.impl.cookie.BasicClientCookie;
 import cz.msebera.android.httpclient.message.BasicNameValuePair;
 import cz.msebera.android.httpclient.util.EntityUtils;
 
-// cz.msebera.android.httpclient recomended by apache
+// cz.msebera.android.httpclient recommended by apache
 //
 // https://hc.apache.org/httpcomponents-client-4.5.x/android-port.html
 
-public class ApacheHttp {
-    public static String USER_AGENT = "Mozilla/5.0 (Linux; Android 6.0; Android SDK built for x86_64 Build/MASTER; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/44.0.2403.119 Mobile Safari/537.36";
+public class HttpClient {
+    public static String USER_AGENT = "Mozilla/5.0 (Linux; Android 6.0.1; Nexus 5 Build/MOB30Y) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.81 Mobile Safari/537.36";
 
     CloseableHttpClient httpclient;
     HttpClientContext httpClientContext = HttpClientContext.create();
     AbstractExecutionAwareRequest request;
+    RequestConfig config;
+
+    public static HttpCookie from(Cookie c) {
+        HttpCookie cookie = new HttpCookie(c.getName(), c.getValue());
+        cookie.setDomain(c.getDomain());
+        cookie.setPath(c.getPath());
+        cookie.setSecure(c.isSecure());
+        return cookie;
+    }
+
+    public static BasicClientCookie from(HttpCookie m) {
+        BasicClientCookie b = new BasicClientCookie(m.getName(), m.getValue());
+        b.setDomain(m.getDomain());
+        b.setPath(m.getPath());
+        b.setSecure(m.getSecure());
+        return b;
+    }
+
+    public static List<NameValuePair> from(Map<String, String> map) {
+        List<NameValuePair> nvps = new ArrayList<>();
+        for (String key : map.keySet()) {
+            String value = map.get(key);
+            nvps.add(new BasicNameValuePair(key, value));
+        }
+        return nvps;
+    }
+
+    public static String encode(Map<String, String> map) {
+        try {
+            UrlEncodedFormEntity entity = new UrlEncodedFormEntity(from(map));
+            InputStream is = entity.getContent();
+            return IOUtils.toString(is, Charset.defaultCharset());
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
     public static class DownloadResponse extends WebResourceResponse {
         public boolean downloaded;
@@ -71,12 +109,19 @@ public class ApacheHttp {
                 String encoding;
                 Charset enc = contentType.getCharset();
                 if (enc == null) {
-                    Document doc = Jsoup.parse(new String(buf, "UTF8"));
+                    Document doc = Jsoup.parse(new String(buf, Charset.defaultCharset()));
                     Element e = doc.select("meta[http-equiv=Content-Type]").first();
                     if (e != null) {
                         String content = e.attr("content");
                         contentType = ContentType.parse(content);
                         enc = contentType.getCharset();
+                    } else {
+                        e = doc.select("meta[charset]").first();
+                        if (e != null) {
+                            String content = e.attr("content");
+                            contentType = ContentType.parse(content);
+                            enc = contentType.getCharset();
+                        }
                     }
                 }
                 encoding = Charsets.toCharset(enc).name();
@@ -141,7 +186,7 @@ public class ApacheHttp {
         }
     }
 
-    public ApacheHttp() {
+    public HttpClient() {
         RequestConfig.Builder requestBuilder = RequestConfig.custom();
         requestBuilder = requestBuilder.setConnectTimeout(MainApplication.CONNECTION_TIMEOUT);
         requestBuilder = requestBuilder.setConnectionRequestTimeout(MainApplication.CONNECTION_TIMEOUT);
@@ -152,11 +197,20 @@ public class ApacheHttp {
                 .build();
     }
 
-    public ApacheHttp(String cookies) {
+    public HttpClient(String cookies) {
         this();
 
         if (cookies != null && !cookies.isEmpty())
             addCookies(cookies);
+    }
+
+    public void setProxy(String host, int port, String scheme) {
+        HttpHost proxy = new HttpHost(host, port, scheme);
+        config = RequestConfig.custom().setProxy(proxy).build();
+    }
+
+    public void clearProxy() {
+        config = null;
     }
 
     public void addCookies(String url, String cookies) {
@@ -164,14 +218,11 @@ public class ApacheHttp {
         CookieStore s = getCookieStore();
         List<HttpCookie> cc = HttpCookie.parse(cookies);
         for (HttpCookie c : cc) {
-            BasicClientCookie m = new BasicClientCookie(c.getName(), c.getValue());
-            m.setDomain(c.getDomain());
+            BasicClientCookie m = from(c);
             if (m.getDomain() == null) {
                 m.setDomain(u.getAuthority());
             }
-
             removeCookie(m);
-
             s.addCookie(m);
         }
     }
@@ -180,14 +231,14 @@ public class ApacheHttp {
         CookieStore s = getCookieStore();
         List<HttpCookie> cc = HttpCookie.parse(cookies);
         for (HttpCookie c : cc) {
-            BasicClientCookie m = new BasicClientCookie(c.getName(), c.getValue());
-            m.setDomain(c.getDomain());
-            m.setPath(c.getPath());
-
+            BasicClientCookie m = from(c);
             removeCookie(m);
-
             s.addCookie(m);
         }
+    }
+
+    public void removeCookie(HttpCookie m) {
+        removeCookie(from(m));
     }
 
     public void removeCookie(BasicClientCookie m) {
@@ -198,6 +249,22 @@ public class ApacheHttp {
             s.addCookie(rm);
         } catch (CloneNotSupportedException e) {
         }
+    }
+
+    public HttpCookie getCookie(int i) {
+        CookieStore s = getCookieStore();
+        Cookie c = s.getCookies().get(i);
+        return from(c);
+    }
+
+    public void addCookie(HttpCookie c) {
+        CookieStore s = getCookieStore();
+        s.addCookie(from(c));
+    }
+
+    public int getCount() {
+        CookieStore s = getCookieStore();
+        return s.getCookies().size();
     }
 
     public String getCookies() {
@@ -260,11 +327,17 @@ public class ApacheHttp {
         request = null;
     }
 
+    CloseableHttpResponse execute(HttpRequestBase request) throws IOException {
+        this.request = request;
+        return httpclient.execute(request, httpClientContext);
+    }
+
     public String get(String url) {
         try {
             HttpGet httpGet = new HttpGet(url);
-            request = httpGet;
-            CloseableHttpResponse response = httpclient.execute(httpGet, httpClientContext);
+            if (config != null)
+                httpGet.setConfig(config);
+            CloseableHttpResponse response = execute(httpGet);
             HttpEntity entity = response.getEntity();
             ContentType contentType = ContentType.getOrDefault(entity);
             String encoding = Charsets.toCharset(contentType.getCharset()).name();
@@ -282,8 +355,9 @@ public class ApacheHttp {
     public byte[] getBytes(String url) {
         try {
             HttpGet httpGet = new HttpGet(url);
-            request = httpGet;
-            CloseableHttpResponse response = httpclient.execute(httpGet, httpClientContext);
+            if (config != null)
+                httpGet.setConfig(config);
+            CloseableHttpResponse response = execute(httpGet);
             HttpEntity entity = response.getEntity();
             byte[] buf = IOUtils.toByteArray(entity.getContent());
             EntityUtils.consume(entity);
@@ -299,14 +373,15 @@ public class ApacheHttp {
     public DownloadResponse getResponse(String base, String url) {
         try {
             HttpGet httpGet = new HttpGet(url);
+            if (config != null)
+                httpGet.setConfig(config);
             if (base != null) {
                 httpGet.addHeader("Referer", base);
                 Uri u = Uri.parse(base);
                 httpGet.addHeader("Origin", new Uri.Builder().scheme(u.getScheme()).authority(u.getAuthority()).toString());
                 httpGet.addHeader("User-Agent", USER_AGENT);
             }
-            request = httpGet;
-            CloseableHttpResponse response = httpclient.execute(httpGet, httpClientContext);
+            CloseableHttpResponse response = execute(httpGet);
             HttpEntity entity = response.getEntity();
             DownloadResponse w = DownloadResponse.create(response);
             EntityUtils.consume(entity);
@@ -328,20 +403,16 @@ public class ApacheHttp {
     }
 
     public String post(String url, Map<String, String> map) {
-        List<NameValuePair> nvps = new ArrayList<>();
-        for (String key : map.keySet()) {
-            String value = map.get(key);
-            nvps.add(new BasicNameValuePair(key, value));
-        }
-        return post(url, nvps);
+        return post(url, from(map));
     }
 
     public String post(String url, List<NameValuePair> nvps) {
         try {
             HttpPost httpPost = new HttpPost(url);
-            request = httpPost;
+            if (config != null)
+                httpPost.setConfig(config);
             httpPost.setEntity(new UrlEncodedFormEntity(nvps));
-            CloseableHttpResponse response = httpclient.execute(httpPost, httpClientContext);
+            CloseableHttpResponse response = execute(httpPost);
             HttpEntity entity = response.getEntity();
             ContentType contentType = ContentType.getOrDefault(entity);
             String html = IOUtils.toString(entity.getContent(), contentType.getCharset());
@@ -355,18 +426,23 @@ public class ApacheHttp {
         }
     }
 
+    public DownloadResponse postResponse(String base, String url, Map<String, String> map) {
+        return postResponse(base, url, from(map));
+    }
+
     public DownloadResponse postResponse(String base, String url, List<NameValuePair> nvps) {
         try {
             HttpPost httpPost = new HttpPost(url);
+            if (config != null)
+                httpPost.setConfig(config);
             if (base != null) {
                 httpPost.addHeader("Referer", base);
                 Uri u = Uri.parse(base);
                 httpPost.addHeader("Origin", new Uri.Builder().scheme(u.getScheme()).authority(u.getAuthority()).toString());
                 httpPost.addHeader("User-Agent", USER_AGENT);
             }
-            request = httpPost;
             httpPost.setEntity(new UrlEncodedFormEntity(nvps));
-            CloseableHttpResponse response = httpclient.execute(httpPost, httpClientContext);
+            CloseableHttpResponse response = execute(httpPost);
             HttpEntity entity = response.getEntity();
             DownloadResponse w = DownloadResponse.create(response);
             EntityUtils.consume(entity);

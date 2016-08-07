@@ -23,7 +23,7 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
 import com.github.axet.torrentclient.R;
-import com.github.axet.torrentclient.app.ApacheHttp;
+import com.github.axet.torrentclient.app.HttpClient;
 
 import org.apache.commons.io.IOUtils;
 import org.json.JSONArray;
@@ -38,26 +38,23 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.net.HttpCookie;
 import java.net.SocketTimeoutException;
 import java.net.URL;
+import java.nio.charset.Charset;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Date;
-import java.util.List;
+import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.TreeSet;
 
-import cz.msebera.android.httpclient.NameValuePair;
-import cz.msebera.android.httpclient.NoHttpResponseException;
-import cz.msebera.android.httpclient.client.CookieStore;
-import cz.msebera.android.httpclient.cookie.Cookie;
-import cz.msebera.android.httpclient.impl.cookie.BasicClientCookie;
-import cz.msebera.android.httpclient.message.BasicNameValuePair;
-
+// Custom WebView with POST/GET interception requests.
+//
+// https://code.google.com/p/android/issues/detail?id=9122#c21
 public class WebViewCustom extends WebView {
     public static final String TAG = WebViewCustom.class.getSimpleName();
 
@@ -67,11 +64,21 @@ public class WebViewCustom extends WebView {
     String inject;
     Thread thread;
     Handler handler = new Handler();
-    ApacheHttp http;
+    HttpClient http;
     String base;
     DownloadListener listener;
 
-    public static class HttpError extends ApacheHttp.DownloadResponse {
+    static void logIO(String url, Throwable e) {
+        while (e.getCause() != null) {
+            e = e.getCause();
+        }
+        if (e instanceof SocketTimeoutException)
+            Log.e(TAG, "load timeout " + url);
+        else
+            Log.e(TAG, url, e);
+    }
+
+    public static class HttpError extends HttpClient.DownloadResponse {
         static final String UTF8 = "UTF8";
 
         public HttpError(Throwable e) {
@@ -112,14 +119,14 @@ public class WebViewCustom extends WebView {
                 String url = null;
                 try {
                     url = new URL(new URL(base), action).toString();
-                    List<NameValuePair> nvps = new ArrayList<>();
+                    Map<String, String> nvps = new HashMap<>();
                     JSONObject j = new JSONObject(form);
                     JSONArray list = (JSONArray) j.get("form");
                     for (int i = 0; i < list.length(); i++) {
                         JSONObject o = (JSONObject) list.get(i);
                         String key = o.getString("name");
                         String value = o.getString("value");
-                        nvps.add(new BasicNameValuePair(key, value.toString()));
+                        nvps.put(key, value.toString());
                     }
                     postUrl(url, nvps);
                 } catch (Exception e) {
@@ -138,7 +145,7 @@ public class WebViewCustom extends WebView {
                 String url = null;
                 try {
                     url = new URL(new URL(base), action).toString();
-                    ApacheHttp.DownloadResponse r = get(url);
+                    HttpClient.DownloadResponse r = get(url);
                     return r.getHtml();
                 } catch (Exception e) {
                     logIO(url, e);
@@ -315,7 +322,7 @@ public class WebViewCustom extends WebView {
         addJavascriptInterface(new Interceptor(), "interception");
     }
 
-    public void setHttp(ApacheHttp http) {
+    public void setHttpClient(HttpClient http) {
         this.http = http;
     }
 
@@ -345,9 +352,9 @@ public class WebViewCustom extends WebView {
         }
     }
 
-    ApacheHttp.DownloadResponse getBase(String url) {
+    HttpClient.DownloadResponse getBase(String url) {
         if (url.startsWith("data")) {
-            return null; // TODO load to ApacheHttp.DownloadResponse
+            return null;
         }
 
         if (http != null) {
@@ -357,7 +364,7 @@ public class WebViewCustom extends WebView {
 
         if (base == null) {
             base = url;
-            ApacheHttp.DownloadResponse w = http.getResponse(base, url);
+            HttpClient.DownloadResponse w = http.getResponse(base, url);
             w.setHtml(loadBase(w.getHtml()));
             return w;
         } else {
@@ -417,16 +424,16 @@ public class WebViewCustom extends WebView {
         }
     }
 
-    public void postUrl(String url, List<NameValuePair> postData) {
+    public void postUrl(String url, Map<String, String> postData) {
         if (http != null) {
             base = url;
             load(url, post(url, postData));
-        } else // TODO postData -> string
-            super.postUrl(url, null);
+        } else
+            super.postUrl(url, HttpClient.encode(postData).getBytes(Charset.defaultCharset()));
     }
 
     // Network on main Thread
-    public void load(final String url, final ApacheHttp.DownloadResponse r) {
+    public void load(final String url, final HttpClient.DownloadResponse r) {
         if (!r.downloaded) {
             listener.onDownloadStart(url, r.userAgent, r.contentDisposition, r.getMimeType(), r.contentLength);
             return;
@@ -519,7 +526,7 @@ public class WebViewCustom extends WebView {
             http.addCookies(url, cookies);
     }
 
-    public ApacheHttp.DownloadResponse get(final String url) {
+    public HttpClient.DownloadResponse get(final String url) {
         handler.post(new Runnable() {
             @Override
             public void run() {
@@ -543,24 +550,12 @@ public class WebViewCustom extends WebView {
         }
     }
 
-    void logIO(String url, Throwable e) {
-        while (e.getCause() != null) {
-            e = e.getCause();
-        }
-        if (e instanceof SocketTimeoutException)
-            Log.e(TAG, "load timeout " + url);
-        else if (e instanceof NoHttpResponseException)
-            Log.e(TAG, "no http respone " + url);
-        else
-            Log.e(TAG, url, e);
-    }
-
-    public ApacheHttp.DownloadResponse post(String url, byte[] postData) {
+    public HttpClient.DownloadResponse post(String url, byte[] postData) {
         // TODO postData -> array
-        return post(url, (List<NameValuePair>) null);
+        return post(url, (Map<String, String>) null);
     }
 
-    public ApacheHttp.DownloadResponse post(String url, List<NameValuePair> postData) {
+    public HttpClient.DownloadResponse post(String url, Map<String, String> postData) {
         updateCookies(url);
         return http.postResponse(base, url, postData);
     }
@@ -595,6 +590,14 @@ public class WebViewCustom extends WebView {
 
     public boolean shouldOverrideUrlLoading(WebView view, String url) {
         return false;
+    }
+
+    public void setInject(String js) {
+        this.js = js;
+    }
+
+    public void setInjectPost(String js) {
+        this.js_post = js;
     }
 
     // not working. use removeAllCookies() then add ones you need.
@@ -650,7 +653,7 @@ public class WebViewCustom extends WebView {
         }
     }
 
-    public static boolean setCookies2Apache(String url, CookieStore apacheStore) {
+    public static boolean setCookies2Apache(String url, HttpClient apacheStore) {
         // longer url better, domain only can return null
         String cookies = CookieManager.getInstance().getCookie(url);
         if (cookies == null || cookies.isEmpty()) {
@@ -664,7 +667,7 @@ public class WebViewCustom extends WebView {
         // replace it with new cookie from webview. This is come from WebView restriction, when we do not know
         // exact cookie domain/path. and only can call getCookie(url)
 
-        ArrayList<BasicClientCookie> webviewStore = new ArrayList<>();
+        ArrayList<HttpCookie> webviewStore = new ArrayList<>();
 
         Uri uri = Uri.parse(url);
 
@@ -678,7 +681,7 @@ public class WebViewCustom extends WebView {
                 v = vv[1].trim();
             if (n == null)
                 continue;
-            BasicClientCookie cookie = new BasicClientCookie(n, v);
+            HttpCookie cookie = new HttpCookie(n, v);
             // it may cause troubles. Cookie maybe set for domain, .domain, www.domain or www.domain/path
             // and since we have to cut all www/path same name cookies with different paths will override.
             // need to check if returned cookie sting can contains DOMAIN/PATH values. Until then use domain only.
@@ -699,32 +702,30 @@ public class WebViewCustom extends WebView {
         }
 
         // find dups in Apache store. delete same cookie by values from WebView store
-        List<Cookie> list = apacheStore.getCookies();
         for (String d : dups) {
-            for (int i = list.size() - 1; i >= 0; i--) {
-                Cookie c = list.get(i);
+            for (int i = apacheStore.getCount() - 1; i >= 0; i--) {
+                HttpCookie c = apacheStore.getCookie(i);
                 String n = c.getName();
                 if (n.equals(d)) {
                     String v = c.getValue();
                     // remove WebView cookies, which name&&value == apache store
                     for (int k = webviewStore.size() - 1; k >= 0; k--) {
-                        Cookie cw = webviewStore.get(k);
+                        HttpCookie cw = webviewStore.get(k);
                         if (cw.getName().equals(n) && cw.getValue().equals(v)) {
                             webviewStore.remove(k);
                         }
                     }
                     // remove from apache store
-                    BasicClientCookie rm = new BasicClientCookie(n, v);
+                    HttpCookie rm = new HttpCookie(n, v);
                     rm.setPath(c.getPath());
                     rm.setDomain(c.getDomain());
-                    rm.setExpiryDate(new Date(0));
-                    apacheStore.addCookie(rm);
+                    apacheStore.removeCookie(rm);
                 }
             }
         }
 
         // add remaining cookies from WebView store to Apache store
-        for (BasicClientCookie c : webviewStore) {
+        for (HttpCookie c : webviewStore) {
             apacheStore.addCookie(c);
         }
 
@@ -740,16 +741,15 @@ public class WebViewCustom extends WebView {
         return true;
     }
 
-    public static void setCookies2WebView(Context context, CookieStore cookieStore) {
+    public static void setCookies2WebView(Context context, HttpClient cookieStore) {
         // share cookies back (Apache --> WebView)
         if (cookieStore != null) {
             CookieSyncManager.createInstance(context);
             CookieManager m = CookieManager.getInstance();
-            List<Cookie> list = cookieStore.getCookies();
-            for (int i = 0; i < list.size(); i++) {
-                Cookie c = list.get(i);
+            for (int i = 0; i < cookieStore.getCount(); i++) {
+                HttpCookie c = cookieStore.getCookie(i);
                 Uri.Builder b = new Uri.Builder();
-                if (c.isSecure())
+                if (c.getSecure())
                     b.scheme("https");
                 else
                     b.scheme("http");
@@ -779,11 +779,4 @@ public class WebViewCustom extends WebView {
             CookieManager.getInstance().removeAllCookie();
     }
 
-    public void setInject(String js) {
-        this.js = js;
-    }
-
-    public void setInjectPost(String js) {
-        this.js_post = js;
-    }
 }
