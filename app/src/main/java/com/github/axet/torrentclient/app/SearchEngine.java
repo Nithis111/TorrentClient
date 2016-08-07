@@ -4,73 +4,31 @@ import android.content.Context;
 import android.net.Uri;
 
 import com.github.axet.androidlibrary.net.HttpClient;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonSyntaxException;
+import com.google.gson.reflect.TypeToken;
 
 import org.apache.commons.io.IOUtils;
-import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 
 public class SearchEngine {
     public static final String TAG = SearchEngine.class.getSimpleName();
 
-    Map<String, Object> map = new HashMap<>();
-
-    // http://stackoverflow.com/questions/21720759/convert-a-json-string-to-a-hashmap
-
-    public static Map<String, Object> jsonToMap(JSONObject json) throws JSONException {
-        Map<String, Object> retMap = new HashMap<String, Object>();
-        if (json != JSONObject.NULL) {
-            retMap = toMap(json);
-        }
-        return retMap;
-    }
-
-    public static Map<String, Object> toMap(JSONObject object) throws JSONException {
-        Map<String, Object> map = new HashMap<String, Object>();
-        Iterator<String> keysItr = object.keys();
-        while (keysItr.hasNext()) {
-            String key = keysItr.next();
-            Object value = object.get(key);
-
-            if (value instanceof JSONArray) {
-                value = toList((JSONArray) value);
-            } else if (value instanceof JSONObject) {
-                value = toMap((JSONObject) value);
-            }
-            map.put(key, value);
-        }
-        return map;
-    }
-
-    public static List<Object> toList(JSONArray array) throws JSONException {
-        List<Object> list = new ArrayList<Object>();
-        for (int i = 0; i < array.length(); i++) {
-            Object value = array.get(i);
-            if (value instanceof JSONArray) {
-                value = toList((JSONArray) value);
-            } else if (value instanceof JSONObject) {
-                value = toMap((JSONObject) value);
-            }
-            list.add(value);
-        }
-        return list;
-    }
+    HashMap<String, Object> map = new HashMap<>();
 
     public void loadJson(String json) {
+        Gson gson = new Gson();
         try {
-            JSONObject j = new JSONObject(json);
-            map = jsonToMap(j);
-        } catch (JSONException e) {
+            map = gson.fromJson(json, map.getClass());
+        } catch (JsonSyntaxException e) {
             throw new RuntimeException(e);
         }
     }
@@ -108,8 +66,8 @@ public class SearchEngine {
     }
 
     public String save() {
-        JSONObject o = new JSONObject(map);
-        return o.toString();
+        Gson gson = new GsonBuilder().create();
+        return gson.toJson(map);
     }
 
     public String getName() {
@@ -117,6 +75,6 @@ public class SearchEngine {
     }
 
     public Integer getVersion() {
-        return (Integer) map.get("version");
+        return ((Double) map.get("version")).intValue();
     }
 }

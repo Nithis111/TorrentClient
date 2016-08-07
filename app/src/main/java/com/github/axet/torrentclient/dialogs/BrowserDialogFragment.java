@@ -225,7 +225,9 @@ public class BrowserDialogFragment extends DialogFragment implements MainActivit
 
         http = new GoogleProxy();
         http.enabled = shared.getString(MainApplication.PREFERENCE_PROXY, "").equals(GoogleProxy.NAME);
-        http.addCookies(getArguments().getString("cookies"));
+        String cc = getArguments().getString("cookies");
+        if (cc != null && !cc.isEmpty())
+            http.addCookies(cc);
         web.setHttpClient(http);
 
         RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.MATCH_PARENT);
