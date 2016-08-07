@@ -256,7 +256,6 @@ public class BrowserDialogFragment extends DialogFragment implements MainActivit
 
         updateButtons();
 
-        final String cookieURL = url;
         web.setDownloadListener(new DownloadListener() {
             @Override
             public void onDownloadStart(final String url, String userAgent, String contentDisposition, String mimetype, long contentLength) {
