@@ -33,8 +33,6 @@ public class MainApplication extends Application {
 
     public static final String SAVE_STATE = MainApplication.class.getName() + ".SAVE_STATE";
 
-    public static final int CONNECTION_TIMEOUT = 10 * 1000;
-
     Storage storage;
 
     SaveState savestate;

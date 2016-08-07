@@ -27,11 +27,11 @@ import android.widget.ProgressBar;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
+import com.github.axet.androidlibrary.net.HttpClient;
+import com.github.axet.androidlibrary.widgets.WebViewCustom;
 import com.github.axet.torrentclient.R;
 import com.github.axet.torrentclient.activities.MainActivity;
 import com.github.axet.torrentclient.app.GoogleProxy;
-import com.github.axet.torrentclient.app.HttpClient;
-import com.github.axet.torrentclient.widgets.WebViewCustom;
 
 public class BrowserDialogFragment extends DialogFragment implements MainActivity.TorrentFragmentInterface {
     public static String TAG = BrowserDialogFragment.class.getSimpleName();

@@ -1,5 +1,7 @@
 package com.github.axet.torrentclient.app;
 
+import com.github.axet.androidlibrary.net.HttpClient;
+
 import java.io.IOException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -36,15 +38,15 @@ public class GoogleProxy extends HttpClient {
     }
 
     public GoogleProxy() {
-        init();
     }
 
     public GoogleProxy(String cookies) {
         super(cookies);
-        init();
     }
 
-    void init() {
+    @Override
+    public void create() {
+        super.create();
         setProxy("proxy.googlezip.net", 443, "https");
     }
 
@@ -54,12 +56,15 @@ public class GoogleProxy extends HttpClient {
         String[] chromeVersion = {"52", "0", "2743", "82"};
         String sid = (timestamp + authValue + timestamp);
         sid = md5(sid);
-        String value = "ps=" + timestamp + "-" + Integer.toString((int) (Math.random() * 1000000000)) + "-" + Integer.toString((int) (Math.random() * 1000000000)) + "-" + Integer.toString((int) (Math.random() * 1000000000)) + ", sid=" + sid + ", b=" + chromeVersion[2] + ", p=" + chromeVersion[3] + ", c=win";
+        String value = "ps=" + timestamp + "-" + Integer.toString((int) (Math.random() * 1000000000))
+                + "-" + Integer.toString((int) (Math.random() * 1000000000))
+                + "-" + Integer.toString((int) (Math.random() * 1000000000))
+                + ", sid=" + sid + ", b=" + chromeVersion[2] + ", p=" + chromeVersion[3] + ", c=win";
         request.addHeader("Chrome-Proxy", value);
     }
 
     @Override
-    CloseableHttpResponse execute(String base, HttpRequestBase request) throws IOException {
+    public CloseableHttpResponse execute(String base, HttpRequestBase request) throws IOException {
         authHeader(request);
         return super.execute(base, request);
     }
