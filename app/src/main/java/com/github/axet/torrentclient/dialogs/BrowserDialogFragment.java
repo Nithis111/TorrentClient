@@ -164,7 +164,7 @@ public class BrowserDialogFragment extends DialogFragment implements MainActivit
 
             @Override
             public void onConsoleMessage(String msg, int lineNumber, String sourceID) {
-                if (sourceID == null || sourceID.isEmpty())
+                if (sourceID == null || sourceID.isEmpty() || sourceID.startsWith(INJECTS_URL))
                     getMainActivity().post(msg);
             }
 
