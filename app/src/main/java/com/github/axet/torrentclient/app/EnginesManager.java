@@ -73,7 +73,9 @@ public class EnginesManager {
     public boolean addManget(String magnet) {
         UrlQuerySanitizer sanitizer = new UrlQuerySanitizer(magnet);
         String type = sanitizer.getValue("x.t");
-        if(type.equals("search")) {
+        if (type == null)
+            return false;
+        if (type.equals("search")) {
             final String as = sanitizer.getValue("as");
             thread = new Thread(new Runnable() {
                 @Override
