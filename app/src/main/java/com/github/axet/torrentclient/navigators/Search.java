@@ -56,6 +56,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import cz.msebera.android.httpclient.client.CookieStore;
+import cz.msebera.android.httpclient.client.methods.AbstractExecutionAwareRequest;
 import cz.msebera.android.httpclient.cookie.Cookie;
 import cz.msebera.android.httpclient.impl.client.BasicCookieStore;
 
@@ -105,6 +106,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
     public static class SearchItem {
         public String title;
         public String details;
+        public String details_html;
         public String html;
         public String magnet;
         public String size;
@@ -112,12 +114,28 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         public String leech;
         public String torrent;
         public Map<String, String> search;
+        public String base;
     }
 
     public class Inject {
+        public String json;
+
+        public Inject() {
+        }
+
+        public Inject(String json) {
+            this.json = json;
+        }
+
         @JavascriptInterface
         public void result(String html) {
             Log.d(TAG, "result()");
+        }
+
+        @JavascriptInterface
+        public String json() {
+            Log.d(TAG, "json()");
+            return json;
         }
     }
 
@@ -221,7 +239,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
                         String url = next;
                         String html = http.get(null, url);
 
-                        search(s, url, html, new Runnable() {
+                        search(s, url, html, null, new Runnable() {
                             @Override
                             public void run() {
                                 // destory looper thread
@@ -445,11 +463,12 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
             threadLooper = null;
             i = true;
         }
-        if (http.getRequest() != null) {
+        final AbstractExecutionAwareRequest r = http.getRequest();
+        if (r != null) {
             Thread thread = new Thread(new Runnable() {
                 @Override
                 public void run() {
-                    http.abort();
+                    r.abort();
                 }
             });
             thread.start();
@@ -624,6 +643,28 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         ImageView torrent = (ImageView) convertView.findViewById(R.id.search_item_torrent);
         torrent.setEnabled(false);
         torrent.setColorFilter(Color.GRAY);
+        if (item.torrent != null) {
+            torrent.setEnabled(true);
+            torrent.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    thread = new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+                            final byte[] buf = http.getBytes(item.search.get(item.base), item.torrent);
+                            handler.post(new Runnable() {
+                                @Override
+                                public void run() {
+                                    main.addTorrentFromBytes(buf);
+                                }
+                            });
+                        }
+                    });
+                    thread.start();
+                }
+            });
+            torrent.setColorFilter(ThemeUtils.getThemeColor(getContext(), R.attr.colorAccent));
+        }
 
         if (item.details != null) {
             convertView.setOnClickListener(new View.OnClickListener() {
@@ -639,6 +680,30 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
                     String js_post = s.get("details_js_post");
 
                     BrowserDialogFragment d = BrowserDialogFragment.create(url, http.getCookies(), js, js_post);
+                    dialog = d;
+                    d.show(main.getSupportFragmentManager(), "");
+                }
+            });
+        }
+
+        if (item.details_html != null) {
+            convertView.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    if (dialog != null)
+                        return;
+
+                    final Map<String, String> s = engine.getMap("search");
+                    String js = s.get("details_js");
+                    String js_post = s.get("details_js_post");
+
+                    String html = "<html>";
+                    html += "<meta name=\"viewport\" content=\"initial-scale=1.0,user-scalable=no,maximum-scale=1,width=device-width\">";
+                    html += "<body>";
+                    html += item.details_html;
+                    html += "</body></html>";
+
+                    BrowserDialogFragment d = BrowserDialogFragment.create(html, js, js_post);
                     dialog = d;
                     d.show(main.getSupportFragmentManager(), "");
                 }
@@ -670,15 +735,16 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
 
         web = new WebViewCustom(context) {
             @Override
-            public void onConsoleMessage(String msg, int lineNumber, String sourceID) {
-                if (sourceID == null || sourceID.isEmpty())
-                    error(msg);
+            public boolean onConsoleMessage(String msg, int lineNumber, String sourceID) {
+                if (sourceID == null || sourceID.isEmpty() || sourceID.startsWith(INJECTS_URL))
+                    error(msg + "\nLine:" + lineNumber + "\n" + formatInjectError(sourceID, lineNumber));
+                return super.onConsoleMessage(msg, lineNumber, sourceID);
             }
 
             @Override
-            public void onJsAlert(WebView view, String url, String message, JsResult result) {
-                super.onJsAlert(view, url, message, result);
+            public boolean onJsAlert(WebView view, String url, String message, JsResult result) {
                 error(message);
+                return super.onJsAlert(view, url, message, result);
             }
         };
         web.setHttpClient(http);
@@ -745,7 +811,8 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         Map<String, String> s = engine.getMap("search");
 
         String url = null;
-        String html = null;
+        String html = "";
+        String jj = null;
 
         String post = s.get("post");
         if (post != null) {
@@ -761,10 +828,17 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
             html = http.get(null, url);
         }
 
-        search(s, url, html, done);
+        String json = s.get("json");
+        if (json != null) {
+            String query = URLEncoder.encode(search, MainApplication.UTF8);
+            url = String.format(json, query);
+            jj = http.get(null, url);
+        }
+
+        search(s, url, html, jj, done);
     }
 
-    public void search(final Map<String, String> s, final String url, final String html, final Runnable done) {
+    public void search(final Map<String, String> s, final String url, final String html, final String jj, final Runnable done) {
         this.nextLast.add(url);
 
         final String js = s.get("js");
@@ -773,7 +847,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
             handler.post(new Runnable() {
                 @Override
                 public void run() {
-                    inject(url, html, js, js_post, new Inject() {
+                    inject(url, html, js, js_post, new Inject(jj) {
                         @JavascriptInterface
                         public void result(final String html) {
                             super.result(html);
@@ -824,6 +898,9 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
             item.seed = matcher(item.html, s.get("seed"));
             item.leech = matcher(item.html, s.get("leech"));
             item.details = matcher(url, item.html, s.get("details"));
+            item.details_html = matcherHtml(item.html, s.get("details_html"));
+            item.search = s;
+            item.base = url;
 
             // do not empty items
             if (isEmpty(item.title) && isEmpty(item.magnet) && isEmpty(item.torrent) && isEmpty(item.details))
@@ -873,7 +950,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         return m;
     }
 
-    String matcher(String html, String q) {
+    String matcherHtml(String html, String q) {
         if (q == null)
             return null;
 
@@ -944,7 +1021,13 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
                 a = ""; // tell we did not find any regex match
             }
         }
+        return a;
+    }
 
+    String matcher(String html, String q) {
+        String a = matcherHtml(html, q);
+        if (a == null)
+            return null;
         return Html.fromHtml(a).toString();
     }
 

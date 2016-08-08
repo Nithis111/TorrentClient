@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.res.Resources;
 import android.net.Uri;
+import android.net.UrlQuerySanitizer;
 import android.os.Handler;
 import android.preference.PreferenceManager;
 import android.util.Log;
@@ -19,12 +20,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.charset.Charset;
 import java.util.ArrayList;
-import java.util.List;
-
-import cz.msebera.android.httpclient.NameValuePair;
-import cz.msebera.android.httpclient.client.utils.URLEncodedUtils;
 
 public class EnginesManager {
     public static final String TAG = EnginesManager.class.getSimpleName();
@@ -75,35 +71,34 @@ public class EnginesManager {
     }
 
     public boolean addManget(String magnet) {
-        Uri uri = Uri.parse(magnet);
-        List<NameValuePair> list = URLEncodedUtils.parse(uri.getQuery(), Charset.forName("UTF-8"));
-        for (int i = 0; i < list.size(); i++) {
-            NameValuePair nn = list.get(i);
-            if (nn.getName().equals("as")) {
-                final String url = nn.getValue();
-                thread = new Thread(new Runnable() {
-                    @Override
-                    public void run() {
-                        try {
-                            final SearchEngine engine = new SearchEngine();
-                            engine.loadUrl(context, url);
-                            handler.post(new Runnable() {
-                                @Override
-                                public void run() {
-                                    Search search = add(url, engine);
-                                    save();
-                                    main.updateManager();
-                                    main.openDrawer(search);
-                                }
-                            });
-                        } catch (RuntimeException e) {
-                            main.post(e);
-                        }
+        UrlQuerySanitizer sanitizer = new UrlQuerySanitizer(magnet);
+        String type = sanitizer.getValue("x.t");
+        if (type == null)
+            return false;
+        if (type.equals("search")) {
+            final String as = sanitizer.getValue("as");
+            thread = new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        final SearchEngine engine = new SearchEngine();
+                        engine.loadUrl(context, as);
+                        handler.post(new Runnable() {
+                            @Override
+                            public void run() {
+                                Search search = add(as, engine);
+                                save();
+                                main.updateManager();
+                                main.openDrawer(search);
+                            }
+                        });
+                    } catch (RuntimeException e) {
+                        main.post(e);
                     }
-                }, "DownloadJson");
-                thread.start();
-                return true;
-            }
+                }
+            }, "DownloadJson");
+            thread.start();
+            return true;
         }
         return false;
     }

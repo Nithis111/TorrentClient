@@ -29,6 +29,7 @@ import android.widget.ProgressBar;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
+import com.github.axet.androidlibrary.net.HttpClient;
 import com.github.axet.androidlibrary.widgets.WebViewCustom;
 import com.github.axet.torrentclient.R;
 import com.github.axet.torrentclient.activities.MainActivity;
@@ -55,6 +56,16 @@ public class BrowserDialogFragment extends DialogFragment implements MainActivit
         args.putString("js", js);
         args.putString("js_post", js_post);
         args.putString("cookies", cookies);
+        f.setArguments(args);
+        return f;
+    }
+
+    public static BrowserDialogFragment create(String html, String js, String js_post) {
+        BrowserDialogFragment f = new BrowserDialogFragment();
+        Bundle args = new Bundle();
+        args.putString("html", html);
+        args.putString("js", js);
+        args.putString("js_post", js_post);
         f.setArguments(args);
         return f;
     }
@@ -132,6 +143,8 @@ public class BrowserDialogFragment extends DialogFragment implements MainActivit
         RelativeLayout r = (RelativeLayout) v.findViewById(R.id.search_details_base);
 
         final String url = getArguments().getString("url");
+        final String html = getArguments().getString("html");
+
         String js = getArguments().getString("js");
         String js_post = getArguments().getString("js_post");
         String result = ";\n\ntorrentclient.result()";
@@ -163,14 +176,16 @@ public class BrowserDialogFragment extends DialogFragment implements MainActivit
             }
 
             @Override
-            public void onConsoleMessage(String msg, int lineNumber, String sourceID) {
-                if (sourceID == null || sourceID.isEmpty())
-                    getMainActivity().post(msg);
+            public boolean onConsoleMessage(String msg, int lineNumber, String sourceID) {
+                if (sourceID == null || sourceID.isEmpty() || sourceID.startsWith(INJECTS_URL))
+                    getMainActivity().post(msg + "\nLine:" + lineNumber + "\n" + formatInjectError(sourceID, lineNumber));
+                return super.onConsoleMessage(msg, lineNumber, sourceID);
             }
 
             @Override
-            public void onJsAlert(WebView view, String url, final String message, JsResult result) {
+            public boolean onJsAlert(WebView view, String url, final String message, JsResult result) {
                 getMainActivity().post(message);
+                return super.onJsAlert(view, url, message, result);
             }
 
             @Override
@@ -217,9 +232,15 @@ public class BrowserDialogFragment extends DialogFragment implements MainActivit
                 }
                 return super.shouldOverrideUrlLoading(view, url);
             }
+
+            @Override
+            public HttpClient.DownloadResponse shouldInterceptRequest(WebView view, String url) {
+                return super.shouldInterceptRequest(view, url);
+            }
         };
         web.setInject(script);
         web.setInjectPost(script_post);
+        status.setText("");
 
         final SharedPreferences shared = PreferenceManager.getDefaultSharedPreferences(getContext());
 
@@ -244,7 +265,10 @@ public class BrowserDialogFragment extends DialogFragment implements MainActivit
                     load = 100;
                     return;
                 }
-                web.reload();
+                if (html != null)
+                    web.loadDataWithBaseURL(null, html, "text/html", "utf8", null);
+                else
+                    web.reload();
             }
         });
 
@@ -290,7 +314,11 @@ public class BrowserDialogFragment extends DialogFragment implements MainActivit
         if (script != null || script_post != null)
             web.addJavascriptInterface(new Inject(), "torrentclient");
 
-        web.loadUrl(url);
+        if (url != null)
+            web.loadUrl(url);
+
+        if (html != null)
+            web.loadDataWithBaseURL(null, html, "text/html", "utf8", null);
 
         return v;
     }

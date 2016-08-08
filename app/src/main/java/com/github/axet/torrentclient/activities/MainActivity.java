@@ -128,7 +128,7 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
 
     BroadcastReceiver screenreceiver;
 
-    EnginesManager manager;
+    EnginesManager engies;
     Thread update;
     Thread updateOne;
     int updateOneIndex;
@@ -258,7 +258,7 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
         navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
 
-        manager = new EnginesManager(this);
+        engies = new EnginesManager(this);
 
         drawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
         drawerLayout.addDrawerListener(new DrawerLayout.DrawerListener() {
@@ -269,7 +269,7 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
             @Override
             public void onDrawerOpened(View drawerView) {
                 long time = System.currentTimeMillis();
-                long t = manager.getTime();
+                long t = engies.getTime();
                 if (t + ENGINES_AUTO_REFRESH < time) {
                     if (update == null)
                         refreshEngines(true);
@@ -591,9 +591,9 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
             delayedInit = null;
         }
 
-        if (manager != null) {
-            manager.save();
-            manager = null;
+        if (engies != null) {
+            engies.save();
+            engies = null;
         }
 
         refreshUI = null;
@@ -1063,7 +1063,7 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
             if (dialog && m.size() == 1) {
                 String s = m.get(0);
 
-                if (manager.addManget(s))
+                if (engies.addManget(s))
                     return;
 
                 String p = getStorage().getStoragePath().getPath();
@@ -1076,7 +1076,7 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
                 return;
             } else {
                 for (String s : m) {
-                    if (!manager.addManget(s)) {
+                    if (!engies.addManget(s)) {
                         Storage.Torrent tt = getStorage().addMagnet(s);
                         Toast.makeText(MainActivity.this, getString(R.string.added) + " " + tt.name(), Toast.LENGTH_SHORT).show();
                     }
@@ -1188,7 +1188,7 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
 
             int pos = id - 1;
 
-            Search search = manager.get(pos);
+            Search search = engies.get(pos);
             search.install(list);
             drawer.closeDrawer(GravityCompat.START);
             return true;
@@ -1213,12 +1213,12 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
                     shared.edit().putString(MainApplication.PREFERENCE_LAST_PATH, p.getParent()).commit();
                     Search search = null;
                     try {
-                        search = manager.add(p);
+                        search = engies.add(p);
                     } catch (RuntimeException e) {
                         Error(e);
                         return;
                     }
-                    manager.save();
+                    engies.save();
                     updateManager();
                     openDrawer(search);
                 }
@@ -1232,8 +1232,8 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
 
     public void openDrawer(Search search) {
         drawer.openDrawer(GravityCompat.START);
-        for (int i = 0; i < manager.getCount(); i++) {
-            if (manager.get(i) == search) {
+        for (int i = 0; i < engies.getCount(); i++) {
+            if (engies.get(i) == search) {
                 int id = i + 1;
                 navigationView.setCheckedItem(id);
 
@@ -1274,8 +1274,8 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
 
         LayoutInflater inflater = LayoutInflater.from(this);
 
-        for (int i = 0; i < manager.getCount(); i++) {
-            final Search search = manager.get(i);
+        for (int i = 0; i < engies.getCount(); i++) {
+            final Search search = engies.get(i);
             final SearchEngine engine = search.getEngine();
             // save to set < 0x00ffffff. check View.generateViewId()
             int id = i + 1;
@@ -1298,13 +1298,13 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
                     updateOne = new Thread(new Runnable() {
                         @Override
                         public void run() {
-                            manager.update(fi);
+                            engies.update(fi);
                             handler.post(new Runnable() {
                                 @Override
                                 public void run() {
                                     updateOne = null;
                                     updateManager();
-                                    Search search = manager.get(fi);
+                                    Search search = engies.get(fi);
                                     SearchEngine engine = search.getEngine();
                                     Toast.makeText(MainActivity.this, engine.getName() + getString(R.string.engine_updated) + engine.getVersion(), Toast.LENGTH_SHORT).show();
                                 }
@@ -1321,7 +1321,7 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
                 progress.setVisibility(View.INVISIBLE);
             }
 
-            if (manager.getUpdate(i))
+            if (engies.getUpdate(i))
                 release.setVisibility(View.VISIBLE);
             else
                 release.setVisibility(View.INVISIBLE);
@@ -1342,10 +1342,10 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
                         public void onClick(DialogInterface dialog, int which) {
                             dialog.cancel();
 
-                            manager.remove(search);
+                            engies.remove(search);
                             search.close();
 
-                            manager.save();
+                            engies.save();
                             updateManager();
                         }
                     });
@@ -1458,7 +1458,7 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
                     }
                 });
                 try {
-                    manager.refresh();
+                    engies.refresh();
                 } catch (final RuntimeException e) {
                     Log.e(TAG, "Update Engine", e);
                     // only report errors for current active update thread
@@ -1482,7 +1482,7 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
                     public void run() {
                         update = null;
                         if (!b) {
-                            if (!manager.updates())
+                            if (!engies.updates())
                                 Toast.makeText(MainActivity.this, R.string.no_updates, Toast.LENGTH_SHORT).show();
                         }
                         updateManager();
@@ -1509,9 +1509,9 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
         int count = 0;
         if (torrents != null)
             count += torrents.getUnreadCount();
-        if (manager != null) {
-            for (int i = 0; i < manager.getCount(); i++) {
-                count += manager.get(i).getUnreadCount();
+        if (engies != null) {
+            for (int i = 0; i < engies.getCount(); i++) {
+                count += engies.get(i).getUnreadCount();
             }
         }
         return count;

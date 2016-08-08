@@ -1,5 +1,5 @@
 {
-  "version": 10,
+  "version": 12,
   "name": "pornolab.net",
   "home": {
     "get": "http://pornolab.net"
@@ -16,7 +16,6 @@
     "post": "http://pornolab.net/forum/tracker.php",
     "post_search": "nm",
     "js": "if(document.querySelectorAll('a[href^=\\'./profile.php\\']').length==0){alert('Not Logged In')}",
-    "js_post": "",
     "list": ".forumline.tablesorter tbody tr",
     "title": "a.tLink:regex(<a[^>]*>(.*)</a>)",
     "details": "a.tLink:regex(.*href=\"([^\"]*)\".*)",
