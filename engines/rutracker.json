@@ -10,12 +10,12 @@
     "post_login": "login_username",
     "post_password": "login_password",
     "post_params": "login=вход",
-    "js": "if(document.querySelectorAll('a.logged-in-as-uname').length==0){alert('Not Logged In')}"
+    "js": "if(document.querySelectorAll('a.logged-in-as-uname').length==0) {\n  alert('Not Logged In');\n}"
   },
   "search": {
     "post": "http://rutracker.org/forum/tracker.php",
     "post_search": "nm",
-    "js": "if(document.querySelectorAll('a.logged-in-as-uname').length==0){alert('Not Logged In')}",
+    "js": "if(document.querySelectorAll('a.logged-in-as-uname').length==0) {\n  alert('Not Logged In');\n}",
     "list": ".forumline.tablesorter tbody tr",
     "title": "a.tLink:regex(<a[^>]*>(.*)</a>)",
     "details": "a.tLink:regex(.*href=\"([^\"]*)\".*)",

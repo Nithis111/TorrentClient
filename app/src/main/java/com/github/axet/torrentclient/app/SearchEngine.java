@@ -4,31 +4,90 @@ import android.content.Context;
 import android.net.Uri;
 
 import com.github.axet.androidlibrary.net.HttpClient;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonSyntaxException;
-import com.google.gson.reflect.TypeToken;
 
 import org.apache.commons.io.IOUtils;
+import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
 public class SearchEngine {
     public static final String TAG = SearchEngine.class.getSimpleName();
 
-    HashMap<String, Object> map = new HashMap<>();
+    Map<String, Object> map = new HashMap<>();
+
+    public static Object toJSON(Object object) throws JSONException {
+        if (object instanceof Map) {
+            JSONObject json = new JSONObject();
+            Map map = (Map) object;
+            for (Object key : map.keySet()) {
+                json.put(key.toString(), toJSON(map.get(key)));
+            }
+            return json;
+        } else if (object instanceof Iterable) {
+            JSONArray json = new JSONArray();
+            for (Object value : ((Iterable) object)) {
+                json.put(value);
+            }
+            return json;
+        } else {
+            return object;
+        }
+    }
+
+    public static Map<String, Object> jsonToMap(JSONObject json) throws JSONException {
+        Map<String, Object> retMap = new HashMap<String, Object>();
+        if (json != JSONObject.NULL) {
+            retMap = toMap(json);
+        }
+        return retMap;
+    }
+
+    public static Map<String, Object> toMap(JSONObject object) throws JSONException {
+        Map<String, Object> map = new HashMap<String, Object>();
+        Iterator<String> keysItr = object.keys();
+        while (keysItr.hasNext()) {
+            String key = keysItr.next();
+            Object value = object.get(key);
+
+            if (value instanceof JSONArray) {
+                value = toList((JSONArray) value);
+            } else if (value instanceof JSONObject) {
+                value = toMap((JSONObject) value);
+            }
+            map.put(key, value);
+        }
+        return map;
+    }
+
+    public static List<Object> toList(JSONArray array) throws JSONException {
+        List<Object> list = new ArrayList<Object>();
+        for (int i = 0; i < array.length(); i++) {
+            Object value = array.get(i);
+            if (value instanceof JSONArray) {
+                value = toList((JSONArray) value);
+            } else if (value instanceof JSONObject) {
+                value = toMap((JSONObject) value);
+            }
+            list.add(value);
+        }
+        return list;
+    }
 
     public void loadJson(String json) {
-        Gson gson = new Gson();
         try {
-            map = gson.fromJson(json, map.getClass());
-        } catch (JsonSyntaxException e) {
+            JSONObject obj = new JSONObject(json);
+            map = toMap(obj);
+        } catch (JSONException e) {
             throw new RuntimeException(e);
         }
     }
@@ -66,15 +125,19 @@ public class SearchEngine {
     }
 
     public String save() {
-        Gson gson = new GsonBuilder().create();
-        return gson.toJson(map);
+        try {
+            JSONObject json = (JSONObject) toJSON(map);
+            return json.toString(2);
+        } catch (JSONException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public String getName() {
         return getString("name");
     }
 
-    public Integer getVersion() {
-        return ((Double) map.get("version")).intValue();
+    public int getVersion() {
+        return ((Number) map.get("version")).intValue();
     }
 }
