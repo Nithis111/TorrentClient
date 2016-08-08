@@ -126,7 +126,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         }
 
         public Inject(String json) {
-            this.json = json.trim();
+            this.json = json;
         }
 
         @JavascriptInterface
@@ -848,7 +848,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         if (json != null) {
             String query = URLEncoder.encode(search, MainApplication.UTF8);
             url = String.format(json, query);
-            jj = http.get(null, url);
+            jj = http.get(null, url).trim();
         }
 
         search(s, url, html, jj, done);
