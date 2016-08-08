@@ -118,18 +118,21 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
     }
 
     public class Inject {
-        public String json;
+        // do not make it public, old phones conflict with method name
+        String json;
+        String html;
 
         public Inject() {
         }
 
         public Inject(String json) {
-            this.json = json;
+            this.json = json.trim();
         }
 
         @JavascriptInterface
         public void result(String html) {
             Log.d(TAG, "result()");
+            this.html = html;
         }
 
         @JavascriptInterface
@@ -713,7 +716,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         return convertView;
     }
 
-    public void inject(final String url, String html, String js, String js_post, final Inject exec) {
+    public void inject(final String url, final String html, String js, String js_post, final Inject exec) {
         Log.d(TAG, "inject()");
 
         String result = ";\n\ntorrentclient.result(document.documentElement.outerHTML);";
@@ -736,8 +739,16 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         web = new WebViewCustom(context) {
             @Override
             public boolean onConsoleMessage(String msg, int lineNumber, String sourceID) {
-                if (sourceID == null || sourceID.isEmpty() || sourceID.startsWith(INJECTS_URL))
+                if (sourceID == null || sourceID.isEmpty() || sourceID.startsWith(INJECTS_URL)) {
                     error(msg + "\nLine:" + lineNumber + "\n" + formatInjectError(sourceID, lineNumber));
+                } else if (exec.json != null) { // we uploaded json, then html errors is our responsability
+                    String[] lines = web.getHtml().split("\n");
+                    int t = lineNumber - 1;
+                    String line = "";
+                    if (t > 0 && t < lines.length)
+                        line = "\n" + lines[t];
+                    error(msg + "\nLine:" + lineNumber + line);
+                }
                 return super.onConsoleMessage(msg, lineNumber, sourceID);
             }
 
@@ -753,7 +764,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         web.addJavascriptInterface(exec, "torrentclient");
         // Uncaught SecurityError: Failed to read the 'cookie' property from 'Document': Cookies are disabled inside 'data:' URLs.
         // called when page loaded with loadData()
-        web.loadDataWithBaseURL(url, html, "text/html", "UTF8", url);
+        web.loadHtmlWithBaseURL(url, html, url);
     }
 
     public void login(String login, String pass, final Runnable done) throws IOException {
@@ -793,6 +804,11 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
                                             done.run();
                                     }
                                 });
+                            }
+
+                            @JavascriptInterface
+                            public String json() {
+                                return super.json();
                             }
                         });
                     }
@@ -864,6 +880,11 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
                                     }
                                 }
                             });
+                        }
+
+                        @JavascriptInterface
+                        public String json() {
+                            return super.json();
                         }
                     });
                 }

@@ -220,7 +220,7 @@ public class EnginesManager {
             try {
                 final SearchEngine engine = new SearchEngine();
                 engine.loadUrl(context, item.url);
-                if (!item.search.getEngine().getVersion().equals(engine.getVersion())) {
+                if (item.search.getEngine().getVersion() != engine.getVersion()) {
                     item.update = true;
                 }
             } catch (RuntimeException e) {

@@ -177,8 +177,16 @@ public class BrowserDialogFragment extends DialogFragment implements MainActivit
 
             @Override
             public boolean onConsoleMessage(String msg, int lineNumber, String sourceID) {
-                if (sourceID == null || sourceID.isEmpty() || sourceID.startsWith(INJECTS_URL))
+                if (sourceID == null || sourceID.isEmpty() || sourceID.startsWith(INJECTS_URL)) {
                     getMainActivity().post(msg + "\nLine:" + lineNumber + "\n" + formatInjectError(sourceID, lineNumber));
+                } else if (html != null) { // we uploaded json, then html errors is our responsability
+                    String[] lines = web.getHtml().split("\n");
+                    int t = lineNumber - 1;
+                    String line = "";
+                    if (t > 0 && t < lines.length)
+                        line = "\n" + lines[t];
+                    getMainActivity().post(msg + "\nLine:" + lineNumber + line);
+                }
                 return super.onConsoleMessage(msg, lineNumber, sourceID);
             }
 
@@ -266,7 +274,7 @@ public class BrowserDialogFragment extends DialogFragment implements MainActivit
                     return;
                 }
                 if (html != null)
-                    web.loadDataWithBaseURL(null, html, "text/html", "utf8", null);
+                    web.loadHtmlWithBaseURL(null, html, null);
                 else
                     web.reload();
             }
@@ -318,7 +326,7 @@ public class BrowserDialogFragment extends DialogFragment implements MainActivit
             web.loadUrl(url);
 
         if (html != null)
-            web.loadDataWithBaseURL(null, html, "text/html", "utf8", null);
+            web.loadHtmlWithBaseURL(null, html, null);
 
         return v;
     }
