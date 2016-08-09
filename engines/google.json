@@ -8,7 +8,7 @@
     "get": "https://www.google.com/search?q=filetype:torrent+%s",
     "list": "div h3 a",
     "details": "a:regex(.*href=\"/url\\?q=([^\"]*)\".*)",
-    "title": "a:regex(<a[^>]*>(.*)</a>)",
+    "title": "a",
     "next": "#nav td:last:regex(.*href=\"([^\"]*)\".*)"
   }
 }

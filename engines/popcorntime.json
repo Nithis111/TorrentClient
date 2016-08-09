@@ -8,6 +8,7 @@
     "get": "https://blog.popcorntime.sh",
     "list": "article",
     "title": ".post-title",
+    "date": "time",
     "details": "a:regex(.*href=\"([^\"]*)\".*)"
   },
   "top": {

@@ -114,6 +114,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         public String details_html;
         public String html;
         public String magnet;
+        public String date;
         public String size;
         public String seed;
         public String leech;
@@ -728,6 +729,14 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
 
         final SearchItem item = getItem(position);
 
+        TextView date = (TextView) convertView.findViewById(R.id.search_item_date);
+        if (item.date == null || item.date.isEmpty()) {
+            date.setVisibility(View.GONE);
+        } else {
+            date.setVisibility(View.VISIBLE);
+            date.setText(item.date);
+        }
+
         TextView size = (TextView) convertView.findViewById(R.id.search_item_size);
         if (item.size == null || item.size.isEmpty()) {
             size.setVisibility(View.GONE);
@@ -758,7 +767,9 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         ImageView magnet = (ImageView) convertView.findViewById(R.id.search_item_magnet);
         magnet.setEnabled(false);
         magnet.setColorFilter(Color.GRAY);
+        magnet.setVisibility(View.GONE);
         if (item.magnet != null) {
+            magnet.setVisibility(View.VISIBLE);
             magnet.setEnabled(true);
             magnet.setOnClickListener(new View.OnClickListener() {
                 @Override
@@ -772,7 +783,9 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         ImageView torrent = (ImageView) convertView.findViewById(R.id.search_item_torrent);
         torrent.setEnabled(false);
         torrent.setColorFilter(Color.GRAY);
+        torrent.setVisibility(View.GONE);
         if (item.torrent != null) {
+            torrent.setVisibility(View.VISIBLE);
             torrent.setEnabled(true);
             torrent.setOnClickListener(new View.OnClickListener() {
                 @Override
@@ -1144,6 +1157,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
             item.title = matcher(item.html, s.get("title"));
             item.magnet = matcher(item.html, s.get("magnet"));
             item.torrent = matcher(url, item.html, s.get("torrent"));
+            item.date = matcher(item.html, s.get("date"));
             item.size = matcher(item.html, s.get("size"));
             item.seed = matcher(item.html, s.get("seed"));
             item.leech = matcher(item.html, s.get("leech"));
