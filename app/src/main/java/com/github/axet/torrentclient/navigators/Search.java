@@ -7,6 +7,7 @@ import android.graphics.Color;
 import android.os.Handler;
 import android.os.Looper;
 import android.preference.PreferenceManager;
+import android.support.v7.widget.AppCompatImageButton;
 import android.text.Html;
 import android.util.Base64;
 import android.util.Log;
@@ -508,26 +509,33 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
     void selectToolbar(View v) {
         for (int i = 0; i < toolbar.getChildCount(); i++) {
             View c = toolbar.getChildAt(i);
+            AppCompatImageButton cc = getCheckBox(c);
             if (c == v) {
-                getCheckBox(c).setChecked(true);
+                int[] states = new int[]{
+                        android.R.attr.state_checked,
+                };
+                cc.setImageState(states, false);
             } else {
-                getCheckBox(c).setChecked(false);
+                int[] states = new int[]{
+                        -android.R.attr.state_checked,
+                };
+                cc.setImageState(states, false);
             }
         }
     }
 
-    CheckBox getCheckBox(View v) {
+    AppCompatImageButton getCheckBox(View v) {
         if (v instanceof ViewGroup) {
             ViewGroup g = (ViewGroup) v;
             for (int i = 0; i < g.getChildCount(); i++) {
                 View c = getCheckBox(g.getChildAt(i));
                 if (c != null) {
-                    return (CheckBox) c;
+                    return (AppCompatImageButton) c;
                 }
             }
         }
-        if (v instanceof CheckBox) {
-            return (CheckBox) v;
+        if (v instanceof AppCompatImageButton) {
+            return (AppCompatImageButton) v;
         }
         return null;
     }

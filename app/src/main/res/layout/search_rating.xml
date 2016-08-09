@@ -7,15 +7,15 @@
     android:clipChildren="false"
     android:clipToPadding="false">
 
-    <CheckBox
+    <ImageButton
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
         android:background="?attr/search_rating_bg"
         android:button="@android:color/transparent"
         android:clickable="false"
-        android:drawableLeft="@drawable/ic_sort_black_24dp"
-        android:drawableTint="?attr/colorAccent"
+        android:src="@drawable/ic_sort_black_24dp"
+        android:tint="?attr/colorAccent"
         android:gravity="center" />
 
     <TextView

@@ -105,7 +105,7 @@
                     android:clipToPadding="false"
                     android:orientation="horizontal">
 
-                    <CheckBox
+                    <ImageButton
                         android:id="@+id/search_header_toolbar_news"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
@@ -113,13 +113,13 @@
                         android:background="?attr/search_rating_bg"
                         android:button="@android:color/transparent"
                         android:clickable="false"
-                        android:drawableLeft="@drawable/ic_fiber_new_black_24dp"
-                        android:drawableTint="?attr/colorAccent"
+                        android:src="@drawable/ic_fiber_new_black_24dp"
+                        android:tint="?attr/colorAccent"
                         android:gravity="center" />
 
                     <include layout="@layout/search_rating" />
 
-                    <CheckBox
+                    <ImageButton
                         android:id="@+id/search_header_toolbar_search"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
@@ -127,8 +127,8 @@
                         android:background="?attr/search_rating_bg"
                         android:button="@android:color/transparent"
                         android:clickable="false"
-                        android:drawableLeft="@drawable/ic_search_black_24dp"
-                        android:drawableTint="?attr/colorAccent"
+                        android:src="@drawable/ic_search_black_24dp"
+                        android:tint="?attr/colorAccent"
                         android:gravity="center" />
                 </com.github.axet.androidlibrary.widgets.EqualLinearLayout>
             </FrameLayout>
