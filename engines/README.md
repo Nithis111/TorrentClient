@@ -29,10 +29,18 @@
   },
   // search operation
   "search": {
+    // GET what url should we to login?
+    "get": "http://rutracker.org/forum/login.php",
     // POST url
     "post": "http://rutracker.org/forum/tracker.php",
     // post search arg query
     "post_search": "nm",
+    // http GET json result
+    "json_get": "http://rutracker.org/forum/login.php",
+    // http POST json result
+    "json_post": "http://rutracker.org/forum/login.php",
+    // post search arg query
+    "json_post_search": "nm",
     // optional. js we need to execute after page loaded
     "js": "if(document.querySelectorAll('a[href^=\\\\.\\\\/profile\\\\.php]').length==0){alert('Not Logged In')};ee=document.querySelectorAll('a.tLink');for(i=0;i<ee.length;i++){e=ee[i];h=e.getAttribute('href');h='http://rutracker.org/forum/'+h;e.setAttribute('href',h);};",
     // list torrents selector
