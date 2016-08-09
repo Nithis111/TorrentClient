@@ -5,9 +5,7 @@ import com.github.axet.androidlibrary.net.HttpClient;
 import java.io.IOException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.List;
 
-import cz.msebera.android.httpclient.NameValuePair;
 import cz.msebera.android.httpclient.client.methods.CloseableHttpResponse;
 import cz.msebera.android.httpclient.client.methods.HttpRequestBase;
 
@@ -52,6 +50,8 @@ public class GoogleProxy extends HttpClient {
     @Override
     public void create() {
         super.create();
+
+        setProxy();
     }
 
     void setProxy() {
@@ -72,28 +72,19 @@ public class GoogleProxy extends HttpClient {
     }
 
     @Override
-    public CloseableHttpResponse execute(String base, HttpRequestBase request) throws IOException {
+    public CloseableHttpResponse execute(HttpRequestBase request) throws IOException {
         if (enabled) {
-            // Goodle Data Saver plugin does not work for sites on https
+            // Google Data Saver plugin does not work for sites on https
             if (request.getURI().getScheme().equals("https")) {
-                clearProxy();
+                request.setConfig(null);
+                httpClientContext.setRequestConfig(null);
             } else {
                 authHeader(request);
-                setProxy();
             }
         }else {
-            clearProxy();
+            request.setConfig(null);
         }
-        return super.execute(base, request);
+        return super.execute(request);
     }
 
-    @Override
-    public DownloadResponse getResponse(String base, String url) {
-        return super.getResponse(base, url);
-    }
-
-    @Override
-    public DownloadResponse postResponse(String base, String url, List<NameValuePair> nvps) {
-        return super.postResponse(base, url, nvps);
-    }
 }

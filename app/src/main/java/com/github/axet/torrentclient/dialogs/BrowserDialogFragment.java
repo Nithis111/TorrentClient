@@ -195,7 +195,7 @@ public class BrowserDialogFragment extends DialogFragment implements MainActivit
                     return super.onConsoleMessage(msg, lineNumber, sourceID);
                 if (sourceID == null || sourceID.isEmpty() || sourceID.startsWith(INJECTS_URL)) {
                     getMainActivity().post(msg + "\nLine:" + lineNumber + "\n" + formatInjectError(sourceID, lineNumber));
-                } else if (html != null) { // we uploaded json, then html errors is our responsability
+                } else if (html != null && sourceID.equals(html_base)) { // we uploaded json, then html errors is our responsability
                     String[] lines = web.getHtml().split("\n");
                     int t = lineNumber - 1;
                     String line = "";
@@ -260,7 +260,7 @@ public class BrowserDialogFragment extends DialogFragment implements MainActivit
             @Override
             public HttpClient.DownloadResponse shouldInterceptRequest(WebView view, String url) {
                 if (url.equals(html_base)) {
-                    return new HttpClient.DownloadResponse("text/html", Charset.defaultCharset().name(), html);
+                    return new HttpClient.DownloadResponse(HttpClient.CONTENTTYPE_HTML, Charset.defaultCharset().name(), html);
                 }
                 return super.shouldInterceptRequest(view, url);
             }
