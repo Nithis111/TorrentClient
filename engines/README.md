@@ -10,6 +10,33 @@
   "home": {
     "get": "http://rutracker.org"
   },
+  // news button section
+  "news": {
+    // GET
+    "get": "http://rutracker.org/forum/viewforum.php?f=1960",
+    // get news list
+    "list": "a.topictitle",
+    // get title of item
+    "title": "regex(<a[^>]*>(.*)</a>)",
+    // get details url
+    "details": "regex(.*href=\"([^\"]*)\".*)",
+    // load more
+    "next": "div.nav a.pg:last:regex(.*href=\"([^\"]*)\".*След.*)"
+  },
+  // tops ratings from search engine
+  "top": {
+    // GET method of 'tops'
+    "get": "tops",
+    "list": "a.topictitle",
+    "title": "regex(<a[^>]*>(.*)</a>)",
+    "details": "regex(.*href=\"([^\"]*)\".*)",
+    "next": "div.nav a.pg:last:regex(.*href=\"([^\"]*)\".*След.*)"
+  },
+  // tops using GET
+  "tops": {
+    "Net": "http://rutracker.org/forum/viewforum.php?f=489",
+    "(c)": "http://rutracker.org/forum/viewforum.php?f=1538"
+  },
   // optional. if present additional action possible - login
   "login": {
     // GET what url should we to login?
