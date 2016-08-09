@@ -855,7 +855,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
             searchHtml(s, url, html, done);
             return;
         }
-        if (json == null) {
+        if (json != null) {
             searchJson(s, url, json, done);
             return;
         }
@@ -866,6 +866,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
                     done.run();
             }
         });
+        throw new RuntimeException("html or json not set");
     }
 
     public void searchJson(final Map<String, String> s, final String url, final String json, final Runnable done) {
@@ -873,6 +874,16 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
 
         final String js = s.get("js");
         final String js_post = s.get("js_post");
+        if (js == null && js_post == null) {
+            handler.post(new Runnable() {
+                @Override
+                public void run() {
+                    if (done != null)
+                        done.run();
+                }
+            });
+            throw new RuntimeException("js not set");
+        }
         handler.post(new Runnable() {
             @Override
             public void run() {
