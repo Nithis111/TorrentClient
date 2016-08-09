@@ -1271,7 +1271,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         String a = matcherHtml(html, q);
         if (a == null)
             return null;
-        return Html.fromHtml(a).toString();
+        return Html.fromHtml(a).toString().trim();
     }
 
     public void error(final Throwable e) {
