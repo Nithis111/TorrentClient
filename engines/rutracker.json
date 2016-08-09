@@ -1,8 +1,26 @@
 {
-  "version": 12,
+  "version": 13,
   "name": "rutracker.org",
   "home": {
     "get": "http://rutracker.org"
+  },
+  "news": {
+    "get": "http://rutracker.org/forum/viewforum.php?f=1960",
+    "list": "a.topictitle",
+    "title": "regex(<a[^>]*>(.*)</a>)",
+    "details": "regex(.*href=\"([^\"]*)\".*)",
+    "next": "div.nav a.pg:last:regex(.*href=\"([^\"]*)\".*След.*)"
+  },
+  "top": {
+    "get": "tops",
+    "list": "a.topictitle",
+    "title": "regex(<a[^>]*>(.*)</a>)",
+    "details": "regex(.*href=\"([^\"]*)\".*)",
+    "next": "div.nav a.pg:last:regex(.*href=\"([^\"]*)\".*След.*)"
+  },
+  "tops": {
+    "Net": "http://rutracker.org/forum/viewforum.php?f=489",
+    "(c)": "http://rutracker.org/forum/viewforum.php?f=1538"
   },
   "login": {
     "details": "http://rutracker.org/forum/login.php",

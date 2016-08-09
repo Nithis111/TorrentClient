@@ -2,77 +2,138 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
+    android:clipChildren="false"
+    android:clipToPadding="false"
     android:orientation="vertical"
-    android:padding="5dp">
+    android:paddingLeft="5dp"
+    android:paddingRight="5dp">
 
-    <LinearLayout
+    <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal">
+        android:clipChildren="false">
 
-        <FrameLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content">
-
-            <ImageButton
-                android:id="@+id/search_header_login"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center"
-                android:layout_marginLeft="5dp"
-                android:layout_marginRight="5dp"
-                android:src="@drawable/ic_vpn_key_black_24dp"
-                android:tint="?attr/colorAccent" />
-
-            <ImageButton
-                android:id="@+id/search_header_home"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center"
-                android:layout_marginLeft="5dp"
-                android:layout_marginRight="5dp"
-                android:src="@drawable/ic_home_black_24dp"
-                android:tint="?attr/colorAccent" />
-        </FrameLayout>
-
-        <EditText
-            android:id="@+id/search_header_text"
-            android:layout_width="0dp"
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text=""
-            android:textColor="?attr/titleColor" />
+            android:clipChildren="false"
+            android:orientation="vertical">
 
-        <FrameLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginLeft="5dp">
-
-            <ImageButton
-                android:id="@+id/search_header_search"
-                android:layout_width="wrap_content"
+            <LinearLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_gravity="center"
-                android:src="@drawable/ic_search_black_24dp"
-                android:tint="?attr/colorAccent" />
+                android:orientation="horizontal">
 
-            <ProgressBar
-                android:id="@+id/search_header_progress"
-                android:layout_width="wrap_content"
+                <FrameLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center">
+
+                    <ImageButton
+                        android:id="@+id/search_header_home"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center"
+                        android:layout_marginLeft="5dp"
+                        android:layout_marginRight="5dp"
+                        android:src="@drawable/ic_home_black_24dp"
+                        android:tint="?attr/colorAccent" />
+
+                    <ImageButton
+                        android:id="@+id/search_header_login"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center"
+                        android:layout_marginLeft="5dp"
+                        android:layout_marginRight="5dp"
+                        android:src="@drawable/ic_vpn_key_black_24dp"
+                        android:tint="?attr/colorAccent" />
+                </FrameLayout>
+
+                <EditText
+                    android:id="@+id/search_header_text"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text=""
+                    android:textColor="?attr/titleColor" />
+
+                <FrameLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:layout_marginLeft="5dp">
+
+                    <ImageButton
+                        android:id="@+id/search_header_search"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center"
+                        android:src="@drawable/ic_search_black_24dp"
+                        android:tint="?attr/colorAccent" />
+
+                    <ProgressBar
+                        android:id="@+id/search_header_progress"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center"
+                        android:indeterminateOnly="true" />
+
+                    <ImageView
+                        android:id="@+id/search_header_stop"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center"
+                        android:src="@drawable/ic_stop_black_24dp"
+                        android:tint="?attr/colorAccent" />
+                </FrameLayout>
+
+            </LinearLayout>
+
+            <FrameLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_gravity="center"
-                android:indeterminateOnly="true" />
+                android:clipChildren="false">
 
-            <ImageView
-                android:id="@+id/search_header_stop"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center"
-                android:src="@drawable/ic_stop_black_24dp"
-                android:tint="?attr/colorAccent" />
-        </FrameLayout>
+                <com.github.axet.androidlibrary.widgets.EqualLinearLayout
+                    android:id="@+id/search_header_toolbar"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginLeft="5dp"
+                    android:layout_marginRight="5dp"
+                    android:clipChildren="false"
+                    android:clipToPadding="false"
+                    android:orientation="horizontal">
 
-    </LinearLayout>
+                    <CheckBox
+                        android:id="@+id/search_header_toolbar_news"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center"
+                        android:background="?attr/search_rating_bg"
+                        android:button="@android:color/transparent"
+                        android:clickable="false"
+                        android:drawableLeft="@drawable/ic_fiber_new_black_24dp"
+                        android:drawableTint="?attr/colorAccent"
+                        android:gravity="center" />
+
+                    <include layout="@layout/search_rating" />
+
+                    <CheckBox
+                        android:id="@+id/search_header_toolbar_search"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center"
+                        android:background="?attr/search_rating_bg"
+                        android:button="@android:color/transparent"
+                        android:clickable="false"
+                        android:drawableLeft="@drawable/ic_search_black_24dp"
+                        android:drawableTint="?attr/colorAccent"
+                        android:gravity="center" />
+                </com.github.axet.androidlibrary.widgets.EqualLinearLayout>
+            </FrameLayout>
+        </LinearLayout>
+    </FrameLayout>
 
     <LinearLayout
         android:id="@+id/search_header_message_panel"

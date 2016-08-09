@@ -1,8 +1,31 @@
 {
-  "version": 4,
+  "version": 5,
   "name": "thepiratebay.org",
   "home": {
     "get": "https://thepiratebay.org/"
+  },
+  "news": {
+    "get": "https://thepiratebay.org/blog",
+    "list": "div.post",
+    "title": "h3:regex(<h3[^>]*>(.*)</h3>)",
+    "details_html": "regex((.*))"
+  },
+  "top": {
+    "get": "tops",
+    "list": "tbody tr",
+    "title": "a.detLink:regex(<a[^>]*>(.*)</a>)",
+    "details": "a.detLink:regex(.*href=\"([^\"]*)\".*)",
+    "magnet": "a[href^=magnet]:regex(.*href=\"([^\"]*)\".*)",
+    "size": "font.detDesc:regex(.*Size ([^,]*).*)",
+    "seed": "td:nth-child(3):regex((.*))",
+    "leech": "td:nth-child(4):regex((.*))",
+    "next": "#content a[href^='/search']:last:regex(.*href=\"([^\"]*).*next.*)"
+  },
+  "tops": {
+    "Music": "https://thepiratebay.org/top/101",
+    "Video": "https://thepiratebay.org/top/200",
+    "Porn": "https://thepiratebay.org/top/500",
+    "All": "https://thepiratebay.org/top/all"
   },
   "search": {
     "get": "https://thepiratebay.org/search/%s/0/7//",

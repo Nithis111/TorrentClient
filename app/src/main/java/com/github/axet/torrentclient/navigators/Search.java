@@ -18,6 +18,7 @@ import android.webkit.JavascriptInterface;
 import android.webkit.JsResult;
 import android.webkit.WebView;
 import android.widget.BaseAdapter;
+import android.widget.CheckBox;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.ProgressBar;
@@ -93,6 +94,8 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
     View header_search; // search button
     TextView searchText;
 
+    ViewGroup toolbar;
+
     // footer data
     View footer;
     View footer_next; // load next button
@@ -100,7 +103,9 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
     View footer_stop; // stop image
 
     // load next data
+    Map<String, String> nextSearch;
     String next;
+    String nextType;
     ArrayList<String> nextLast = new ArrayList<>();
 
     public static class SearchItem {
@@ -230,19 +235,10 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         footer_next.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                footer_progress.setVisibility(View.VISIBLE);
-                footer_stop.setVisibility(View.VISIBLE);
-                footer_next.setVisibility(View.GONE);
-
                 request(new Runnable() {
                     @Override
                     public void run() {
-                        Map<String, String> s = engine.getMap("search");
-
-                        String url = next;
-                        String html = http.get(null, url);
-
-                        searchHtml(s, url, html, new Runnable() {
+                        search(nextSearch, nextType, next, null, new Runnable() {
                             @Override
                             public void run() {
                                 // destory looper thread
@@ -250,13 +246,8 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
                             }
                         });
                     }
-                }, new Runnable() {
-                    @Override
-                    public void run() {
-                        // thread will be cleared by request()
-                        updateLoadNext();
-                    }
-                });
+                }, null);
+                updateFooterButtons();
             }
         });
         footer_progress.setOnClickListener(new View.OnClickListener() {
@@ -265,14 +256,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
                 requestCancel();
             }
         });
-        footer_next.setVisibility(View.GONE);
-        if (thread == null) {
-            footer_progress.setVisibility(View.GONE);
-            footer_stop.setVisibility(View.GONE);
-        } else {
-            footer_progress.setVisibility(View.VISIBLE);
-            footer_stop.setVisibility(View.VISIBLE);
-        }
+        updateFooterButtons();
 
         message_panel = (ViewGroup) header.findViewById(R.id.search_header_message_panel);
 
@@ -325,16 +309,13 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         header_search.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Search.this.list.clear();
-                Search.this.nextLast.clear();
-                footer_next.setVisibility(View.GONE);
-                notifyDataSetChanged();
-
+                clearList();
+                selectToolbar(toolbar.findViewById(R.id.search_header_toolbar_search));
                 request(new Runnable() {
                     @Override
                     public void run() {
                         try {
-                            search(searchText.getText().toString(), new Runnable() {
+                            search(engine.getMap("search"), searchText.getText().toString(), new Runnable() {
                                 @Override
                                 public void run() {
                                     // destory looper thread
@@ -411,6 +392,57 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
             home.setVisibility(View.GONE);
         }
 
+        toolbar = (ViewGroup) header.findViewById(R.id.search_header_toolbar);
+        final View toolbar_news = header.findViewById(R.id.search_header_toolbar_news);
+        final View toolbar_search = header.findViewById(R.id.search_header_toolbar_search);
+        final Map<String, String> news = engine.getMap("news");
+        final Map<String, String> top = engine.getMap("top");
+        if (news == null && top == null) {
+            toolbar.setVisibility(View.GONE);
+        }
+        toolbar_news.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                clearList();
+                selectToolbar(toolbar.findViewById(R.id.search_header_toolbar_news));
+                request(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            search(news, null, new Runnable() {
+                                @Override
+                                public void run() {
+                                    // destory looper thread
+                                    requestCancel();
+                                }
+                            });
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+                    }
+                }, null);
+            }
+        });
+        if (news == null) {
+            toolbar_news.setVisibility(View.GONE);
+        }
+        for (int i = toolbar.getChildCount() - 1; i >= 0; i--) {
+            View v = toolbar.getChildAt(i);
+            if (v.getId() == R.id.search_header_toolbar_tops) {
+                toolbar.removeView(v);
+            }
+        }
+        if (top != null) {
+            String type;
+            final Map<String, String> post = engine.getMap(top.get(type = "post"));
+            loadTops(top, type, post);
+            final Map<String, String> get = engine.getMap(top.get(type = "get"));
+            loadTops(top, type, get);
+            final Map<String, String> json_post = engine.getMap(top.get(type = "json_post"));
+            loadTops(top, type, json_post);
+            final Map<String, String> json_get = engine.getMap(top.get(type = "json_get"));
+            loadTops(top, type, json_get);
+        }
         list.addHeaderView(header);
         list.addFooterView(footer);
 
@@ -432,26 +464,105 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         list.removeFooterView(footer);
     }
 
+    void loadTops(final Map<String, String> top, final String type, Map<String, String> tops) {
+        if (tops == null)
+            return;
+
+        LayoutInflater inflater = LayoutInflater.from(getContext());
+
+        for (String key : tops.keySet()) {
+            final String url = tops.get(key);
+            View v = inflater.inflate(R.layout.search_rating, null);
+            TextView text = (TextView) v.findViewById(R.id.search_header_toolbar_tops_name);
+            text.setText(key);
+            v.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    clearList();
+                    selectToolbar(v);
+                    request(new Runnable() {
+                        @Override
+                        public void run() {
+                            search(top, type, url, null, new Runnable() {
+                                @Override
+                                public void run() {
+                                    // destory looper thread
+                                    requestCancel();
+                                }
+                            });
+                        }
+                    }, null);
+                }
+            });
+            int i;
+            for (i = 0; i < toolbar.getChildCount(); i++) {
+                View c = toolbar.getChildAt(i);
+                if (c.getId() == R.id.search_header_toolbar_search) {
+                    break;
+                }
+            }
+            toolbar.addView(v, i);
+        }
+    }
+
+    void selectToolbar(View v) {
+        for (int i = 0; i < toolbar.getChildCount(); i++) {
+            View c = toolbar.getChildAt(i);
+            if (c == v) {
+                getCheckBox(c).setChecked(true);
+            } else {
+                getCheckBox(c).setChecked(false);
+            }
+        }
+    }
+
+    CheckBox getCheckBox(View v) {
+        if (v instanceof ViewGroup) {
+            ViewGroup g = (ViewGroup) v;
+            for (int i = 0; i < g.getChildCount(); i++) {
+                View c = getCheckBox(g.getChildAt(i));
+                if (c != null) {
+                    return (CheckBox) c;
+                }
+            }
+        }
+        if (v instanceof CheckBox) {
+            return (CheckBox) v;
+        }
+        return null;
+    }
+
     void updateHeaderButtons() {
         if (thread == null) {
-            header_progress.setVisibility(View.GONE);
-            header_stop.setVisibility(View.GONE);
+            header_progress.setVisibility(View.INVISIBLE);
+            header_stop.setVisibility(View.INVISIBLE);
             header_search.setVisibility(View.VISIBLE);
         } else {
             header_progress.setVisibility(View.VISIBLE);
             header_stop.setVisibility(View.VISIBLE);
-            header_search.setVisibility(View.GONE);
+            header_search.setVisibility(View.INVISIBLE);
         }
     }
 
-    void updateLoadNext() {
+    void updateFooterButtons() {
         if (Search.this.next != null) {
-            footer_next.setVisibility(View.VISIBLE);
+            if (thread == null)
+                footer_next.setVisibility(View.VISIBLE);
+            else
+                footer_next.setVisibility(View.GONE);
+            footer.setVisibility(View.VISIBLE);
         } else {
             footer_next.setVisibility(View.GONE);
+            footer.setVisibility(View.GONE);
         }
-        footer_progress.setVisibility(View.GONE);
-        footer_stop.setVisibility(View.GONE);
+
+        if (thread == null) {
+            footer_progress.setVisibility(View.GONE);
+            footer_stop.setVisibility(View.GONE);
+        } else {
+            footer_progress.setVisibility(View.VISIBLE);
+            footer_stop.setVisibility(View.VISIBLE);
+        }
     }
 
     void requestCancel() {
@@ -483,6 +594,13 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         }
         if (i)
             Log.d(TAG, "interrupt");
+    }
+
+    void clearList() {
+        Search.this.list.clear();
+        Search.this.nextLast.clear();
+        footer_next.setVisibility(View.GONE);
+        notifyDataSetChanged();
     }
 
     void request(final Runnable run, final Runnable done) {
@@ -518,6 +636,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
                             threadLooper = null;
 
                             updateHeaderButtons();
+                            updateFooterButtons();
 
                             if (done != null)
                                 done.run();
@@ -823,40 +942,80 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
             done.run();
     }
 
-    public void search(String search, final Runnable done) throws IOException {
-        Map<String, String> s = engine.getMap("search");
+    public void search(Map<String, String> s, String search, final Runnable done) throws IOException {
+        String url;
+        String type;
 
-        String url = null;
+        String post = s.get(type = "post");
+        if (post != null) {
+            url = post;
+            search(s, type, url, search, done);
+            return;
+        }
+
+        String get = s.get(type = "get");
+        if (get != null) {
+            if (search != null) {
+                String query = URLEncoder.encode(search, MainApplication.UTF8);
+                url = String.format(get, query);
+            } else {
+                url = get;
+            }
+            search(s, type, url, search, done);
+            return;
+        }
+
+        String json_get = s.get(type = "json_get");
+        if (json_get != null) {
+            if (search != null) {
+                String query = URLEncoder.encode(search, MainApplication.UTF8);
+                url = String.format(json_get, query);
+            } else {
+                url = json_get;
+            }
+            search(s, type, url, search, done);
+            return;
+        }
+
+        String json_post = s.get(type = "json_post");
+        if (json_post != null) {
+            url = json_post;
+            search(s, type, url, search, done);
+            return;
+        }
+    }
+
+    public void search(Map<String, String> s, String type, String url, String search, final Runnable done) {
         String html = null;
         String json = null;
 
-        String post = s.get("post");
-        if (post != null) {
+        if (type.equals("post")) {
             String t = s.get("post_search");
-            url = post;
-            html = http.post(null, url, new String[][]{{t, search}});
+            String[][] data = new String[][]{};
+            if (search != null)
+                data = new String[][]{{t, search}};
+            html = http.post(null, url, data);
         }
-
-        String get = s.get("get");
-        if (get != null) {
-            String query = URLEncoder.encode(search, MainApplication.UTF8);
-            url = String.format(get, query);
+        if (type.equals("get")) {
             html = http.get(null, url);
         }
-
-        String json_get = s.get("json_get");
-        if (json_get != null) {
-            String query = URLEncoder.encode(search, MainApplication.UTF8);
-            url = String.format(json_get, query);
+        if (type.equals("json_get")) {
             json = http.get(null, url).trim();
+        }
+        if (type.equals("json_post")) {
+            String t = s.get("json_post_search");
+            String[][] data = new String[][]{};
+            if (search != null)
+                data = new String[][]{{t, search}};
+            json = http.post(null, url, data);
         }
 
         if (html != null) {
-            searchHtml(s, url, html, done);
+            searchHtml(s, type, url, html, done);
             return;
         }
         if (json != null) {
-            searchJson(s, url, json, done);
+            searchJson(s, type, url, json, done);
             return;
         }
         handler.post(new Runnable() {
@@ -869,7 +1028,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         throw new RuntimeException("html or json not set");
     }
 
-    public void searchJson(final Map<String, String> s, final String url, final String json, final Runnable done) {
+    public void searchJson(final Map<String, String> s, final String type, final String url, final String json, final Runnable done) {
         this.nextLast.add(url);
 
         final String js = s.get("js");
@@ -895,7 +1054,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
                             @Override
                             public void run() {
                                 try {
-                                    searchList(s, url, html);
+                                    searchList(s, type, url, html);
                                 } catch (final RuntimeException e) {
                                     error(e);
                                 } finally {
@@ -915,7 +1074,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         });
     }
 
-    public void searchHtml(final Map<String, String> s, final String url, final String html, final Runnable done) {
+    public void searchHtml(final Map<String, String> s, final String type, final String url, final String html, final Runnable done) {
         this.nextLast.add(url);
 
         final String js = s.get("js");
@@ -932,7 +1091,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
                                 @Override
                                 public void run() {
                                     try {
-                                        searchList(s, url, html);
+                                        searchList(s, type, url, html);
                                     } catch (final RuntimeException e) {
                                         error(e);
                                     } finally {
@@ -956,7 +1115,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
             @Override
             public void run() {
                 try {
-                    searchList(s, url, html);
+                    searchList(s, type, url, html);
                 } catch (final RuntimeException e) {
                     error(e);
                 } finally {
@@ -967,7 +1126,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         });
     }
 
-    void searchList(Map<String, String> s, String url, String html) {
+    void searchList(Map<String, String> s, String type, String url, String html) {
         Document doc = Jsoup.parse(html);
         Elements list = doc.select(s.get("list"));
         for (int i = 0; i < list.size(); i++) {
@@ -1001,8 +1160,10 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
             }
         }
         this.next = next;
+        this.nextSearch = s;
+        this.nextType = type;
 
-        updateLoadNext();
+        updateFooterButtons();
 
         if (list.size() > 0) {
             // hide keyboard on search sucecful completed

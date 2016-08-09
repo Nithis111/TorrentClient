@@ -6,4 +6,5 @@
     <attr name="menu_labels_style" format="reference" />
     <attr name="roundprogress_style" format="reference" />
     <attr name="side_nav_bar" format="reference" />
+    <attr name="search_rating_bg" format="reference" />
 </resources>
