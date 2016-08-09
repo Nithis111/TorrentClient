@@ -1274,6 +1274,8 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
 
         LayoutInflater inflater = LayoutInflater.from(this);
 
+        int selectedId = -1;
+
         for (int i = 0; i < engies.getCount(); i++) {
             final Search search = engies.get(i);
             final SearchEngine engine = search.getEngine();
@@ -1286,6 +1288,10 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
             final View view = inflater.inflate(R.layout.search_engine, null);
             final View release = view.findViewById(R.id.search_engine_new);
             View progress = view.findViewById(R.id.search_engine_progress);
+
+            if (active(search)) {
+                selectedId = id;
+            }
 
             final int fi = i;
             release.setOnClickListener(new View.OnClickListener() {
@@ -1372,6 +1378,8 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
         }
         // reset group. add recent items to toggle group
         menu.setGroupCheckable(R.id.group_torrents, true, true);
+
+        navigationView.setCheckedItem(selectedId);
 
         View update = inflater.inflate(R.layout.search_update, null);
         final ProgressBar progress = (ProgressBar) update.findViewById(R.id.search_update_progress);
