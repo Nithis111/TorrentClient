@@ -242,7 +242,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
                         String url = next;
                         String html = http.get(null, url);
 
-                        search(s, url, html, null, new Runnable() {
+                        searchHtml(s, url, html, new Runnable() {
                             @Override
                             public void run() {
                                 // destory looper thread
@@ -823,7 +823,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
             done.run();
     }
 
-    public void search(String search, Runnable done) throws IOException {
+    public void search(String search, final Runnable done) throws IOException {
         Map<String, String> s = engine.getMap("search");
 
         String url = null;
@@ -851,10 +851,60 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
             json = http.get(null, url).trim();
         }
 
-        search(s, url, html, json, done);
+        if (html != null) {
+            searchHtml(s, url, html, done);
+            return;
+        }
+        if (json == null) {
+            searchJson(s, url, json, done);
+            return;
+        }
+        handler.post(new Runnable() {
+            @Override
+            public void run() {
+                if (done != null)
+                    done.run();
+            }
+        });
     }
 
-    public void search(final Map<String, String> s, final String url, final String html, final String json, final Runnable done) {
+    public void searchJson(final Map<String, String> s, final String url, final String json, final Runnable done) {
+        this.nextLast.add(url);
+
+        final String js = s.get("js");
+        final String js_post = s.get("js_post");
+        handler.post(new Runnable() {
+            @Override
+            public void run() {
+                inject(url, "", js, js_post, new Inject(json) {
+                    @JavascriptInterface
+                    public void result(final String html) {
+                        super.result(html);
+                        handler.post(new Runnable() {
+                            @Override
+                            public void run() {
+                                try {
+                                    searchList(s, url, html);
+                                } catch (final RuntimeException e) {
+                                    error(e);
+                                } finally {
+                                    if (done != null)
+                                        done.run();
+                                }
+                            }
+                        });
+                    }
+
+                    @JavascriptInterface
+                    public String json() {
+                        return super.json();
+                    }
+                });
+            }
+        });
+    }
+
+    public void searchHtml(final Map<String, String> s, final String url, final String html, final Runnable done) {
         this.nextLast.add(url);
 
         final String js = s.get("js");
@@ -863,7 +913,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
             handler.post(new Runnable() {
                 @Override
                 public void run() {
-                    inject(url, html, js, js_post, new Inject(json) {
+                    inject(url, html, js, js_post, new Inject() {
                         @JavascriptInterface
                         public void result(final String html) {
                             super.result(html);
