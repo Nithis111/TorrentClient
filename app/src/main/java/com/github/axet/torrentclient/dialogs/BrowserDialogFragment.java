@@ -36,8 +36,12 @@ import com.github.axet.torrentclient.activities.MainActivity;
 import com.github.axet.torrentclient.app.GoogleProxy;
 import com.github.axet.torrentclient.app.MainApplication;
 
+import java.nio.charset.Charset;
+
 public class BrowserDialogFragment extends DialogFragment implements MainActivity.TorrentFragmentInterface {
     public static String TAG = BrowserDialogFragment.class.getSimpleName();
+
+    public static String ABOUT_HTML = "about:html";
 
     ViewPager pager;
     View v;
@@ -48,6 +52,12 @@ public class BrowserDialogFragment extends DialogFragment implements MainActivit
     GoogleProxy http;
     Thread thread;
     int load;
+
+    public static boolean logIgnore(String msg) {
+        if (msg.contains("insecure content")) // some pages old phones gives: The page at https://www... ran insecure content from inject://0...
+            return true;
+        return false;
+    }
 
     public static BrowserDialogFragment create(String url, String cookies, String js, String js_post) {
         BrowserDialogFragment f = new BrowserDialogFragment();
@@ -60,9 +70,10 @@ public class BrowserDialogFragment extends DialogFragment implements MainActivit
         return f;
     }
 
-    public static BrowserDialogFragment create(String html, String js, String js_post) {
+    public static BrowserDialogFragment createHtml(String html_base, String html, String js, String js_post) {
         BrowserDialogFragment f = new BrowserDialogFragment();
         Bundle args = new Bundle();
+        args.putString("base", html_base);
         args.putString("html", html);
         args.putString("js", js);
         args.putString("js_post", js_post);
@@ -144,6 +155,7 @@ public class BrowserDialogFragment extends DialogFragment implements MainActivit
 
         final String url = getArguments().getString("url");
         final String html = getArguments().getString("html");
+        final String html_base = getArguments().getString("base", ABOUT_HTML);
 
         String js = getArguments().getString("js");
         String js_post = getArguments().getString("js_post");
@@ -177,6 +189,8 @@ public class BrowserDialogFragment extends DialogFragment implements MainActivit
 
             @Override
             public boolean onConsoleMessage(String msg, int lineNumber, String sourceID) {
+                if (logIgnore(msg))
+                    return super.onConsoleMessage(msg, lineNumber, sourceID);
                 if (sourceID == null || sourceID.isEmpty() || sourceID.startsWith(INJECTS_URL)) {
                     getMainActivity().post(msg + "\nLine:" + lineNumber + "\n" + formatInjectError(sourceID, lineNumber));
                 } else if (html != null) { // we uploaded json, then html errors is our responsability
@@ -243,6 +257,9 @@ public class BrowserDialogFragment extends DialogFragment implements MainActivit
 
             @Override
             public HttpClient.DownloadResponse shouldInterceptRequest(WebView view, String url) {
+                if (url.equals(html_base)) {
+                    return new HttpClient.DownloadResponse("text/html", Charset.defaultCharset().name(), html);
+                }
                 return super.shouldInterceptRequest(view, url);
             }
         };
@@ -273,10 +290,7 @@ public class BrowserDialogFragment extends DialogFragment implements MainActivit
                     load = 100;
                     return;
                 }
-                if (html != null)
-                    web.loadHtmlWithBaseURL(null, html, null);
-                else
-                    web.reload();
+                web.reload();
             }
         });
 
@@ -326,7 +340,7 @@ public class BrowserDialogFragment extends DialogFragment implements MainActivit
             web.loadUrl(url);
 
         if (html != null)
-            web.loadHtmlWithBaseURL(null, html, null);
+            web.loadHtmlWithBaseURL(html_base, html, html_base);
 
         return v;
     }

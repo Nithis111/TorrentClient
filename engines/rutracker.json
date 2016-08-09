@@ -6,16 +6,18 @@
   },
   "news": {
     "get": "http://rutracker.org/forum/viewforum.php?f=1960",
-    "list": "a.topictitle",
-    "title": "regex(<a[^>]*>(.*)</a>)",
-    "details": "regex(.*href=\"([^\"]*)\".*)",
+    "list": ".hl-tr",
+    "title": "a.topictitle",
+    "details": "a.topictitle:regex(.*href=\"([^\"]*)\".*)",
+    "date": "td:nth-child(5):regex(.*<p>(.*)</p>.*<p>.*</p>.*)",
     "next": "div.nav a.pg:last:regex(.*href=\"([^\"]*)\".*След.*)"
   },
   "top": {
     "get": "tops",
-    "list": "a.topictitle",
-    "title": "regex(<a[^>]*>(.*)</a>)",
-    "details": "regex(.*href=\"([^\"]*)\".*)",
+    "list": ".hl-tr",
+    "title": "a.topictitle",
+    "details": "a.topictitle:regex(.*href=\"([^\"]*)\".*)",
+    "date": "td:nth-child(5):regex(.*<p>(.*)</p>.*<p>.*</p>.*)",
     "next": "div.nav a.pg:last:regex(.*href=\"([^\"]*)\".*След.*)"
   },
   "tops": {
@@ -37,6 +39,7 @@
     "list": ".forumline.tablesorter tbody tr",
     "title": "a.tLink:regex(<a[^>]*>(.*)</a>)",
     "details": "a.tLink:regex(.*href=\"([^\"]*)\".*)",
+    "date": "td:nth-child(10):regex(.*<p>(.*)</p>.*)",
     "size": "a.dl-stub:regex(<a[^>]*>(.*)</a>)",
     "seed": "b.seedmed:regex(<b[^>]*>(.*)</b>)",
     "leech": "td.leechmed b:regex(<b[^>]*>(.*)</b>)",

@@ -8,7 +8,8 @@
     "get": "https://thepiratebay.org/blog",
     "list": "div.post",
     "title": "h3:regex(<h3[^>]*>(.*)</h3>)",
-    "details_html": "regex((.*))"
+    "details_html": "regex((.*))",
+    "date": "div.meta:regex(.*Posted ([^ ]*).*)"
   },
   "top": {
     "get": "tops",
@@ -16,6 +17,7 @@
     "title": "a.detLink:regex(<a[^>]*>(.*)</a>)",
     "details": "a.detLink:regex(.*href=\"([^\"]*)\".*)",
     "magnet": "a[href^=magnet]:regex(.*href=\"([^\"]*)\".*)",
+    "date": "font.detDesc:regex(.*Uploaded ([^,]*).*)",
     "size": "font.detDesc:regex(.*Size ([^,]*).*)",
     "seed": "td:nth-child(3):regex((.*))",
     "leech": "td:nth-child(4):regex((.*))",
@@ -33,6 +35,7 @@
     "title": "a.detLink:regex(<a[^>]*>(.*)</a>)",
     "details": "a.detLink:regex(.*href=\"([^\"]*)\".*)",
     "magnet": "a[href^=magnet]:regex(.*href=\"([^\"]*)\".*)",
+    "date": "font.detDesc:regex(.*Uploaded ([^,]*).*)",
     "size": "font.detDesc:regex(.*Size ([^,]*).*)",
     "seed": "td:nth-child(3):regex((.*))",
     "leech": "td:nth-child(4):regex((.*))",

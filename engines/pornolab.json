@@ -6,16 +6,18 @@
   },
   "news": {
     "get": "http://pornolab.net/forum/viewforum.php?f=15",
-    "list": "a.topictitle",
-    "title": "regex(<a[^>]*>(.*)</a>)",
-    "details": "regex(.*href=\"([^\"]*)\".*)",
+    "list": "tr[id]",
+    "title": "a.topictitle",
+    "details": "a.topictitle:regex(.*href=\"([^\"]*)\".*)",
+    "date": "td:nth-child(5):regex(.*<p>(.*)</p>.*)",
     "next": "div.nav a.pg:last:regex(.*href=\"([^\"]*)\".*След.*)"
   },
   "top": {
     "get": "tops",
-    "list": "a.topictitle",
-    "title": "regex(<a[^>]*>(.*)</a>)",
-    "details": "regex(.*href=\"([^\"]*)\".*)",
+    "list": "tr[id]",
+    "title": "a.topictitle",
+    "details": "a.topictitle:regex(.*href=\"([^\"]*)\".*)",
+    "date": "td:nth-child(5):regex(.*<p>(.*)</p>.*)",
     "next": "div.nav a.pg:last:regex(.*href=\"([^\"]*)\".*След.*)"
   },
   "tops": {
