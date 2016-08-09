@@ -827,7 +827,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         Map<String, String> s = engine.getMap("search");
 
         String url = null;
-        String html = "";
+        String html = null;
         String json = null;
 
         String post = s.get("post");
