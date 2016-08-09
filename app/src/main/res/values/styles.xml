@@ -12,6 +12,7 @@
         <item name="alertDialogTheme">@style/AppThemeDialogLight</item>
         <item name="side_nav_bar">@drawable/side_nav_bar_light</item>
         <item name="unreadColor">@color/unreadLight</item>
+        <item name="search_rating_bg">@drawable/search_rating_bg_light</item>
     </style>
 
     <style name="AppThemeDialogLight" parent="@style/Theme.AppCompat.Light.Dialog.Alert">
@@ -26,6 +27,15 @@
     <style name="menu_labels_style_light">
         <item name="android:padding">5dp</item>
         <item name="android:background">@drawable/roundlabel_light</item>
+    </style>
+
+    <style name="tops_style_light">
+        <item name="android:layout_marginTop">8dp</item>
+        <item name="android:paddingLeft">5dp</item>
+        <item name="android:paddingRight">5dp</item>
+        <item name="android:textSize">8dp</item>
+        <item name="android:textColor">@android:color/white</item>
+        <item name="android:background">@drawable/search_rating_tip_round_light</item>
     </style>
 
     <style name="AppThemeLight.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar" />
@@ -44,6 +54,7 @@
         <item name="alertDialogTheme">@style/AppThemeDialogDark</item>
         <item name="side_nav_bar">@drawable/side_nav_bar_dark</item>
         <item name="unreadColor">@color/unreadDark</item>
+        <item name="search_rating_bg">@drawable/search_rating_bg_dark</item>
     </style>
 
     <style name="AppThemeDialogDark" parent="@style/Theme.AppCompat.Dialog.Alert">

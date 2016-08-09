@@ -1,8 +1,26 @@
 {
-  "version": 12,
+  "version": 13,
   "name": "pornolab.net",
   "home": {
     "get": "http://pornolab.net"
+  },
+  "news": {
+    "get": "http://pornolab.net/forum/viewforum.php?f=15",
+    "list": "a.topictitle",
+    "title": "regex(<a[^>]*>(.*)</a>)",
+    "details": "regex(.*href=\"([^\"]*)\".*)",
+    "next": "div.nav a.pg:last:regex(.*href=\"([^\"]*)\".*След.*)"
+  },
+  "top": {
+    "get": "tops",
+    "list": "a.topictitle",
+    "title": "regex(<a[^>]*>(.*)</a>)",
+    "details": "regex(.*href=\"([^\"]*)\".*)",
+    "next": "div.nav a.pg:last:regex(.*href=\"([^\"]*)\".*След.*)"
+  },
+  "tops": {
+    "Porn": "http://pornolab.net/forum/viewforum.php?f=1668",
+    "Top": "http://pornolab.net/forum/viewforum.php?f=489"
   },
   "login": {
     "details": "http://pornolab.net/forum/login.php",
