@@ -49,6 +49,12 @@ public class BrowserDialogFragment extends DialogFragment implements MainActivit
     Thread thread;
     int load;
 
+    public static boolean logIgnore(String msg) {
+        if (msg.contains("insecure content")) // some pages old phones gives: The page at https://www... ran insecure content from inject://0...
+            return true;
+        return false;
+    }
+
     public static BrowserDialogFragment create(String url, String cookies, String js, String js_post) {
         BrowserDialogFragment f = new BrowserDialogFragment();
         Bundle args = new Bundle();
@@ -177,6 +183,8 @@ public class BrowserDialogFragment extends DialogFragment implements MainActivit
 
             @Override
             public boolean onConsoleMessage(String msg, int lineNumber, String sourceID) {
+                if (logIgnore(msg))
+                    return super.onConsoleMessage(msg, lineNumber, sourceID);
                 if (sourceID == null || sourceID.isEmpty() || sourceID.startsWith(INJECTS_URL)) {
                     getMainActivity().post(msg + "\nLine:" + lineNumber + "\n" + formatInjectError(sourceID, lineNumber));
                 } else if (html != null) { // we uploaded json, then html errors is our responsability

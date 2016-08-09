@@ -19,7 +19,6 @@ import android.webkit.JavascriptInterface;
 import android.webkit.JsResult;
 import android.webkit.WebView;
 import android.widget.BaseAdapter;
-import android.widget.CheckBox;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.ProgressBar;
@@ -866,6 +865,8 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         web = new WebViewCustom(context) {
             @Override
             public boolean onConsoleMessage(String msg, int lineNumber, String sourceID) {
+                if (BrowserDialogFragment.logIgnore(msg))
+                    return super.onConsoleMessage(msg, lineNumber, sourceID);
                 if (sourceID == null || sourceID.isEmpty() || sourceID.startsWith(INJECTS_URL)) {
                     error(msg + "\nLine:" + lineNumber + "\n" + formatInjectError(sourceID, lineNumber));
                 } else if (exec.json != null) { // we uploaded json, then html errors is our responsability
