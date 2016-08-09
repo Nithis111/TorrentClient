@@ -1379,7 +1379,8 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
         // reset group. add recent items to toggle group
         menu.setGroupCheckable(R.id.group_torrents, true, true);
 
-        navigationView.setCheckedItem(selectedId);
+        if (selectedId != -1)
+            navigationView.setCheckedItem(selectedId);
 
         View update = inflater.inflate(R.layout.search_update, null);
         final ProgressBar progress = (ProgressBar) update.findViewById(R.id.search_update_progress);

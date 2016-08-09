@@ -8,8 +8,8 @@ android {
         applicationId "com.github.axet.torrentclient"
         minSdkVersion 16
         targetSdkVersion 23
-        versionCode 189
-        versionName "2.2.2"
+        versionCode 190
+        versionName "2.2.3"
     }
     signingConfigs {
         release {
@@ -45,6 +45,6 @@ dependencies {
     compile 'com.google.android.gms:play-services-appindexing:8.1.0'
     compile 'org.apache.commons:commons-math3:3.6.1'
     compile 'com.getbase:floatingactionbutton:1.10.1'
-    compile 'com.github.axet:android-library:1.2.12' // compile project(':android-library')
+    compile 'com.github.axet:android-library:1.2.13' // compile project(':android-library')
     compile project(":libtorrent")
 }
