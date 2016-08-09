@@ -154,7 +154,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         final SharedPreferences shared = PreferenceManager.getDefaultSharedPreferences(context);
 
         http = new GoogleProxy();
-        http.enabled = shared.getString(MainApplication.PREFERENCE_PROXY, "").equals("google");
+        http.enabled = shared.getString(MainApplication.PREFERENCE_PROXY, "").equals(GoogleProxy.NAME);
 
         shared.registerOnSharedPreferenceChangeListener(this);
     }
@@ -828,7 +828,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
 
         String url = null;
         String html = "";
-        String jj = null;
+        String json = null;
 
         String post = s.get("post");
         if (post != null) {
@@ -844,17 +844,17 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
             html = http.get(null, url);
         }
 
-        String json = s.get("json");
-        if (json != null) {
+        String json_get = s.get("json_get");
+        if (json_get != null) {
             String query = URLEncoder.encode(search, MainApplication.UTF8);
-            url = String.format(json, query);
-            jj = http.get(null, url).trim();
+            url = String.format(json_get, query);
+            json = http.get(null, url).trim();
         }
 
-        search(s, url, html, jj, done);
+        search(s, url, html, json, done);
     }
 
-    public void search(final Map<String, String> s, final String url, final String html, final String jj, final Runnable done) {
+    public void search(final Map<String, String> s, final String url, final String html, final String json, final Runnable done) {
         this.nextLast.add(url);
 
         final String js = s.get("js");
@@ -863,7 +863,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
             handler.post(new Runnable() {
                 @Override
                 public void run() {
-                    inject(url, html, js, js_post, new Inject(jj) {
+                    inject(url, html, js, js_post, new Inject(json) {
                         @JavascriptInterface
                         public void result(final String html) {
                             super.result(html);
