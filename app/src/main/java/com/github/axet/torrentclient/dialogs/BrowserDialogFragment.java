@@ -70,9 +70,10 @@ public class BrowserDialogFragment extends DialogFragment implements MainActivit
         return f;
     }
 
-    public static BrowserDialogFragment create(String html, String js, String js_post) {
+    public static BrowserDialogFragment createHtml(String html_base, String html, String js, String js_post) {
         BrowserDialogFragment f = new BrowserDialogFragment();
         Bundle args = new Bundle();
+        args.putString("base", html_base);
         args.putString("html", html);
         args.putString("js", js);
         args.putString("js_post", js_post);
@@ -154,6 +155,7 @@ public class BrowserDialogFragment extends DialogFragment implements MainActivit
 
         final String url = getArguments().getString("url");
         final String html = getArguments().getString("html");
+        final String html_base = getArguments().getString("base", ABOUT_HTML);
 
         String js = getArguments().getString("js");
         String js_post = getArguments().getString("js_post");
@@ -255,7 +257,7 @@ public class BrowserDialogFragment extends DialogFragment implements MainActivit
 
             @Override
             public HttpClient.DownloadResponse shouldInterceptRequest(WebView view, String url) {
-                if (url.equals(ABOUT_HTML)) {
+                if (url.equals(html_base)) {
                     return new HttpClient.DownloadResponse("text/html", Charset.defaultCharset().name(), html);
                 }
                 return super.shouldInterceptRequest(view, url);
@@ -338,7 +340,7 @@ public class BrowserDialogFragment extends DialogFragment implements MainActivit
             web.loadUrl(url);
 
         if (html != null)
-            web.loadHtmlWithBaseURL(ABOUT_HTML, html, ABOUT_HTML);
+            web.loadHtmlWithBaseURL(html_base, html, html_base);
 
         return v;
     }

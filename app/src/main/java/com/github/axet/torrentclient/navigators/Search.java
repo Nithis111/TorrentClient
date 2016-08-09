@@ -845,7 +845,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
                     html += item.details_html;
                     html += "</body></html>";
 
-                    BrowserDialogFragment d = BrowserDialogFragment.create(html, js, js_post);
+                    BrowserDialogFragment d = BrowserDialogFragment.createHtml(item.base, html, js, js_post);
                     dialog = d;
                     d.show(main.getSupportFragmentManager(), "");
                 }
