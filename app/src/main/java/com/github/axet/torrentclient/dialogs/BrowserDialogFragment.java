@@ -36,8 +36,12 @@ import com.github.axet.torrentclient.activities.MainActivity;
 import com.github.axet.torrentclient.app.GoogleProxy;
 import com.github.axet.torrentclient.app.MainApplication;
 
+import java.nio.charset.Charset;
+
 public class BrowserDialogFragment extends DialogFragment implements MainActivity.TorrentFragmentInterface {
     public static String TAG = BrowserDialogFragment.class.getSimpleName();
+
+    public static String ABOUT_HTML = "about:html";
 
     ViewPager pager;
     View v;
@@ -251,6 +255,9 @@ public class BrowserDialogFragment extends DialogFragment implements MainActivit
 
             @Override
             public HttpClient.DownloadResponse shouldInterceptRequest(WebView view, String url) {
+                if (url.equals(ABOUT_HTML)) {
+                    return new HttpClient.DownloadResponse("text/html", Charset.defaultCharset().name(), html);
+                }
                 return super.shouldInterceptRequest(view, url);
             }
         };
@@ -281,10 +288,7 @@ public class BrowserDialogFragment extends DialogFragment implements MainActivit
                     load = 100;
                     return;
                 }
-                if (html != null)
-                    web.loadHtmlWithBaseURL(null, html, null);
-                else
-                    web.reload();
+                web.reload();
             }
         });
 
@@ -334,7 +338,7 @@ public class BrowserDialogFragment extends DialogFragment implements MainActivit
             web.loadUrl(url);
 
         if (html != null)
-            web.loadHtmlWithBaseURL(null, html, null);
+            web.loadHtmlWithBaseURL(ABOUT_HTML, html, ABOUT_HTML);
 
         return v;
     }
