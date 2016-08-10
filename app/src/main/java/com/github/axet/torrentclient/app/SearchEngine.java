@@ -17,13 +17,14 @@ import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
 public class SearchEngine {
     public static final String TAG = SearchEngine.class.getSimpleName();
 
-    Map<String, Object> map = new HashMap<>();
+    Map<String, Object> map = new LinkedHashMap<>();
 
     public static Object toJSON(Object object) throws JSONException {
         if (object instanceof Map) {
@@ -44,16 +45,8 @@ public class SearchEngine {
         }
     }
 
-    public static Map<String, Object> jsonToMap(JSONObject json) throws JSONException {
-        Map<String, Object> retMap = new HashMap<String, Object>();
-        if (json != JSONObject.NULL) {
-            retMap = toMap(json);
-        }
-        return retMap;
-    }
-
     public static Map<String, Object> toMap(JSONObject object) throws JSONException {
-        Map<String, Object> map = new HashMap<String, Object>();
+        Map<String, Object> map = new LinkedHashMap<String, Object>();
         Iterator<String> keysItr = object.keys();
         while (keysItr.hasNext()) {
             String key = keysItr.next();
@@ -70,7 +63,7 @@ public class SearchEngine {
     }
 
     public static List<Object> toList(JSONArray array) throws JSONException {
-        List<Object> list = new ArrayList<Object>();
+        List<Object> list = new ArrayList<>();
         for (int i = 0; i < array.length(); i++) {
             Object value = array.get(i);
             if (value instanceof JSONArray) {

@@ -95,6 +95,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
     TextView searchText;
 
     ViewGroup toolbar;
+    int toolbarIndex = -1;
 
     // footer data
     View footer;
@@ -444,6 +445,11 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
             final Map<String, String> json_get = engine.getMap(top.get(type = "json_get"));
             loadTops(top, type, json_get);
         }
+        if (toolbarIndex != -1) {
+            if (toolbarIndex < toolbar.getChildCount()) // when we update engine and it has less items
+                selectToolbar(toolbar.getChildAt(toolbarIndex));
+        }
+
         list.addHeaderView(header);
         list.addFooterView(footer);
 
@@ -507,10 +513,12 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
     }
 
     void selectToolbar(View v) {
+        toolbarIndex = -1;
         for (int i = 0; i < toolbar.getChildCount(); i++) {
             View c = toolbar.getChildAt(i);
             AppCompatImageButton cc = getCheckBox(c);
             if (c == v) {
+                toolbarIndex = i;
                 int[] states = new int[]{
                         android.R.attr.state_checked,
                 };
