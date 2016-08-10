@@ -1,5 +1,5 @@
 {
-  "version": 14,
+  "version": 16,
   "name": "pornolab.net",
   "home": {
     "get": "http://pornolab.net"
@@ -9,7 +9,7 @@
     "list": "tr[id]",
     "title": "a.topictitle",
     "details": "a.topictitle:regex(.*href=\"([^\"]*)\".*)",
-    "date": "td:nth-child(5):regex(.*<p>(.*)</p>.*)",
+    "date": "td:nth-child(5):regex(.*<p>(.*-.*-.*)</p>.*)",
     "next": "div.nav a.pg:last:regex(.*href=\"([^\"]*)\".*След.*)"
   },
   "top": {
@@ -17,7 +17,7 @@
     "list": "tr[id]",
     "title": "a.topictitle",
     "details": "a.topictitle:regex(.*href=\"([^\"]*)\".*)",
-    "date": "td:nth-child(5):regex(.*<p>(.*)</p>.*)",
+    "date": "td:nth-child(5):regex(.*<p>(.*-.*-.*)</p>.*)",
     "next": "div.nav a.pg:last:regex(.*href=\"([^\"]*)\".*След.*)"
   },
   "tops": {
