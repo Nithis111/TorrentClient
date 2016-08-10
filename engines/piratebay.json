@@ -7,21 +7,21 @@
   "news": {
     "get": "https://thepiratebay.org/blog",
     "list": "div.post",
-    "title": "h3:regex(<h3[^>]*>(.*)</h3>)",
+    "title": "h3",
     "details_html": "regex((.*))",
     "date": "div.meta:regex(.*Posted ([^ ]*).*)"
   },
   "top": {
     "get": "tops",
     "list": "tbody tr",
-    "title": "a.detLink:regex(<a[^>]*>(.*)</a>)",
+    "title": "a.detLink",
     "details": "a.detLink:regex(.*href=\"([^\"]*)\".*)",
     "magnet": "a[href^=magnet]:regex(.*href=\"([^\"]*)\".*)",
     "date": "font.detDesc:regex(.*Uploaded ([^,]*).*)",
     "size": "font.detDesc:regex(.*Size ([^,]*).*)",
-    "seed": "td:nth-child(3):regex((.*))",
-    "leech": "td:nth-child(4):regex((.*))",
-    "next": "#content a[href^='/search']:last:regex(.*href=\"([^\"]*).*next.*)"
+    "seed": "td:eq(2):regex((.*))",
+    "leech": "td:eq(3):regex((.*))",
+    "next": "#content a[href^='/search']:has(img[src$='next.gif']):regex(.*href=\"([^\"]*).*)"
   },
   "tops": {
     "Music": "https://thepiratebay.org/top/101",
@@ -37,8 +37,8 @@
     "magnet": "a[href^=magnet]:regex(.*href=\"([^\"]*)\".*)",
     "date": "font.detDesc:regex(.*Uploaded ([^,]*).*)",
     "size": "font.detDesc:regex(.*Size ([^,]*).*)",
-    "seed": "td:nth-child(3):regex((.*))",
-    "leech": "td:nth-child(4):regex((.*))",
-    "next": "#content a[href^='/search']:last:regex(.*href=\"([^\"]*).*next.*)"
+    "seed": "td:eq(2):regex((.*))",
+    "leech": "td:eq(3):regex((.*))",
+    "next": "#content a[href^='/search']:has(img[src$='next.gif']):regex(.*href=\"([^\"]*).*)"
   }
 }

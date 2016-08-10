@@ -1230,39 +1230,19 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
 
         String all = "(.*)";
         String regex = "regex\\((.*)\\)";
-        String child = "nth-child\\((.*)\\)";
-        String last = "last";
 
-        Boolean l = false;
-        Integer e = null;
         String r = null;
-        Pattern p = Pattern.compile(all + ":" + last + ":" + regex, Pattern.DOTALL);
+        Pattern p = Pattern.compile(all + ":" + regex, Pattern.DOTALL);
         Matcher m = p.matcher(q);
-        if (m.matches()) { // first we look for q:last:regex
+        if (m.matches()) {
             q = m.group(1);
-            l = true;
             r = m.group(2);
-        } else { // then we look for q:nth-child:regex
-            p = Pattern.compile(all + ":" + child + ":" + regex, Pattern.DOTALL);
+        } else { // then for regex only
+            p = Pattern.compile(regex, Pattern.DOTALL);
             m = p.matcher(q);
             if (m.matches()) {
-                q = m.group(1);
-                e = Integer.parseInt(m.group(2));
-                r = m.group(3);
-            } else { // then we look for q:regex
-                p = Pattern.compile(all + ":" + regex, Pattern.DOTALL);
-                m = p.matcher(q);
-                if (m.matches()) {
-                    q = m.group(1);
-                    r = m.group(2);
-                } else { // then for regex only
-                    p = Pattern.compile(regex, Pattern.DOTALL);
-                    m = p.matcher(q);
-                    if (m.matches()) {
-                        q = null;
-                        r = m.group(1);
-                    }
-                }
+                q = null;
+                r = m.group(1);
             }
         }
 
@@ -1274,15 +1254,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
             Document doc1 = Jsoup.parse(html, "", Parser.xmlParser());
             Elements list1 = doc1.select(q);
             if (list1.size() > 0) {
-                if (l)
-                    a = list1.get(list1.size() - 1).outerHtml();
-                else if (e != null) {
-                    int i = e - 1;
-                    if (i < list1.size()) { // ignore offset
-                        a = list1.get(i).outerHtml();
-                    }
-                } else
-                    a = list1.get(0).outerHtml();
+                a = list1.get(0).outerHtml();
             }
         }
 
