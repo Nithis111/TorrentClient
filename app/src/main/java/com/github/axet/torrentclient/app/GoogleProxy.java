@@ -3,12 +3,25 @@ package com.github.axet.torrentclient.app;
 import com.github.axet.androidlibrary.net.HttpClient;
 
 import java.io.IOException;
+import java.net.URI;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
+import cz.msebera.android.httpclient.HttpClientConnection;
+import cz.msebera.android.httpclient.HttpException;
+import cz.msebera.android.httpclient.HttpRequest;
+import cz.msebera.android.httpclient.HttpResponse;
+import cz.msebera.android.httpclient.ProtocolException;
 import cz.msebera.android.httpclient.client.config.RequestConfig;
 import cz.msebera.android.httpclient.client.methods.CloseableHttpResponse;
 import cz.msebera.android.httpclient.client.methods.HttpRequestBase;
+import cz.msebera.android.httpclient.client.methods.HttpUriRequest;
+import cz.msebera.android.httpclient.client.protocol.HttpClientContext;
+import cz.msebera.android.httpclient.impl.client.CloseableHttpClient;
+import cz.msebera.android.httpclient.impl.client.HttpClientBuilder;
+import cz.msebera.android.httpclient.impl.client.LaxRedirectStrategy;
+import cz.msebera.android.httpclient.protocol.HttpContext;
+import cz.msebera.android.httpclient.protocol.HttpRequestExecutor;
 
 public class GoogleProxy extends HttpClient {
 
@@ -55,13 +68,46 @@ public class GoogleProxy extends HttpClient {
         setProxy();
     }
 
+    @Override
+    protected CloseableHttpClient create(HttpClientBuilder builder) {
+        builder.setRedirectStrategy(new LaxRedirectStrategy() {
+            @Override
+            public HttpUriRequest getRedirect(HttpRequest request, HttpResponse response, HttpContext context) throws ProtocolException {
+                HttpUriRequest r = super.getRedirect(request, response, context);
+                filter(r, context);
+                return r;
+            }
+        });
+        return super.create(builder);
+    }
+
+    void filter(HttpRequest request, HttpContext context) {
+        if (request instanceof HttpUriRequest) {
+            HttpUriRequest uri = (HttpUriRequest) request;
+            // Google Data Saver plugin does not work for sites on https
+            if (!enabled || uri.getURI().getScheme().equals("https")) {
+                if (request instanceof HttpRequestBase) {
+                    HttpRequestBase m = (HttpRequestBase) request;
+                    m.setConfig(null);
+                }
+                RequestConfig config = (RequestConfig) context.getAttribute(HttpClientContext.REQUEST_CONFIG);
+                if (config != null) {
+                    config = RequestConfig.copy(config).setProxy(null).build();
+                    context.setAttribute(HttpClientContext.REQUEST_CONFIG, config);
+                }
+            } else {
+                authHeader(request);
+            }
+        }
+    }
+
     void setProxy() {
         //setProxy("compress.googlezip.net", 80, "http");
         //setProxy("proxy.googlezip.net", 80, "http");
         setProxy("proxy.googlezip.net", 443, "https");
     }
 
-    void authHeader(HttpRequestBase request) {
+    void authHeader(HttpRequest request) {
         String authValue = "ac4500dd3b7579186c1b0620614fdb1f7d61f944";
         String timestamp = Long.toString(System.currentTimeMillis()).substring(0, 10);
         String sid = (timestamp + authValue + timestamp);
@@ -74,19 +120,7 @@ public class GoogleProxy extends HttpClient {
 
     @Override
     public CloseableHttpResponse execute(HttpRequestBase request) throws IOException {
-        if (enabled) {
-            // Google Data Saver plugin does not work for sites on https
-            if (request.getURI().getScheme().equals("https")) {
-                request.setConfig(null);
-                httpClientContext.setRequestConfig(RequestConfig.copy(httpClientContext.getRequestConfig()).setProxy(null).build());
-            } else {
-                authHeader(request);
-            }
-        }else {
-            request.setConfig(null);
-            httpClientContext.setRequestConfig(RequestConfig.copy(httpClientContext.getRequestConfig()).setProxy(null).build());
-        }
+        filter(request, httpClientContext);
         return super.execute(request);
     }
-
 }
