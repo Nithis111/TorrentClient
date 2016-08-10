@@ -1169,11 +1169,12 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
         if (a != null && a instanceof HeaderViewListAdapter) {
             a = ((HeaderViewListAdapter) a).getWrappedAdapter();
         }
-        if (a != null && a instanceof NavigatorInterface) {
-            ((NavigatorInterface) a).remove(list);
-        }
 
         if (id == R.id.nav_torrents) {
+            if (a != null && a instanceof NavigatorInterface) {
+                ((NavigatorInterface) a).remove(list);
+            }
+
             empty.setVisibility(View.GONE);
             list.setEmptyView(empty);
 
@@ -1183,6 +1184,10 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
         }
 
         if (id > 0 && id < 0x00ffffff) {
+            if (a != null && a instanceof NavigatorInterface) {
+                ((NavigatorInterface) a).remove(list);
+            }
+
             empty.setVisibility(View.GONE);
             list.setEmptyView(null);
 
@@ -1195,6 +1200,10 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
         }
 
         if (id == R.id.nav_add) {
+            if (a != null && a instanceof NavigatorInterface) {
+                ((NavigatorInterface) a).remove(list);
+            }
+
             final OpenFileDialog f = new OpenFileDialog(MainActivity.this);
 
             String path = "";
