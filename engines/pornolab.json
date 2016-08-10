@@ -9,16 +9,16 @@
     "list": "tr[id]",
     "title": "a.topictitle",
     "details": "a.topictitle:regex(.*href=\"([^\"]*)\".*)",
-    "date": "td:nth-child(5):regex(.*<p>(.*-[^<]*)</p>.*)",
-    "next": "div.nav a.pg:last:regex(.*href=\"([^\"]*)\".*След.*)"
+    "date": "td:eq(4):regex(.*<p>(.*-[^<]*)</p>.*)",
+    "next": ".nav b+a:regex(.*href=\"([^\"]*)\".*)"
   },
   "top": {
     "get": "tops",
     "list": "tr[id]",
     "title": "a.topictitle",
     "details": "a.topictitle:regex(.*href=\"([^\"]*)\".*)",
-    "date": "td:nth-child(5):regex(.*<p>(.*-[^<]*)</p>.*)",
-    "next": "div.nav a.pg:last:regex(.*href=\"([^\"]*)\".*След.*)"
+    "date": "td:eq(4):regex(.*<p>(.*-[^<]*)</p>.*)",
+    "next": ".nav b+a:regex(.*href=\"([^\"]*)\".*)"
   },
   "tops": {
     "Porn": "http://pornolab.net/forum/viewforum.php?f=1668",
@@ -37,11 +37,11 @@
     "post_search": "nm",
     "js": "if(document.querySelectorAll('a[href^=\\'./profile.php\\']').length==0) {\n  alert('Not Logged In');\n}",
     "list": ".forumline.tablesorter tbody tr",
-    "title": "a.tLink:regex(<a[^>]*>(.*)</a>)",
+    "title": "a.tLink",
     "details": "a.tLink:regex(.*href=\"([^\"]*)\".*)",
-    "size": "a.dl-stub:regex(<a[^>]*>(.*)</a>)",
-    "seed": "td.seedmed b:regex(<b[^>]*>(.*)</b>)",
-    "leech": "td.leechmed b:regex(<b[^>]*>(.*)</b>)",
-    "next": "div.nav a.pg:last:regex(.*href=\"([^\"]*)\".*След.*)"
+    "size": "a.dl-stub",
+    "seed": "td.seedmed b",
+    "leech": "td.leechmed b",
+    "next": ".nav b+a:regex(.*href=\"([^\"]*)\".*)"
   }
 }

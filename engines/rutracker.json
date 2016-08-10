@@ -9,16 +9,16 @@
     "list": ".hl-tr",
     "title": "a.topictitle",
     "details": "a.topictitle:regex(.*href=\"([^\"]*)\".*)",
-    "date": "td:nth-child(5):regex(.*<p>(.*)</p>.*<p>.*</p>.*)",
-    "next": "div.nav a.pg:last:regex(.*href=\"([^\"]*)\".*След.*)"
+    "date": "td:eq(4):regex(.*<p>(.*)</p>.*<p>.*</p>.*)",
+    "next": ".nav b+a:regex(.*href=\"([^\"]*)\".*)"
   },
   "top": {
     "get": "tops",
     "list": ".hl-tr",
     "title": "a.topictitle",
     "details": "a.topictitle:regex(.*href=\"([^\"]*)\".*)",
-    "date": "td:nth-child(5):regex(.*<p>(.*)</p>.*<p>.*</p>.*)",
-    "next": "div.nav a.pg:last:regex(.*href=\"([^\"]*)\".*След.*)"
+    "date": "td:eq(4):regex(.*<p>(.*)</p>.*<p>.*</p>.*)",
+    "next": ".nav b+a:regex(.*href=\"([^\"]*)\".*)"
   },
   "tops": {
     "Net": "http://rutracker.org/forum/viewforum.php?f=489",
@@ -37,12 +37,12 @@
     "post_search": "nm",
     "js": "if(document.querySelectorAll('a.logged-in-as-uname').length==0) {\n  alert('Not Logged In');\n}",
     "list": ".forumline.tablesorter tbody tr",
-    "title": "a.tLink:regex(<a[^>]*>(.*)</a>)",
+    "title": "a.tLink",
     "details": "a.tLink:regex(.*href=\"([^\"]*)\".*)",
-    "date": "td:nth-child(10):regex(.*<p>(.*)</p>.*)",
-    "size": "a.dl-stub:regex(<a[^>]*>(.*)</a>)",
-    "seed": "b.seedmed:regex(<b[^>]*>(.*)</b>)",
-    "leech": "td.leechmed b:regex(<b[^>]*>(.*)</b>)",
-    "next": "div.nav a.pg:last:regex(.*href=\"([^\"]*)\".*След.*)"
+    "date": "td:eq(9):regex(.*<p>(.*)</p>.*)",
+    "size": "a.dl-stub",
+    "seed": "b.seedmed",
+    "leech": "td.leechmed b",
+    "next": ".nav b+a:regex(.*href=\"([^\"]*)\".*)"
   }
 }
