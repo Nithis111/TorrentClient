@@ -93,3 +93,9 @@
   }
 }
 ```
+
+# Selectors
+
+Supported CSS selectors you can find here:
+
+  * https://jsoup.org/apidocs/org/jsoup/select/Selector.html
