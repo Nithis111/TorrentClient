@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
+import cz.msebera.android.httpclient.client.config.RequestConfig;
 import cz.msebera.android.httpclient.client.methods.CloseableHttpResponse;
 import cz.msebera.android.httpclient.client.methods.HttpRequestBase;
 
@@ -77,12 +78,13 @@ public class GoogleProxy extends HttpClient {
             // Google Data Saver plugin does not work for sites on https
             if (request.getURI().getScheme().equals("https")) {
                 request.setConfig(null);
-                httpClientContext.setRequestConfig(null);
+                httpClientContext.setRequestConfig(RequestConfig.copy(httpClientContext.getRequestConfig()).setProxy(null).build());
             } else {
                 authHeader(request);
             }
         }else {
             request.setConfig(null);
+            httpClientContext.setRequestConfig(RequestConfig.copy(httpClientContext.getRequestConfig()).setProxy(null).build());
         }
         return super.execute(request);
     }
