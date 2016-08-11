@@ -3,12 +3,9 @@ package com.github.axet.torrentclient.app;
 import com.github.axet.androidlibrary.net.HttpClient;
 
 import java.io.IOException;
-import java.net.URI;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
-import cz.msebera.android.httpclient.HttpClientConnection;
-import cz.msebera.android.httpclient.HttpException;
 import cz.msebera.android.httpclient.HttpRequest;
 import cz.msebera.android.httpclient.HttpResponse;
 import cz.msebera.android.httpclient.ProtocolException;
@@ -21,7 +18,6 @@ import cz.msebera.android.httpclient.impl.client.CloseableHttpClient;
 import cz.msebera.android.httpclient.impl.client.HttpClientBuilder;
 import cz.msebera.android.httpclient.impl.client.LaxRedirectStrategy;
 import cz.msebera.android.httpclient.protocol.HttpContext;
-import cz.msebera.android.httpclient.protocol.HttpRequestExecutor;
 
 public class GoogleProxy extends HttpClient {
 
@@ -64,12 +60,11 @@ public class GoogleProxy extends HttpClient {
     @Override
     public void create() {
         super.create();
-
         setProxy();
     }
 
     @Override
-    protected CloseableHttpClient create(HttpClientBuilder builder) {
+    protected CloseableHttpClient build(HttpClientBuilder builder) {
         builder.setRedirectStrategy(new LaxRedirectStrategy() {
             @Override
             public HttpUriRequest getRedirect(HttpRequest request, HttpResponse response, HttpContext context) throws ProtocolException {
@@ -78,7 +73,14 @@ public class GoogleProxy extends HttpClient {
                 return r;
             }
         });
-        return super.create(builder);
+        return super.build(builder);
+    }
+
+    RequestConfig filter(RequestConfig config) {
+        if (config == null)
+            return null;
+        config = RequestConfig.copy(config).setProxy(null).build();
+        return config;
     }
 
     void filter(HttpRequest request, HttpContext context) {
@@ -88,15 +90,13 @@ public class GoogleProxy extends HttpClient {
             if (!enabled || uri.getURI().getScheme().equals("https")) {
                 if (request instanceof HttpRequestBase) {
                     HttpRequestBase m = (HttpRequestBase) request;
-                    RequestConfig config = m.getConfig();
+                    RequestConfig config = filter(m.getConfig());
                     if (config != null) {
-                        config = RequestConfig.copy(config).setProxy(null).build();
                         m.setConfig(config);
                     }
                 }
-                RequestConfig config = (RequestConfig) context.getAttribute(HttpClientContext.REQUEST_CONFIG);
+                RequestConfig config = filter((RequestConfig) context.getAttribute(HttpClientContext.REQUEST_CONFIG));
                 if (config != null) {
-                    config = RequestConfig.copy(config).setProxy(null).build();
                     context.setAttribute(HttpClientContext.REQUEST_CONFIG, config);
                 }
             } else {
