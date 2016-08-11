@@ -88,7 +88,11 @@ public class GoogleProxy extends HttpClient {
             if (!enabled || uri.getURI().getScheme().equals("https")) {
                 if (request instanceof HttpRequestBase) {
                     HttpRequestBase m = (HttpRequestBase) request;
-                    m.setConfig(null);
+                    RequestConfig config = m.getConfig();
+                    if (config != null) {
+                        config = RequestConfig.copy(config).setProxy(null).build();
+                        m.setConfig(config);
+                    }
                 }
                 RequestConfig config = (RequestConfig) context.getAttribute(HttpClientContext.REQUEST_CONFIG);
                 if (config != null) {
@@ -103,8 +107,9 @@ public class GoogleProxy extends HttpClient {
 
     void setProxy() {
         //setProxy("compress.googlezip.net", 80, "http");
+        setProxy("compress.googlezip.net", 443, "https");
         //setProxy("proxy.googlezip.net", 80, "http");
-        setProxy("proxy.googlezip.net", 443, "https");
+        //setProxy("proxy.googlezip.net", 443, "https");
     }
 
     void authHeader(HttpRequest request) {
