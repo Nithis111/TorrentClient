@@ -9,7 +9,7 @@
     "list": "div.post",
     "title": "h3",
     "details_html": "regex((.*))",
-    "date": "div.meta:regex(.*Posted ([^ ]*).*)"
+    "date": "div.meta:regex(.*Posted (.*) by .*)"
   },
   "top": {
     "get": "tops",

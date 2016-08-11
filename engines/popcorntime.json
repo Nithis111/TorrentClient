@@ -17,23 +17,23 @@
     "list": "div.movie",
     "details_html": "regex((.*))",
     "title": "h3",
+    "grid":"110,150",
+    "image": ".poster:regex(.*src=\"([^\"]*)\".*)",
     "magnet": "a.magnet:regex(.*href=\"([^\"]*)\".*)",
-    "torrent": "a.torrent:regex(.*href=\"([^\"]*)\".*)",
-    "size": "span.size:regex(.*:([^<]*).*)",
-    "seed": "span.seed:regex(.*:([^<]*).*)"
+    "torrent": "a.torrent:regex(.*href=\"([^\"]*)\".*)"
   },
   "tops": {
-    "Recent": "http://api.torrentsapi.com/list?sort=seed&count=15"
+    "Home": "http://api.torrentsapi.com/list?sort=seed&count=15"
   },
   "search": {
     "json_get": "http://api.torrentsapi.com/?keywords=%s&count=15&page=1",
     "js": "function fmt(s) {\n    if (s > 0.1 * 1024 * 1024 * 1024) {\n      var f = s / 1024 / 1024 / 1024;\n      return f.toFixed(1) + ' GB';\n    } else if (s > 0.1 * 1024 * 1024) {\n      var f = s / 1024 / 1024;\n      return f.toFixed(1) + 'MB';\n    } else {\n      var f = s / 1024;\n      return f.toFixed(1) + 'kb';\n    }\n};\nvar jj = JSON.parse(torrentclient.json());\nvar html = '';\nvar list = jj.MovieList;\nfor(var index in list) {\n  var item = list[index];\n  html += '<div class=\"movie\">\\n';\n  html += '  <h3 class=\"title\">' + item.title + '</h3>\\n';\n  html += '  <img class=\"poster\" src=\"' + item.poster_med + '\" />\\n';\n  var items = item.items;\n  items.sort(function(a,b) {\n    return b.torrent_seeds-a.torrent_seeds;\n  });\n  for(var index in items) {\n    var source = items[index];\n    html += '  <p>\\n';\n    html += '    <span class=\"quality\">' + source.quality + '</span>\\n';\n    html += '    <a class=\"magnet\" href=\"' + encodeURI(source.torrent_magnet) + '\">magnet</a>\\n';\n    html += '    <a class=\"torrent\" href=\"' + encodeURI(source.torrent_url) + '\">torrent</a>\\n';\n    html += '    <span class=\"size\">size:' + fmt(source.size_bytes) + '</span>\\n';\n    html += '    <span class=\"seed\">seed:' + source.torrent_seeds + '</span>\\n';\n    html += '  </p>\\n';\n  };\n  html += '</div>\\n';\n};\ndocument.body.innerHTML=html;",
     "list": "div.movie",
+    "grid":"110,150",
     "details_html": "regex((.*))",
     "title": "h3",
+    "image": ".poster:regex(.*src=\"([^\"]*)\".*)",
     "magnet": "a.magnet:regex(.*href=\"([^\"]*)\".*)",
-    "torrent": "a.torrent:regex(.*href=\"([^\"]*)\".*)",
-    "size": "span.size:regex(.*:([^<]*).*)",
-    "seed": "span.seed:regex(.*:([^<]*).*)"
+    "torrent": "a.torrent:regex(.*href=\"([^\"]*)\".*)"
   }
 }

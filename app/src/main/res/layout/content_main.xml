@@ -45,12 +45,15 @@
         android:layout_centerHorizontal="true"
         android:indeterminate="true" />
 
-    <ListView
+    <com.github.axet.androidlibrary.widgets.HeaderGridView
         android:id="@+id/list"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_below="@id/space"
         android:clipChildren="false"
         android:clipToPadding="false"
-        android:paddingBottom="72dp" />
+        android:numColumns="1"
+        android:paddingBottom="72dp"
+        android:stretchMode="columnWidth"
+        android:verticalSpacing="2dp" />
 </RelativeLayout>

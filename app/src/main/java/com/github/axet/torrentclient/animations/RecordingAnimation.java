@@ -5,13 +5,13 @@ import android.os.Build;
 import android.os.Handler;
 import android.view.View;
 import android.view.animation.Transformation;
-import android.widget.ListView;
 
 import com.github.axet.androidlibrary.animations.MarginAnimation;
 import com.github.axet.torrentclient.R;
+import com.github.axet.androidlibrary.widgets.HeaderGridView;
 
 public class RecordingAnimation extends MarginAnimation {
-    ListView list;
+    HeaderGridView list;
 
     View convertView;
 
@@ -24,7 +24,7 @@ public class RecordingAnimation extends MarginAnimation {
     // the only one 'expand' should have control of showChild function.
     static RecordingAnimation atomicExpander;
 
-    public static void apply(final ListView list, final View v, final boolean expand, boolean animate) {
+    public static void apply(final HeaderGridView list, final View v, final boolean expand, boolean animate) {
         apply(new LateCreator() {
             @Override
             public MarginAnimation create() {
@@ -36,7 +36,7 @@ public class RecordingAnimation extends MarginAnimation {
         }, v, expand, animate);
     }
 
-    public RecordingAnimation(ListView list, View v, boolean expand) {
+    public RecordingAnimation(HeaderGridView list, View v, boolean expand) {
         super(v.findViewById(R.id.recording_player), expand);
 
         handler = new Handler();

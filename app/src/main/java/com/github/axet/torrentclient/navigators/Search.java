@@ -3,7 +3,11 @@ package com.github.axet.torrentclient.navigators;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.SharedPreferences;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Color;
+import android.graphics.Rect;
+import android.os.AsyncTask;
 import android.os.Handler;
 import android.os.Looper;
 import android.preference.PreferenceManager;
@@ -11,6 +15,7 @@ import android.support.v7.widget.AppCompatImageButton;
 import android.text.Html;
 import android.util.Base64;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -19,11 +24,13 @@ import android.webkit.JavascriptInterface;
 import android.webkit.JsResult;
 import android.webkit.WebView;
 import android.widget.BaseAdapter;
+import android.widget.GridView;
 import android.widget.ImageView;
-import android.widget.ListView;
+import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
+import com.github.axet.androidlibrary.widgets.HeaderGridView;
 import com.github.axet.androidlibrary.widgets.ThemeUtils;
 import com.github.axet.androidlibrary.widgets.WebViewCustom;
 import com.github.axet.torrentclient.R;
@@ -35,6 +42,7 @@ import com.github.axet.torrentclient.dialogs.BrowserDialogFragment;
 import com.github.axet.torrentclient.dialogs.LoginDialogFragment;
 import com.github.axet.torrentclient.widgets.UnreadCountDrawable;
 
+import org.apmem.tools.layouts.FlowLayout;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.parser.Parser;
@@ -43,6 +51,7 @@ import org.jsoup.select.Elements;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.MalformedURLException;
@@ -73,6 +82,8 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
     Context context;
     MainActivity main;
     ArrayList<SearchItem> list = new ArrayList<>();
+
+    ArrayList<DownloadImageTask> downloads = new ArrayList<>();
 
     BrowserDialogFragment dialog;
 
@@ -113,8 +124,13 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
     String nextType;
     ArrayList<String> nextLast = new ArrayList<>();
 
+    HeaderGridView grid;
+    Rect gridRect;
+
     public static class SearchItem {
         public String title;
+        public String image;
+        public Bitmap imageBitmap;
         public String details;
         public String details_html;
         public String html;
@@ -150,6 +166,40 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         public String json() {
             Log.d(TAG, "json()");
             return json;
+        }
+    }
+
+    class DownloadImageTask extends AsyncTask<SearchItem, Void, Bitmap> {
+        ImageView bmImage;
+
+        public DownloadImageTask(ImageView bmImage) {
+            this.bmImage = bmImage;
+        }
+
+        protected Bitmap doInBackground(SearchItem... items) {
+            SearchItem item = items[0];
+            for (int i = 0; i < 5; i++) {
+                try {
+                    InputStream in = new java.net.URL(item.image).openStream();
+                    item.imageBitmap = BitmapFactory.decodeStream(in);
+                    return item.imageBitmap;
+                } catch (Exception e) {
+                    Log.e(TAG, "DownloadImageTask", e);
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException ee) {
+                        Thread.currentThread().interrupt();
+                        return null;
+                    }
+                }
+            }
+            return null;
+        }
+
+        protected void onPostExecute(Bitmap result) {
+            downloads.remove(this);
+            if (result != null)
+                bmImage.setImageBitmap(result);
         }
     }
 
@@ -233,7 +283,9 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         return "";
     }
 
-    public void install(final ListView list) {
+    public void install(final HeaderGridView list) {
+        this.grid = list;
+
         list.setAdapter(null); // old phones crash to addHeader
 
         LayoutInflater inflater = LayoutInflater.from(context);
@@ -454,6 +506,8 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
 
         list.setAdapter(this);
 
+        gridUpdate();
+
         handler.post(new Runnable() {
             @Override
             public void run() {
@@ -464,10 +518,27 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         });
     }
 
-    public void remove(ListView list) {
+    void gridUpdate() {
+        if (this.gridRect != null) {
+            Search.this.grid.setNumColumns(GridView.AUTO_FIT);
+            Search.this.grid.setColumnWidth(Search.this.gridRect.width());
+            Search.this.grid.setStretchMode(GridView.STRETCH_SPACING);
+        } else { // restore original xml
+            gridRestore();
+        }
+    }
+
+    void gridRestore() {
+        Search.this.grid.setNumColumns(1);
+        Search.this.grid.setColumnWidth(GridView.AUTO_FIT);
+        Search.this.grid.setStretchMode(GridView.STRETCH_COLUMN_WIDTH);
+    }
+
+    public void remove(HeaderGridView list) {
         lastSearch = searchText.getText().toString();
         list.removeHeaderView(header);
         list.removeFooterView(footer);
+        gridRestore();
     }
 
     void loadTops(final Map<String, String> top, final String type, Map<String, String> tops) {
@@ -734,7 +805,33 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
             convertView = inflater.inflate(R.layout.search_item, parent, false);
         }
 
+        View title = convertView.findViewById(R.id.search_item_title);
+        FlowLayout flow = (FlowLayout) convertView.findViewById(R.id.search_item_flow);
+
+        if (gridRect != null) {
+            convertView.setLayoutParams(new GridView.LayoutParams(gridRect.width(), gridRect.height()));
+            ((LinearLayout.LayoutParams) title.getLayoutParams()).gravity = Gravity.CENTER;
+            flow.setGravity(Gravity.CENTER);
+        } else {
+            convertView.setLayoutParams(new GridView.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+            ((LinearLayout.LayoutParams) title.getLayoutParams()).gravity = Gravity.NO_GRAVITY;
+            flow.setGravity(Gravity.NO_GRAVITY);
+        }
+
         final SearchItem item = getItem(position);
+
+        ImageView image = (ImageView) convertView.findViewById(R.id.search_item_image);
+        if (item.image != null) {
+            if (item.imageBitmap == null) {
+                DownloadImageTask task = new DownloadImageTask(image);
+                downloads.add(task);
+                task.execute(item);
+            } else {
+                image.setImageBitmap(item.imageBitmap);
+            }
+        } else {
+            image.setVisibility(View.GONE);
+        }
 
         TextView date = (TextView) convertView.findViewById(R.id.search_item_date);
         if (item.date == null || item.date.isEmpty()) {
@@ -1024,9 +1121,26 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         }
     }
 
-    public void search(Map<String, String> s, String type, String url, String search, final Runnable done) {
+    public void search(final Map<String, String> s, String type, String url, String search, final Runnable done) {
         String html = null;
         String json = null;
+
+        handler.post(new Runnable() {
+            @Override
+            public void run() {
+                String grid = s.get("grid");
+                if (grid != null) {
+                    String[] gg = grid.split(",");
+                    if (gg.length > 1) {
+                        Search.this.gridRect = new Rect(0, 0, ThemeUtils.dp2px(getContext(), Integer.parseInt(gg[0])),
+                                ThemeUtils.dp2px(getContext(), Integer.parseInt(gg[1])));
+                    }
+                } else {
+                    Search.this.gridRect = null;
+                }
+                gridUpdate();
+            }
+        });
 
         if (type.equals("post")) {
             String t = s.get("post_search");
@@ -1184,6 +1298,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
             SearchItem item = new SearchItem();
             item.html = list.get(i).outerHtml();
             item.title = matcher(item.html, s.get("title"));
+            item.image = matcher(item.html, s.get("image"));
             item.magnet = matcher(item.html, s.get("magnet"));
             item.torrent = matcher(url, item.html, s.get("torrent"));
             item.date = matcher(item.html, s.get("date"));

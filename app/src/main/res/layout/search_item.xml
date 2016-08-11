@@ -5,16 +5,37 @@
     android:orientation="vertical"
     android:padding="5dp">
 
-    <TextView
-        android:id="@+id/search_item_name"
-        android:layout_width="wrap_content"
+    <FrameLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_gravity="center_vertical"
-        android:paddingLeft="5dp"
-        android:text="demo fragmentdemo fragmentdemo fragment.avi"
-        android:textColor="?attr/titleColor" />
+        android:layout_weight="1"
+        android:background="#b1b1b1">
 
-    <LinearLayout
+        <ImageView
+            android:id="@+id/search_item_image"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:src="@drawable/ic_crop_original_black_24dp" />
+    </FrameLayout>
+
+    <com.github.axet.androidlibrary.widgets.PathMax
+        android:id="@+id/search_item_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content">
+
+        <TextView
+            android:id="@+id/search_item_name"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_vertical"
+            android:paddingLeft="5dp"
+            android:text="demo fragmentdemo fragmentdemo fragment.avi"
+            android:textColor="?attr/titleColor" />
+    </com.github.axet.androidlibrary.widgets.PathMax>
+
+    <org.apmem.tools.layouts.FlowLayout
+        android:id="@+id/search_item_flow"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal">
@@ -68,6 +89,6 @@
             android:layout_gravity="center"
             android:paddingLeft="5dp"
             android:text="Leech: 222" />
-    </LinearLayout>
+    </org.apmem.tools.layouts.FlowLayout>
 
 </LinearLayout>
