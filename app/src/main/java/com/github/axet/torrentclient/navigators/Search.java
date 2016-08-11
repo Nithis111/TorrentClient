@@ -166,9 +166,9 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
 
         http = new GoogleProxy() {
             @Override
-            protected CloseableHttpClient create(HttpClientBuilder builder) {
+            protected CloseableHttpClient build(HttpClientBuilder builder) {
                 builder.setUserAgent(Search.USER_AGENT); // search requests shold go from desktop browser
-                return super.create(builder);
+                return super.build(builder);
             }
         };
         http.enabled = shared.getString(MainApplication.PREFERENCE_PROXY, "").equals(GoogleProxy.NAME);
