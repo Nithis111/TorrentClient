@@ -60,11 +60,15 @@ import cz.msebera.android.httpclient.client.CookieStore;
 import cz.msebera.android.httpclient.client.methods.AbstractExecutionAwareRequest;
 import cz.msebera.android.httpclient.cookie.Cookie;
 import cz.msebera.android.httpclient.impl.client.BasicCookieStore;
+import cz.msebera.android.httpclient.impl.client.CloseableHttpClient;
+import cz.msebera.android.httpclient.impl.client.HttpClientBuilder;
 
 public class Search extends BaseAdapter implements DialogInterface.OnDismissListener,
         UnreadCountDrawable.UnreadCount, MainActivity.NavigatorInterface,
         SharedPreferences.OnSharedPreferenceChangeListener {
     public static final String TAG = Search.class.getSimpleName();
+
+    public static String USER_AGENT = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/52.0.2743.116 Safari/537.36";
 
     Context context;
     MainActivity main;
@@ -160,7 +164,13 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
 
         final SharedPreferences shared = PreferenceManager.getDefaultSharedPreferences(context);
 
-        http = new GoogleProxy();
+        http = new GoogleProxy() {
+            @Override
+            protected CloseableHttpClient create(HttpClientBuilder builder) {
+                builder.setUserAgent(Search.USER_AGENT); // search requests shold go from desktop browser
+                return super.create(builder);
+            }
+        };
         http.enabled = shared.getString(MainApplication.PREFERENCE_PROXY, "").equals(GoogleProxy.NAME);
 
         shared.registerOnSharedPreferenceChangeListener(this);
