@@ -253,8 +253,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
                         search(nextSearch, nextType, next, null, new Runnable() {
                             @Override
                             public void run() {
-                                // destory looper thread
-                                requestCancel();
+                                requestCancel(); // destory looper thread
                             }
                         });
                     }
@@ -326,17 +325,12 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
                 request(new Runnable() {
                     @Override
                     public void run() {
-                        try {
-                            search(engine.getMap("search"), searchText.getText().toString(), new Runnable() {
-                                @Override
-                                public void run() {
-                                    // destory looper thread
-                                    requestCancel();
-                                }
-                            });
-                        } catch (IOException e) {
-                            throw new RuntimeException(e);
-                        }
+                        search(engine.getMap("search"), searchText.getText().toString(), new Runnable() {
+                            @Override
+                            public void run() {
+                                requestCancel(); // destory looper thread
+                            }
+                        });
                     }
                 }, null);
             }
@@ -420,17 +414,12 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
                 request(new Runnable() {
                     @Override
                     public void run() {
-                        try {
-                            search(news, null, new Runnable() {
-                                @Override
-                                public void run() {
-                                    // destory looper thread
-                                    requestCancel();
-                                }
-                            });
-                        } catch (IOException e) {
-                            throw new RuntimeException(e);
-                        }
+                        search(news, null, new Runnable() {
+                            @Override
+                            public void run() {
+                                requestCancel(); // destory looper thread
+                            }
+                        });
                     }
                 }, null);
             }
@@ -503,8 +492,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
                             search(top, type, url, null, new Runnable() {
                                 @Override
                                 public void run() {
-                                    // destory looper thread
-                                    requestCancel();
+                                    requestCancel(); // destory looper thread
                                 }
                             });
                         }
@@ -624,6 +612,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
 
     void clearList() {
         Search.this.list.clear();
+        Search.this.next = null;
         Search.this.nextLast.clear();
         footer_next.setVisibility(View.GONE);
         notifyDataSetChanged();
@@ -709,7 +698,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
                             login(l.login, l.pass, new Runnable() {
                                 @Override
                                 public void run() {
-                                    requestCancel();
+                                    requestCancel(); // destory looper thread
                                 }
                             });
                         } catch (IOException e) {
@@ -933,16 +922,18 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         if (post != null) {
             String l = s.get("post_login");
             String p = s.get("post_password");
-            String pp = s.get("post_params");
             HashMap<String, String> map = new HashMap<>();
             if (l != null)
                 map.put(l, login);
             if (p != null)
                 map.put(p, pass);
-            String[] params = pp.split(";");
-            for (String param : params) {
-                String[] m = param.split("=");
-                map.put(URLDecoder.decode(m[0].trim(), MainApplication.UTF8), URLDecoder.decode(m[1].trim(), MainApplication.UTF8));
+            String pp = s.get("post_params");
+            if (pp != null) {
+                String[] params = pp.split(";");
+                for (String param : params) {
+                    String[] m = param.split("=");
+                    map.put(URLDecoder.decode(m[0].trim(), MainApplication.UTF8), URLDecoder.decode(m[1].trim(), MainApplication.UTF8));
+                }
             }
             final String html = http.post(null, post, map);
 
@@ -982,7 +973,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
             done.run();
     }
 
-    public void search(Map<String, String> s, String search, final Runnable done) throws IOException {
+    public void search(Map<String, String> s, String search, final Runnable done) {
         String url;
         String type;
 
@@ -996,8 +987,12 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         String get = s.get(type = "get");
         if (get != null) {
             if (search != null) {
-                String query = URLEncoder.encode(search, MainApplication.UTF8);
-                url = String.format(get, query);
+                try {
+                    String query = URLEncoder.encode(search, MainApplication.UTF8);
+                    url = String.format(get, query);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
             } else {
                 url = get;
             }
@@ -1008,8 +1003,12 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         String json_get = s.get(type = "json_get");
         if (json_get != null) {
             if (search != null) {
-                String query = URLEncoder.encode(search, MainApplication.UTF8);
-                url = String.format(json_get, query);
+                try {
+                    String query = URLEncoder.encode(search, MainApplication.UTF8);
+                    url = String.format(json_get, query);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
             } else {
                 url = json_get;
             }
@@ -1031,10 +1030,22 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
 
         if (type.equals("post")) {
             String t = s.get("post_search");
-            String[][] data = new String[][]{};
+            HashMap<String, String> map = new HashMap<>();
             if (search != null)
-                data = new String[][]{{t, search}};
-            html = http.post(null, url, data);
+                map.put(t, search);
+            String pp = s.get("post_params");
+            if (pp != null) {
+                String[] params = pp.split(";");
+                for (String param : params) {
+                    String[] m = param.split("=");
+                    try {
+                        map.put(URLDecoder.decode(m[0].trim(), MainApplication.UTF8), URLDecoder.decode(m[1].trim(), MainApplication.UTF8));
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+            }
+            html = http.post(null, url, map);
         }
         if (type.equals("get")) {
             html = http.get(null, url);
