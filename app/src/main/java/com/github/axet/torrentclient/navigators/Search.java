@@ -1272,7 +1272,11 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
             Pattern p1 = Pattern.compile(r, Pattern.DOTALL);
             Matcher m1 = p1.matcher(a);
             if (m1.matches()) {
-                a = m1.group(1);
+                for (int i = 1; i <= m1.groupCount(); i++) { // optional groups support
+                    a = m1.group(i);
+                    if (a != null)
+                        return a;
+                }
             } else {
                 a = ""; // tell we did not find any regex match
             }

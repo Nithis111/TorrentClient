@@ -1,5 +1,5 @@
 {
-  "version": 7,
+  "version": 8,
   "name": "google.com",
   "home": {
     "get": "https://google.com"
@@ -7,7 +7,7 @@
   "search": {
     "get": "https://www.google.com/search?q=filetype:torrent+%s",
     "list": "div h3 a",
-    "details": "a:regex(.*href=\"/url\\?q=([^\"]*)\".*)",
+    "details": "a:regex(.*(data-)?href=\"(/url\\?q=)?([^\"]*)\".*)",
     "title": "a",
     "next": ".cur+td a:regex(.*href=\"([^\"]*)\".*)"
   }
