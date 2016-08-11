@@ -124,7 +124,7 @@ public class GoogleProxy extends HttpClient {
     }
 
     @Override
-    public CloseableHttpResponse execute(HttpRequestBase request) throws IOException {
+    public CloseableHttpResponse execute(HttpRequestBase request) {
         filter(request, httpClientContext);
         return super.execute(request);
     }
