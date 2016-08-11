@@ -43,7 +43,6 @@ import android.widget.Adapter;
 import android.widget.HeaderViewListAdapter;
 import android.widget.ImageView;
 import android.widget.ListAdapter;
-import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.Switch;
 import android.widget.TextView;
@@ -51,6 +50,7 @@ import android.widget.Toast;
 
 import com.getbase.floatingactionbutton.FloatingActionButton;
 import com.getbase.floatingactionbutton.FloatingActionsMenu;
+import com.github.axet.androidlibrary.widgets.HeaderGridView;
 import com.github.axet.androidlibrary.widgets.OpenFileDialog;
 import com.github.axet.androidlibrary.widgets.ThemeUtils;
 import com.github.axet.torrentclient.R;
@@ -100,7 +100,7 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
 
     Torrents torrents;
     ProgressBar progress;
-    ListView list;
+    HeaderGridView list;
     View empty;
     Handler handler;
 
@@ -146,9 +146,9 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
     }
 
     public interface NavigatorInterface {
-        void install(ListView list);
+        void install(HeaderGridView list);
 
-        void remove(ListView list);
+        void remove(HeaderGridView list);
     }
 
     static interface DrawerToggle {
@@ -460,7 +460,7 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
 
         progress = (ProgressBar) findViewById(R.id.progress);
 
-        list = (ListView) findViewById(R.id.list);
+        list = (HeaderGridView) findViewById(R.id.list);
         empty = findViewById(R.id.empty_list);
 
         fab.setVisibility(View.GONE);
@@ -935,14 +935,15 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
         if (dialogInterface instanceof AddDialogFragment.Result) {
             AddDialogFragment.Result r = (AddDialogFragment.Result) dialogInterface;
             if (r.ok) {
+                torrentUnread(getStorage().find(r.t));
                 updateUnread();
             }
         }
 
         dialog = null;
         ListAdapter a = list.getAdapter();
-        if (a != null && a instanceof HeaderViewListAdapter) {
-            a = ((HeaderViewListAdapter) a).getWrappedAdapter();
+        if (a != null && a instanceof HeaderGridView.HeaderViewGridAdapter) {
+            a = ((HeaderGridView.HeaderViewGridAdapter) a).getWrappedAdapter();
         }
         if (a instanceof DialogInterface.OnDismissListener) {
             ((DialogInterface.OnDismissListener) a).onDismiss(dialogInterface);
@@ -1084,6 +1085,7 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
                 for (String s : m) {
                     if (!engies.addManget(s)) {
                         Storage.Torrent tt = getStorage().addMagnet(s);
+                        torrentUnread(tt);
                         Toast.makeText(MainActivity.this, getString(R.string.added) + " " + tt.name(), Toast.LENGTH_SHORT).show();
                     }
                 }
@@ -1111,6 +1113,7 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
                 addTorrentDialog(t, s);
             } else {
                 Storage.Torrent tt = getStorage().addTorrentFromBytes(buf);
+                torrentUnread(tt);
                 Toast.makeText(MainActivity.this, getString(R.string.added) + " " + tt.name(), Toast.LENGTH_SHORT).show();
             }
         } catch (RuntimeException e) {
@@ -1158,7 +1161,9 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
         if (shared.getBoolean(MainApplication.PREFERENCE_DIALOG, false)) {
             createTorrentDialog(t, pp);
         } else {
-            getStorage().add(new Storage.Torrent(this, t, pp, true));
+            Storage.Torrent tt = new Storage.Torrent(this, t, pp, true);
+            getStorage().add(tt);
+            torrentUnread(tt);
             torrents.notifyDataSetChanged();
             updateUnread();
         }
@@ -1172,8 +1177,8 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
         // here only two types of adapters, so setup empty view manually here.
 
         Adapter a = list.getAdapter();
-        if (a != null && a instanceof HeaderViewListAdapter) {
-            a = ((HeaderViewListAdapter) a).getWrappedAdapter();
+        if (a != null && a instanceof HeaderGridView.HeaderViewGridAdapter) {
+            a = ((HeaderGridView.HeaderViewGridAdapter) a).getWrappedAdapter();
         }
 
         if (id == R.id.nav_torrents) {
@@ -1253,8 +1258,8 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
                 navigationView.setCheckedItem(id);
 
                 Adapter a = list.getAdapter();
-                if (a != null && a instanceof HeaderViewListAdapter) {
-                    a = ((HeaderViewListAdapter) a).getWrappedAdapter();
+                if (a != null && a instanceof HeaderGridView.HeaderViewGridAdapter) {
+                    a = ((HeaderGridView.HeaderViewGridAdapter) a).getWrappedAdapter();
                 }
                 if (a != null && a instanceof Search) {
                     ((Search) a).remove(list);
@@ -1517,15 +1522,12 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
         update.start();
     }
 
-    public boolean active(Search s) {
+    public boolean active(ListAdapter s) {
         Adapter a = list.getAdapter();
-        if (a != null && a instanceof HeaderViewListAdapter) {
-            a = ((HeaderViewListAdapter) a).getWrappedAdapter();
+        if (a != null && a instanceof HeaderGridView.HeaderViewGridAdapter) {
+            a = ((HeaderGridView.HeaderViewGridAdapter) a).getWrappedAdapter();
         }
-        if (a != null && a instanceof Search) {
-            return s == a;
-        }
-        return false;
+        return s == a;
     }
 
     @Override
@@ -1544,5 +1546,11 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
     public void updateUnread() {
         unread.update();
         updateManager();
+    }
+
+    void torrentUnread(Storage.Torrent tt) {
+        if (active(torrents)) {
+            tt.message = false;
+        }
     }
 }

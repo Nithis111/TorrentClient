@@ -897,6 +897,16 @@ public class Storage {
         saveUpdate();
     }
 
+    public Torrent find(long t) {
+        for (int i = 0; i < torrents.size(); i++) {
+            Torrent tt = torrents.get(i);
+            if (tt.t == t)
+                return tt;
+        }
+        return null;
+    }
+
+
     public int getUnreadCount() {
         int count = 0;
         for (int i = 0; i < torrents.size(); i++) {

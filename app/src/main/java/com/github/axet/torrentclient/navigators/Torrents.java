@@ -19,11 +19,11 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.ImageView;
-import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import com.github.axet.androidlibrary.animations.RemoveItemAnimation;
+import com.github.axet.androidlibrary.widgets.HeaderGridView;
 import com.github.axet.androidlibrary.widgets.PopupShareActionProvider;
 import com.github.axet.androidlibrary.widgets.ThemeUtils;
 import com.github.axet.torrentclient.R;
@@ -57,7 +57,7 @@ public class Torrents extends BaseAdapter implements DialogInterface.OnDismissLi
     MainActivity main;
     PopupShareActionProvider shareProvider;
     TorrentDialogFragment dialog;
-    ListView list;
+    HeaderGridView list;
     Map<Storage.Torrent, Boolean> unread = new HashMap<>();
 
     public static class Tag {
@@ -88,7 +88,7 @@ public class Torrents extends BaseAdapter implements DialogInterface.OnDismissLi
         }
     }
 
-    public Torrents(MainActivity main, ListView list) {
+    public Torrents(MainActivity main, HeaderGridView list) {
         super();
 
         this.main = main;
@@ -173,6 +173,8 @@ public class Torrents extends BaseAdapter implements DialogInterface.OnDismissLi
         Boolean u = unread.get(t);
         if (u != null && u)
             convertView.setBackgroundColor(ThemeUtils.getThemeColor(getContext(), R.attr.unreadColor));
+        else
+            convertView.setBackgroundColor(0);
 
         TextView title = (TextView) convertView.findViewById(R.id.torrent_title);
         title.setText(t.name());
@@ -471,10 +473,11 @@ public class Torrents extends BaseAdapter implements DialogInterface.OnDismissLi
         return selected;
     }
 
-    public void install(ListView list) {
+    public void install(HeaderGridView list) {
         unread.clear();
 
         list.setAdapter(this);
+
         Storage s = getStorage();
         for (int i = 0; i < s.count(); i++) {
             Storage.Torrent t = s.torrent(i);
@@ -484,7 +487,7 @@ public class Torrents extends BaseAdapter implements DialogInterface.OnDismissLi
         getStorage().clearUnreadCount();
     }
 
-    public void remove(ListView list) {
+    public void remove(HeaderGridView list) {
     }
 
     public void showDetails(Long f) {
