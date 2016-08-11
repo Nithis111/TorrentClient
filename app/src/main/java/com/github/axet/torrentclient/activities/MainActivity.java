@@ -37,6 +37,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.WindowManager;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.AbsListView;
 import android.widget.Adapter;
 import android.widget.HeaderViewListAdapter;
@@ -264,6 +265,11 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
         drawerLayout.addDrawerListener(new DrawerLayout.DrawerListener() {
             @Override
             public void onDrawerSlide(View drawerView, float slideOffset) {
+                View view = MainActivity.this.getCurrentFocus();
+                if (view != null) {
+                    InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+                    imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
+                }
             }
 
             @Override
