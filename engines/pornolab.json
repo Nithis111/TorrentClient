@@ -1,5 +1,5 @@
 {
-  "version": 18,
+  "version": 19,
   "name": "pornolab.net",
   "home": {
     "get": "http://pornolab.net"
@@ -35,6 +35,7 @@
   "search": {
     "post": "http://pornolab.net/forum/tracker.php",
     "post_search": "nm",
+    "post_params": "o=10",
     "js": "if(document.querySelectorAll('a[href^=\\'./profile.php\\']').length==0) {\n  alert('Not Logged In');\n}",
     "list": ".forumline.tablesorter tbody tr",
     "title": "a.tLink",
