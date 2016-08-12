@@ -10,6 +10,7 @@ import android.os.AsyncTask;
 import android.os.Handler;
 import android.os.Looper;
 import android.preference.PreferenceManager;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.widget.AppCompatImageButton;
 import android.text.Html;
 import android.util.Base64;
@@ -179,7 +180,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
                     InputStream in = new java.net.URL(item.image).openStream();
                     item.imageBitmap = BitmapFactory.decodeStream(in);
                     return item.imageBitmap;
-                } catch (Exception e) {
+                } catch (IOException e) {
                     Log.e(TAG, "DownloadImageTask", e);
                     try {
                         Thread.sleep(1000);
@@ -628,21 +629,20 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
     }
 
     void updateFooterButtons() {
-        if (Search.this.next != null) {
-            if (thread == null)
-                footer_next.setVisibility(View.VISIBLE);
-            else
-                footer_next.setVisibility(View.GONE);
-            footer.setVisibility(View.VISIBLE);
-        } else {
-            footer_next.setVisibility(View.GONE);
+        Thread thread = this.thread;
+
+        if (next == null) {
             footer.setVisibility(View.GONE);
+        } else {
+            footer.setVisibility(View.VISIBLE);
         }
 
         if (thread == null) {
+            footer_next.setVisibility(View.VISIBLE);
             footer_progress.setVisibility(View.GONE);
             footer_stop.setVisibility(View.GONE);
         } else {
+            footer_next.setVisibility(View.GONE);
             footer_progress.setVisibility(View.VISIBLE);
             footer_stop.setVisibility(View.VISIBLE);
         }
@@ -824,6 +824,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         ImageView image = (ImageView) convertView.findViewById(R.id.search_item_image);
         if (item.image != null) {
             if (item.imageBitmap == null) {
+                image.setImageDrawable(ContextCompat.getDrawable(getContext(), R.drawable.ic_crop_original_black_24dp));
                 DownloadImageTask task = new DownloadImageTask(image);
                 downloads.add(task);
                 task.execute(item);
