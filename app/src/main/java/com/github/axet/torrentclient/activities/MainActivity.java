@@ -1306,6 +1306,7 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
             UnreadCountDrawable unread = new UnreadCountDrawable(this, R.drawable.share, search);
             item.setIcon(unread);
             final View view = inflater.inflate(R.layout.search_engine, null);
+            final View panel = view.findViewById(R.id.search_engine_panel);
             final View release = view.findViewById(R.id.search_engine_new);
             View progress = view.findViewById(R.id.search_engine_progress);
 
@@ -1341,16 +1342,20 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
                 }
             });
 
+            panel.setVisibility(View.GONE);
             if (updateOne != null && updateOneIndex == i) {
                 progress.setVisibility(View.VISIBLE);
+                panel.setVisibility(View.VISIBLE);
             } else {
                 progress.setVisibility(View.INVISIBLE);
             }
 
-            if (engies.getUpdate(i))
+            if (engies.getUpdate(i)) {
                 release.setVisibility(View.VISIBLE);
-            else
+                panel.setVisibility(View.VISIBLE);
+            } else {
                 release.setVisibility(View.INVISIBLE);
+            }
 
             ImageView trash = (ImageView) view.findViewById(R.id.search_engine_trash);
             trash.setOnClickListener(new View.OnClickListener() {
