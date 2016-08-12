@@ -6,7 +6,6 @@ import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
-import android.graphics.Rect;
 import android.os.AsyncTask;
 import android.os.Handler;
 import android.os.Looper;
@@ -15,7 +14,6 @@ import android.support.v7.widget.AppCompatImageButton;
 import android.text.Html;
 import android.util.Base64;
 import android.util.Log;
-import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -26,7 +24,6 @@ import android.webkit.WebView;
 import android.widget.BaseAdapter;
 import android.widget.GridView;
 import android.widget.ImageView;
-import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
@@ -42,7 +39,6 @@ import com.github.axet.torrentclient.dialogs.BrowserDialogFragment;
 import com.github.axet.torrentclient.dialogs.LoginDialogFragment;
 import com.github.axet.torrentclient.widgets.UnreadCountDrawable;
 
-import org.apmem.tools.layouts.FlowLayout;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.parser.Parser;
@@ -125,7 +121,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
     ArrayList<String> nextLast = new ArrayList<>();
 
     HeaderGridView grid;
-    Rect gridRect;
+    View gridView;
 
     public static class SearchItem {
         public String title;
@@ -519,19 +515,21 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
     }
 
     void gridUpdate() {
-        if (this.gridRect != null) {
-            Search.this.grid.setNumColumns(GridView.AUTO_FIT);
-            Search.this.grid.setColumnWidth(Search.this.gridRect.width());
-            Search.this.grid.setStretchMode(GridView.STRETCH_SPACING);
+        if (gridView != null) {
+            grid.setNumColumns(GridView.AUTO_FIT);
+            grid.setColumnWidth(gridView.getLayoutParams().width);
+            grid.setStretchMode(GridView.STRETCH_SPACING);
+            grid.requestLayout();
         } else { // restore original xml
             gridRestore();
         }
     }
 
     void gridRestore() {
-        Search.this.grid.setNumColumns(1);
-        Search.this.grid.setColumnWidth(GridView.AUTO_FIT);
-        Search.this.grid.setStretchMode(GridView.STRETCH_COLUMN_WIDTH);
+        grid.setNumColumns(1);
+        grid.setColumnWidth(GridView.AUTO_FIT);
+        grid.setStretchMode(GridView.STRETCH_COLUMN_WIDTH);
+        grid.requestLayout();
     }
 
     public void remove(HeaderGridView list) {
@@ -801,21 +799,24 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
     public View getView(final int position, View convertView, final ViewGroup parent) {
         LayoutInflater inflater = LayoutInflater.from(getContext());
 
-        if (convertView == null) {
-            convertView = inflater.inflate(R.layout.search_item, parent, false);
+        if (convertView != null) {
+            if (gridView != null) {
+                if ((int) convertView.getTag() != R.layout.search_item_grid)
+                    convertView = null;
+            } else {
+                if ((int) convertView.getTag() != R.layout.search_item_list)
+                    convertView = null;
+            }
         }
 
-        View title = convertView.findViewById(R.id.search_item_title);
-        FlowLayout flow = (FlowLayout) convertView.findViewById(R.id.search_item_flow);
-
-        if (gridRect != null) {
-            convertView.setLayoutParams(new GridView.LayoutParams(gridRect.width(), gridRect.height()));
-            ((LinearLayout.LayoutParams) title.getLayoutParams()).gravity = Gravity.CENTER;
-            flow.setGravity(Gravity.CENTER);
-        } else {
-            convertView.setLayoutParams(new GridView.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
-            ((LinearLayout.LayoutParams) title.getLayoutParams()).gravity = Gravity.NO_GRAVITY;
-            flow.setGravity(Gravity.NO_GRAVITY);
+        if (convertView == null) {
+            if (gridView != null) {
+                convertView = inflater.inflate(R.layout.search_item_grid, parent, false);
+                convertView.setTag(R.layout.search_item_grid);
+            } else {
+                convertView = inflater.inflate(R.layout.search_item_list, parent, false);
+                convertView.setTag(R.layout.search_item_list);
+            }
         }
 
         final SearchItem item = getItem(position);
@@ -1124,23 +1125,6 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         String html = null;
         String json = null;
 
-        handler.post(new Runnable() {
-            @Override
-            public void run() {
-                String grid = s.get("grid");
-                if (grid != null) {
-                    String[] gg = grid.split(",");
-                    if (gg.length > 1) {
-                        Search.this.gridRect = new Rect(0, 0, ThemeUtils.dp2px(getContext(), Integer.parseInt(gg[0])),
-                                ThemeUtils.dp2px(getContext(), Integer.parseInt(gg[1])));
-                    }
-                } else {
-                    Search.this.gridRect = null;
-                }
-                gridUpdate();
-            }
-        });
-
         if (type.equals("post")) {
             String t = s.get("post_search");
             HashMap<String, String> map = new HashMap<>();
@@ -1290,9 +1274,24 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         });
     }
 
+    // UI thread
     void searchList(Map<String, String> s, String type, String url, String html) {
+        String select = null;
+        String l = s.get("list");
+        if (l != null) {
+            select = l;
+            gridView = null;
+        }
+        String g = s.get("grid");
+        if (g != null) {
+            select = g;
+            LayoutInflater inflater = LayoutInflater.from(getContext());
+            gridView = inflater.inflate(R.layout.search_item_grid, grid, false);
+        }
+        gridUpdate();
+
         Document doc = Jsoup.parse(html);
-        Elements list = doc.select(s.get("list"));
+        Elements list = doc.select(select);
         for (int i = 0; i < list.size(); i++) {
             SearchItem item = new SearchItem();
             item.html = list.get(i).outerHtml();
