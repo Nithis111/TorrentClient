@@ -903,6 +903,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
                                 @Override
                                 public void run() {
                                     main.addTorrentFromBytes(buf);
+                                    requestCancel();  // destory looper thread
                                 }
                             });
                         }
