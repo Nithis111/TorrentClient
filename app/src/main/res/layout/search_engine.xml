@@ -6,7 +6,9 @@
     android:padding="5dp">
 
     <FrameLayout
+        android:id="@+id/search_engine_panel"
         android:layout_width="wrap_content"
+        android:layout_gravity="center"
         android:layout_height="wrap_content">
 
         <ImageView
