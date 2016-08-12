@@ -683,7 +683,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         Search.this.list.clear();
         Search.this.next = null;
         Search.this.nextLast.clear();
-        footer_next.setVisibility(View.GONE);
+        footer.setVisibility(View.GONE);
         notifyDataSetChanged();
     }
 
