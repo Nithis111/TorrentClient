@@ -322,13 +322,17 @@ public class BrowserDialogFragment extends DialogFragment implements MainActivit
                 thread = new Thread(new Runnable() {
                     @Override
                     public void run() {
-                        final byte[] buf = http.getBytes(base, url);
-                        handler.post(new Runnable() {
-                            @Override
-                            public void run() {
-                                getMainActivity().addTorrentFromBytes(buf);
-                            }
-                        });
+                        try {
+                            final byte[] buf = http.getBytes(base, url);
+                            handler.post(new Runnable() {
+                                @Override
+                                public void run() {
+                                    getMainActivity().addTorrentFromBytes(buf);
+                                }
+                            });
+                        } catch (RuntimeException e) {
+                            web.load(WebViewCustom.ABOUT_ERROR, new HttpClient.HttpError(e));
+                        }
                     }
                 });
                 thread.start();

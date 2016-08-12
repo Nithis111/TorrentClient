@@ -894,7 +894,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
             torrent.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    thread = new Thread(new Runnable() {
+                    request(new Runnable() {
                         @Override
                         public void run() {
                             final byte[] buf = http.getBytes(item.search.get(item.base), item.torrent);
@@ -905,8 +905,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
                                 }
                             });
                         }
-                    });
-                    thread.start();
+                    }, null);
                 }
             });
             torrent.setColorFilter(ThemeUtils.getThemeColor(getContext(), R.attr.colorAccent));
@@ -1172,7 +1171,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
             String[][] data = new String[][]{};
             if (search != null)
                 data = new String[][]{{t, search}};
-            json = http.post(null, url, data);
+            json = http.post(null, url, data).trim();
         }
 
         if (html != null) {
