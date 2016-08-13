@@ -94,6 +94,12 @@
 }
 ```
 
+# JSON
+
+JSON javascript encoding / decoding can be found here:
+
+  * https://axet.github.io/android-torrent-client/escape.html
+
 # Selectors
 
 Supported CSS selectors you can find here:
