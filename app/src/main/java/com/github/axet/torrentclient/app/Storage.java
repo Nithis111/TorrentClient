@@ -397,8 +397,6 @@ public class Storage {
             }
         };
 
-        context.registerReceiver(wifiReciver, wifiFilter);
-
         downloaded.start(0);
         uploaded.start(0);
 
@@ -412,12 +410,14 @@ public class Storage {
             if (wifi) {
                 if (isConnectedWifi()) {
                     resume();
-                    return;
                 }
             } else {
                 resume();
             }
         }
+
+        // prevent java.util.ConcurrentModificationException on .torrents
+        context.registerReceiver(wifiReciver, wifiFilter);
     }
 
     void refresh() {
