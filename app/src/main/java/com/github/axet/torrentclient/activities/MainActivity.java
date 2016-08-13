@@ -640,7 +640,10 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
 
     public void post(final Throwable e) {
         Log.e(TAG, "Exception", e);
-        post(e.getMessage());
+        Throwable t = e;
+        while (t.getCause() != null)
+            t = t.getCause();
+        post(t.getMessage());
     }
 
     public void post(final String msg) {
@@ -654,7 +657,10 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
 
     public void Error(Throwable e) {
         Log.e(TAG, "Exception", e);
-        Error(e.getMessage());
+        Throwable t = e;
+        while (t.getCause() != null)
+            t = t.getCause();
+        Error(t.getMessage());
     }
 
     public void Error(String err) {
@@ -1500,10 +1506,10 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
                         handler.post(new Runnable() {
                             @Override
                             public void run() {
-                                String msg = e.getMessage();
-                                Throwable t = e.getCause();
-                                if (t != null)
-                                    msg += " " + t.getMessage();
+                                Throwable t = e;
+                                while (t.getCause() != null)
+                                    t = t.getCause();
+                                String msg = t.getMessage();
                                 Toast.makeText(MainActivity.this, msg, Toast.LENGTH_SHORT).show();
                             }
                         });

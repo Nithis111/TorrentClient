@@ -1424,7 +1424,10 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
                 if (main.active(Search.this)) {
                     main.post(e);
                 } else {
-                    message.add(e.getMessage());
+                    Throwable t = e;
+                    while (t.getCause() != null)
+                        t = t.getCause();
+                    message.add(t.getMessage());
                     main.updateUnread();
                 }
             }
