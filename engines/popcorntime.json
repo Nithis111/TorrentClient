@@ -1,5 +1,5 @@
 {
-  "version": 10,
+  "version": 11,
   "name": "popcorntime.sh",
   "home": {
     "get": "https://popcorntime.sh"
@@ -23,10 +23,10 @@
     "next": ".next:regex(.*href=\"([^\"]*)\".*)"
   },
   "tops": {
-    "Home": "http://api.apidomain.info/list?sort=seeds&quality=720p,1080p,3d&count=15&page=1"
+    "Home": "https://api.apidomain.info/list?sort=seeds&quality=720p,1080p,3d&count=15&page=1"
   },
   "search": {
-    "json_get": "http://api.apidomain.info/list?keywords=%s&sort=seeds&quality=720p,1080p,3d&count=15&page=1",
+    "json_get": "https://api.apidomain.info/list?keywords=%s&sort=seeds&quality=720p,1080p,3d&count=15&page=1",
     "js": "function fmt(s) {\n    if (s > 0.1 * 1024 * 1024 * 1024) {\n      var f = s / 1024 / 1024 / 1024;\n      return f.toFixed(1) + ' GB';\n    } else if (s > 0.1 * 1024 * 1024) {\n      var f = s / 1024 / 1024;\n      return f.toFixed(1) + 'MB';\n    } else {\n      var f = s / 1024;\n      return f.toFixed(1) + 'kb';\n    }\n};\nvar jj = JSON.parse(torrentclient.json());\nvar html = '';\nvar list = jj.MovieList;\nfor(var index in list) {\n  var item = list[index];\n  html += '<div class=\"movie\">\\n';\n  html += '  <h3 align=\"center\" class=\"title\">' + item.title + '</h3>\\n';\n  html += '  <div align=\"center\"><img class=\"poster\" src=\"' + item.poster_med + '\" /></div>\\n';\n  html += '  <div align=\"center\" class=\"genres\">';\n  var genres = item.genres;\n  for(var index in genres) {\n    var genre = genres[index].trim();\n    if (genre.length > 0) {\n      html += '<b>' + genre + ', </b>';\n    }\n  }\n  html += 'imdb: <a href=\"http://www.imdb.com/title/' + item.imdb + '\">' + item.rating + '/10</a> ';\n  html += '</div>';\n  html += '  <p align=\"justify\" class=\"description\">';\n  html += '<b>' + item.year + '</b> ';\n  html += item.description + '</p>\\n';\n  var items = item.items;\n  items.sort(function(a,b) {\n    return b.torrent_seeds-a.torrent_seeds;\n  });\n  for(var index in items) {\n    var source = items[index];\n    html += '  <p>\\n';\n    html += '    <b class=\"quality\">' + source.quality + '</b>\\n';\n    html += '    / <span class=\"size\">' + fmt(source.size_bytes) + '</span>\\n';\n    html += '    / seed:<span class=\"seed\">' + source.torrent_seeds + '</span>\\n';\n    html += '    / <a class=\"magnet\" href=\"' + encodeURI(source.torrent_magnet) + '\">magnet</a>\\n';\n    html += '    / <a class=\"torrent\" href=\"' + encodeURI(source.torrent_url) + '\">torrent</a>\\n';\n    html += '  </p>\\n';\n  };\n  html += '</div>\\n';\n};\nif(list.length > 0) {\n  page = (RegExp('page' + '=' + '(.+?)(&|$)').exec(location.href)||[,null])[1]\n  newpage = 'page=' + (parseInt(page,10)+1);\n  href = location.href.replace(/page=[^&]+/, newpage);\n  html += '<a class=\"next\" href=\"' + href + '\" /a>'\n}\ndocument.body.innerHTML=html;",
     "grid": "div.movie",
     "details_html": "regex((.*))",
