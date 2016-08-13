@@ -337,6 +337,26 @@ public class Storage {
             pause();
         }
 
+        downloaded.start(0);
+        uploaded.start(0);
+
+        load();
+
+        refresh();
+
+        if (active()) {
+            saveUpdate();
+
+            if (wifi) {
+                if (isConnectedWifi()) {
+                    resume();
+                }
+            } else {
+                resume();
+            }
+        }
+
+        // start at least. prevent java.util.ConcurrentModificationException on .torrents
         IntentFilter wifiFilter = new IntentFilter();
         wifiFilter.addAction(WifiManager.SUPPLICANT_STATE_CHANGED_ACTION);
         wifiFilter.addAction(WifiManager.NETWORK_STATE_CHANGED_ACTION);
@@ -396,27 +416,6 @@ public class Storage {
                 }
             }
         };
-
-        downloaded.start(0);
-        uploaded.start(0);
-
-        load();
-
-        refresh();
-
-        if (active()) {
-            saveUpdate();
-
-            if (wifi) {
-                if (isConnectedWifi()) {
-                    resume();
-                }
-            } else {
-                resume();
-            }
-        }
-
-        // prevent java.util.ConcurrentModificationException on .torrents
         context.registerReceiver(wifiReciver, wifiFilter);
     }
 
