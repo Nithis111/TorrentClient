@@ -88,8 +88,8 @@ public class EnginesManager {
                             public void run() {
                                 Search search = add(as, engine);
                                 save();
-                                main.updateManager();
-                                main.openDrawer(search);
+                                main.getDrawer().updateManager();
+                                main.getDrawer().openDrawer(search);
                             }
                         });
                     } catch (RuntimeException e) {

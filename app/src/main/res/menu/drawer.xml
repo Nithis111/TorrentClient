@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto">
+      xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <group
         android:id="@+id/group_torrents"
@@ -9,25 +9,26 @@
             android:id="@+id/nav_torrents"
             android:icon="@drawable/ic_storage_black_24dp"
             android:orderInCategory="1"
-            android:title="@string/torrents" />
+            android:title="@string/torrents"/>
         <item
             android:id="@+id/nav_search"
             android:icon="@drawable/share"
             android:orderInCategory="0"
             android:title="template"
-            android:visible="false" />
+            android:visible="false"/>
     </group>
 
     <item
         android:orderInCategory="2"
-        android:title="@string/web_proxy_s">
+        android:title="@string/web_proxy_s"
+        app:actionLayout="@layout/search_plus">
         <menu>
             <item
                 android:id="@+id/nav_google"
-                android:actionLayout="@layout/search_update"
                 android:icon="@drawable/ic_vpn_key_black_24dp"
                 android:title="Google Data Saver"
-                app:showAsAction="always" />
+                app:actionLayout="@layout/search_update"
+                app:showAsAction="always"/>
         </menu>
     </item>
 
@@ -40,7 +41,7 @@
                 android:actionLayout="@layout/search_update"
                 android:icon="@drawable/ic_add_black_24dp"
                 android:title="@string/add_search_engine"
-                app:showAsAction="always" />
+                app:showAsAction="always"/>
         </menu>
     </item>
 

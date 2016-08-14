@@ -1,7 +1,6 @@
 package com.github.axet.torrentclient.activities;
 
 import android.Manifest;
-import android.app.Activity;
 import android.app.KeyguardManager;
 import android.app.ProgressDialog;
 import android.content.BroadcastReceiver;
@@ -10,41 +9,29 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
-import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
-import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
-import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.preference.PreferenceManager;
-import android.support.design.widget.NavigationView;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
-import android.support.v4.view.GravityCompat;
-import android.support.v4.widget.DrawerLayout;
-import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.graphics.drawable.DrawerArrowDrawable;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
-import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.WindowManager;
-import android.view.inputmethod.InputMethodManager;
 import android.widget.AbsListView;
 import android.widget.Adapter;
 import android.widget.HeaderViewListAdapter;
-import android.widget.ImageView;
 import android.widget.ListAdapter;
 import android.widget.ProgressBar;
-import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -52,39 +39,28 @@ import com.getbase.floatingactionbutton.FloatingActionButton;
 import com.getbase.floatingactionbutton.FloatingActionsMenu;
 import com.github.axet.androidlibrary.widgets.HeaderGridView;
 import com.github.axet.androidlibrary.widgets.OpenFileDialog;
-import com.github.axet.androidlibrary.widgets.ThemeUtils;
 import com.github.axet.torrentclient.R;
+import com.github.axet.torrentclient.app.Drawer;
 import com.github.axet.torrentclient.app.EnginesManager;
-import com.github.axet.torrentclient.app.GoogleProxy;
 import com.github.axet.torrentclient.app.MainApplication;
-import com.github.axet.torrentclient.app.SearchEngine;
 import com.github.axet.torrentclient.app.Storage;
 import com.github.axet.torrentclient.dialogs.AddDialogFragment;
 import com.github.axet.torrentclient.dialogs.CreateDialogFragment;
 import com.github.axet.torrentclient.dialogs.OpenIntentDialogFragment;
-import com.github.axet.torrentclient.navigators.Search;
 import com.github.axet.torrentclient.navigators.Torrents;
-import com.github.axet.torrentclient.widgets.UnreadCountDrawable;
 import com.google.android.gms.appindexing.Action;
 import com.google.android.gms.appindexing.AppIndex;
 import com.google.android.gms.common.api.GoogleApiClient;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
 import go.libtorrent.Libtorrent;
 
 public class MainActivity extends AppCompatActivity implements AbsListView.OnScrollListener,
-        DialogInterface.OnDismissListener, SharedPreferences.OnSharedPreferenceChangeListener,
-        NavigationView.OnNavigationItemSelectedListener, UnreadCountDrawable.UnreadCount {
+        DialogInterface.OnDismissListener, SharedPreferences.OnSharedPreferenceChangeListener {
     public final static String TAG = MainActivity.class.getSimpleName();
-
-    static final long INFO_MANUAL_REFRESH = 5 * 1000;
-    static final long INFO_AUTO_REFRESH = 5 * 60 * 1000;
-    static final long ENGINES_AUTO_REFRESH = 24 * 60 * 60 * 1000;
 
     /**
      * ATTENTION: This was auto-generated to implement the App Indexing API.
@@ -104,16 +80,7 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
     View empty;
     Handler handler;
 
-    NavigationView navigationView;
-    DrawerLayout drawerLayout;
-    View navigationHeader;
-    DrawerLayout drawer;
-    UnreadCountDrawable unread;
-
-    Thread infoThread;
-    List<String> infoOld;
-    boolean infoPort;
-    long infoTime; // last time checked
+    Drawer drawer;
 
     int themeId;
 
@@ -130,9 +97,6 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
     BroadcastReceiver screenreceiver;
 
     EnginesManager engies;
-    Thread update;
-    Thread updateOne;
-    int updateOneIndex;
 
     public static void startActivity(Context context) {
         Intent i = new Intent(context, MainActivity.class);
@@ -150,36 +114,6 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
 
         void remove(HeaderGridView list);
     }
-
-    static interface DrawerToggle {
-
-        public void setPosition(float position);
-
-        public float getPosition();
-    }
-
-    static class DrawerArrowDrawableToggle extends DrawerArrowDrawable implements DrawerToggle {
-        private final Activity mActivity;
-
-        public DrawerArrowDrawableToggle(Activity activity, Context themedContext) {
-            super(themedContext);
-            mActivity = activity;
-        }
-
-        public void setPosition(float position) {
-            if (position == 1f) {
-                setVerticalMirror(true);
-            } else if (position == 0f) {
-                setVerticalMirror(false);
-            }
-            setProgress(position);
-        }
-
-        public float getPosition() {
-            return getProgress();
-        }
-    }
-
 
     public void checkTorrent(long t) {
         if (Libtorrent.TorrentStatus(t) == Libtorrent.StatusChecking) {
@@ -241,66 +175,9 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
         toolbar.setBackground(new ColorDrawable(MainApplication.getActionbarColor(this)));
         setSupportActionBar(toolbar);
 
-        drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
-        ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
-                this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close) {
-            @Override
-            public void syncState() {
-                super.syncState();
-                Drawable navigationIcon = toolbar.getNavigationIcon();
-                unread = new UnreadCountDrawable(MainActivity.this, navigationIcon, MainActivity.this);
-                unread.setPadding(ThemeUtils.dp2px(MainActivity.this, 15));
-                toolbar.setNavigationIcon(unread);
-            }
-        };
-        drawer.setDrawerListener(toggle);
-        toggle.syncState();
-
-        navigationView = (NavigationView) findViewById(R.id.nav_view);
-        navigationView.setNavigationItemSelectedListener(this);
+        drawer = new Drawer(this, toolbar);
 
         engies = new EnginesManager(this);
-
-        drawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
-        drawerLayout.addDrawerListener(new DrawerLayout.DrawerListener() {
-            @Override
-            public void onDrawerSlide(View drawerView, float slideOffset) {
-                View view = MainActivity.this.getCurrentFocus();
-                if (view != null) {
-                    InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
-                    imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
-                }
-            }
-
-            @Override
-            public void onDrawerOpened(View drawerView) {
-                long time = System.currentTimeMillis();
-                long t = engies.getTime();
-                if (t + ENGINES_AUTO_REFRESH < time) {
-                    if (update == null)
-                        refreshEngines(true);
-                }
-            }
-
-            @Override
-            public void onDrawerClosed(View drawerView) {
-            }
-
-            @Override
-            public void onDrawerStateChanged(int newState) {
-            }
-        });
-
-        navigationHeader = navigationView.getHeaderView(0);
-
-        TextView ver = (TextView) navigationHeader.findViewById(R.id.nav_version);
-        try {
-            PackageInfo pInfo = getPackageManager().getPackageInfo(getPackageName(), 0);
-            String version = "v" + pInfo.versionName;
-            ver.setText(version);
-        } catch (PackageManager.NameNotFoundException e) {
-            ver.setVisibility(View.GONE);
-        }
 
         handler = new Handler();
 
@@ -473,8 +350,8 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
             public void onReceive(Context context, Intent intent) {
                 if (intent.getAction().equals(Intent.ACTION_SCREEN_OFF)) {
                     Log.d(TAG, "Screen OFF");
-                    if (drawer.isDrawerOpen(GravityCompat.START)) {
-                        drawer.closeDrawer(GravityCompat.START);
+                    if (drawer.isDrawerOpen()) {
+                        drawer.closeDrawer();
                     }
                     moveTaskToBack(true);
                 }
@@ -506,7 +383,7 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
                 torrents = new Torrents(MainActivity.this, list);
                 torrents.install(list);
 
-                navigationView.setCheckedItem(R.id.nav_torrents);
+                drawer.setCheckedItem(R.id.nav_torrents);
 
                 if (permitted()) {
                     try {
@@ -522,9 +399,9 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
                 }
 
                 // update unread icon after torrents created
-                unread.update();
+                drawer.updateUnread();
 
-                updateManager();
+                drawer.updateManager();
 
                 if (delayedIntent != null) {
                     openIntent(delayedIntent);
@@ -539,7 +416,6 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
             @Override
             public void run() {
                 getApp().create();
-
                 handler.post(new Runnable() {
                     @Override
                     public void run() {
@@ -677,27 +553,6 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
                 .show();
     }
 
-    public void Fatal(String err) {
-        Log.e(TAG, Libtorrent.Error());
-
-        new AlertDialog.Builder(this)
-                .setTitle(R.string.fatal)
-                .setMessage(err)
-                .setNeutralButton(android.R.string.ok, new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog, int which) {
-                        shutdown();
-                    }
-                })
-                .setOnCancelListener(new DialogInterface.OnCancelListener() {
-                    @Override
-                    public void onCancel(DialogInterface dialogInterface) {
-                        shutdown();
-                    }
-                })
-                .setIcon(android.R.drawable.ic_dialog_alert)
-                .show();
-    }
-
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         // Handle action bar base clicks here. The action bar will
@@ -742,7 +597,7 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
         invalidateOptionsMenu();
 
         // update if keyguard enabled or not
-        updateManager();
+        drawer.updateManager();
 
         KeyguardManager myKM = (KeyguardManager) getSystemService(Context.KEYGUARD_SERVICE);
         if (myKM.inKeyguardRestrictedInputMode()) {
@@ -865,8 +720,8 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
 
     @Override
     public void onBackPressed() {
-        if (drawer.isDrawerOpen(GravityCompat.START)) {
-            drawer.closeDrawer(GravityCompat.START);
+        if (drawer.isDrawerOpen()) {
+            drawer.closeDrawer();
         } else {
             moveTaskToBack(true);
         }
@@ -884,12 +739,10 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
         });
     }
 
-
     @Override
     protected void onDestroy() {
         super.onDestroy();
         Log.d(TAG, "onDestory");
-
         close();
     }
 
@@ -958,78 +811,7 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
     void updateHeader(Storage s) {
         TextView text = (TextView) findViewById(R.id.space_left);
         text.setText(s.formatHeader());
-
-        ArrayList<String> info = new ArrayList<>();
-        long c = Libtorrent.PortCount();
-        for (long i = 0; i < c; i++) {
-            info.add(Libtorrent.Port(i));
-        }
-
-        String str = "";
-        for (String ip : info) {
-            str += ip + "\n";
-        }
-        str = str.trim();
-        TextView textView = (TextView) navigationHeader.findViewById(R.id.torrent_ip);
-        textView.setText(str);
-
-        View portButton = navigationHeader.findViewById(R.id.torrent_port_button);
-        ImageView portIcon = (ImageView) navigationHeader.findViewById(R.id.torrent_port_icon);
-        TextView port = (TextView) navigationHeader.findViewById(R.id.torrent_port_text);
-
-        portButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                long time = System.currentTimeMillis();
-                if (infoTime + INFO_MANUAL_REFRESH < time) {
-                    infoTime = time;
-                    infoOld = null;
-                }
-            }
-        });
-
-        long time = System.currentTimeMillis();
-        if (infoTime + INFO_AUTO_REFRESH < time) {
-            infoTime = time;
-            infoOld = null;
-        }
-
-        if (infoOld == null || !Arrays.equals(info.toArray(), infoOld.toArray())) {
-            if (drawer.isDrawerOpen(GravityCompat.START)) { // only probe port when drawer is open
-                if (infoThread != null) {
-                    return;
-                }
-                infoOld = info;
-                infoThread = new Thread(new Runnable() {
-                    @Override
-                    public void run() {
-                        final boolean b = Libtorrent.PortCheck();
-                        handler.post(new Runnable() {
-                            @Override
-                            public void run() {
-                                infoPort = b;
-                                infoThread = null;
-                            }
-                        });
-                    }
-                });
-                infoThread.start();
-                infoPort = false;
-                portIcon.setImageResource(R.drawable.port_no);
-                port.setText(R.string.port_checking);
-            } else {
-                portIcon.setImageResource(R.drawable.port_no);
-                port.setText(R.string.port_closed);
-            }
-        } else {
-            if (infoPort) {
-                portIcon.setImageResource(R.drawable.port_ok);
-                port.setText(R.string.port_open);
-            } else {
-                portIcon.setImageResource(R.drawable.port_no);
-                port.setText(R.string.port_closed);
-            }
-        }
+        drawer.updateHeader();
     }
 
     public Storage getStorage() {
@@ -1174,364 +956,6 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
         }
     }
 
-    @SuppressWarnings("StatementWithEmptyBody")
-    @Override
-    public boolean onNavigationItemSelected(MenuItem item) {
-        int id = item.getItemId();
-
-        // here only two types of adapters, so setup empty view manually here.
-
-        Adapter a = list.getAdapter();
-        if (a != null && a instanceof HeaderGridView.HeaderViewGridAdapter) {
-            a = ((HeaderGridView.HeaderViewGridAdapter) a).getWrappedAdapter();
-        }
-
-        if (id == R.id.nav_torrents) {
-            if (a != null && a instanceof NavigatorInterface) {
-                ((NavigatorInterface) a).remove(list);
-            }
-
-            empty.setVisibility(View.GONE);
-            list.setEmptyView(empty);
-
-            torrents.install(list);
-            drawer.closeDrawer(GravityCompat.START);
-            return true;
-        }
-
-        if (id > 0 && id < 0x00ffffff) {
-            if (a != null && a instanceof NavigatorInterface) {
-                ((NavigatorInterface) a).remove(list);
-            }
-
-            empty.setVisibility(View.GONE);
-            list.setEmptyView(null);
-
-            int pos = id - 1;
-
-            Search search = engies.get(pos);
-            search.install(list);
-            drawer.closeDrawer(GravityCompat.START);
-            return true;
-        }
-
-        if (id == R.id.nav_add) {
-            if (a != null && a instanceof NavigatorInterface) {
-                ((NavigatorInterface) a).remove(list);
-            }
-
-            final OpenFileDialog f = new OpenFileDialog(MainActivity.this);
-
-            String path = "";
-
-            final SharedPreferences shared = PreferenceManager.getDefaultSharedPreferences(MainActivity.this);
-
-            if (path == null || path.isEmpty()) {
-                path = shared.getString(MainApplication.PREFERENCE_LAST_PATH, Environment.getExternalStorageDirectory().getPath());
-            }
-
-            f.setCurrentPath(new File(path));
-            f.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
-                @Override
-                public void onClick(DialogInterface dialog, int which) {
-                    File p = f.getCurrentPath();
-                    shared.edit().putString(MainApplication.PREFERENCE_LAST_PATH, p.getParent()).commit();
-                    Search search = null;
-                    try {
-                        search = engies.add(p);
-                    } catch (RuntimeException e) {
-                        Error(e);
-                        return;
-                    }
-                    engies.save();
-                    updateManager();
-                    openDrawer(search);
-                }
-            });
-            f.show();
-            // prevent close drawer
-            return true;
-        }
-        return true;
-    }
-
-    public void openDrawer(Search search) {
-        drawer.openDrawer(GravityCompat.START);
-        for (int i = 0; i < engies.getCount(); i++) {
-            if (engies.get(i) == search) {
-                int id = i + 1;
-                navigationView.setCheckedItem(id);
-
-                Adapter a = list.getAdapter();
-                if (a != null && a instanceof HeaderGridView.HeaderViewGridAdapter) {
-                    a = ((HeaderGridView.HeaderViewGridAdapter) a).getWrappedAdapter();
-                }
-                if (a != null && a instanceof Search) {
-                    ((Search) a).remove(list);
-                }
-                empty.setVisibility(View.GONE);
-                list.setEmptyView(null);
-                search.install(list);
-                return;
-            }
-        }
-    }
-
-    public void updateManager() {
-        KeyguardManager myKM = (KeyguardManager) getSystemService(Context.KEYGUARD_SERVICE);
-        boolean locked = myKM.inKeyguardRestrictedInputMode();
-
-        Menu menu = navigationView.getMenu();
-
-        for (int i = menu.size() - 1; i >= 0; i--) {
-            MenuItem m = menu.getItem(i);
-            int id = m.getItemId();
-            if (id > 0 && id < 0x00ffffff) {
-                menu.removeItem(id);
-            }
-        }
-
-        if (torrents != null) {
-            MenuItem torrents = menu.findItem(R.id.nav_torrents);
-            UnreadCountDrawable unread = new UnreadCountDrawable(this, R.drawable.ic_storage_black_24dp, this.torrents);
-            torrents.setIcon(unread);
-        }
-
-        LayoutInflater inflater = LayoutInflater.from(this);
-
-        int selectedId = -1;
-
-        for (int i = 0; i < engies.getCount(); i++) {
-            final Search search = engies.get(i);
-            final SearchEngine engine = search.getEngine();
-            // save to set < 0x00ffffff. check View.generateViewId()
-            int id = i + 1;
-            int order = 1;
-            MenuItem item = menu.add(R.id.group_torrents, id, order, engine.getName());
-            UnreadCountDrawable unread = new UnreadCountDrawable(this, R.drawable.share, search);
-            item.setIcon(unread);
-            final View view = inflater.inflate(R.layout.search_engine, null);
-            final View panel = view.findViewById(R.id.search_engine_panel);
-            final View release = view.findViewById(R.id.search_engine_new);
-            View progress = view.findViewById(R.id.search_engine_progress);
-
-            if (active(search)) {
-                selectedId = id;
-            }
-
-            final int fi = i;
-            release.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    if (updateOne != null) {
-                        updateOne.interrupt();
-                    }
-                    updateOneIndex = fi;
-                    updateOne = new Thread(new Runnable() {
-                        @Override
-                        public void run() {
-                            engies.update(fi);
-                            handler.post(new Runnable() {
-                                @Override
-                                public void run() {
-                                    updateOne = null;
-                                    updateManager();
-                                    Search search = engies.get(fi);
-                                    SearchEngine engine = search.getEngine();
-                                    Toast.makeText(MainActivity.this, engine.getName() + getString(R.string.engine_updated) + engine.getVersion(), Toast.LENGTH_SHORT).show();
-                                }
-                            });
-                        }
-                    }, "Update One");
-                    updateOne.start();
-                }
-            });
-
-            panel.setVisibility(View.GONE);
-            if (updateOne != null && updateOneIndex == i) {
-                progress.setVisibility(View.VISIBLE);
-                panel.setVisibility(View.VISIBLE);
-            } else {
-                progress.setVisibility(View.INVISIBLE);
-            }
-
-            if (engies.getUpdate(i)) {
-                release.setVisibility(View.VISIBLE);
-                panel.setVisibility(View.VISIBLE);
-            } else {
-                release.setVisibility(View.INVISIBLE);
-            }
-
-            ImageView trash = (ImageView) view.findViewById(R.id.search_engine_trash);
-            trash.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    Context context = MainActivity.this;
-                    AlertDialog.Builder builder = new AlertDialog.Builder(context);
-                    builder.setTitle(getString(R.string.delete_search));
-
-                    String name = engine.getName();
-
-                    builder.setMessage(name + "\n\n" + context.getString(R.string.are_you_sure));
-                    builder.setPositiveButton(R.string.yes, new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialog, int which) {
-                            dialog.cancel();
-
-                            engies.remove(search);
-                            search.close();
-
-                            engies.save();
-                            updateManager();
-                        }
-                    });
-                    builder.setNegativeButton(R.string.no, new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialog, int which) {
-                            dialog.cancel();
-                        }
-                    });
-                    builder.show();
-                }
-            });
-            if (locked) {
-                trash.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-                    }
-                });
-                trash.setColorFilter(Color.GRAY);
-            } else {
-                trash.setColorFilter(ThemeUtils.getThemeColor(this, R.attr.colorAccent));
-            }
-            item.setActionView(view);
-        }
-        // reset group. add recent items to toggle group
-        menu.setGroupCheckable(R.id.group_torrents, true, true);
-
-        if (selectedId != -1)
-            navigationView.setCheckedItem(selectedId);
-
-        View update = inflater.inflate(R.layout.search_update, null);
-        final ProgressBar progress = (ProgressBar) update.findViewById(R.id.search_update_progress);
-        ImageView refresh = (ImageView) update.findViewById(R.id.search_update_refresh);
-        update.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (MainActivity.this.update != null) {
-                    MainActivity.this.update.interrupt();
-                    MainActivity.this.update = null;
-                    updateManager();
-                } else {
-                    refreshEngines(false);
-                }
-            }
-        });
-
-        if (MainActivity.this.update != null) {
-            progress.setVisibility(View.VISIBLE);
-            refresh.setVisibility(View.INVISIBLE);
-        } else {
-            progress.setVisibility(View.INVISIBLE);
-            refresh.setVisibility(View.VISIBLE);
-        }
-
-        MenuItem add = menu.findItem(R.id.nav_add);
-        if (locked) {
-            update.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                }
-            });
-            refresh.setColorFilter(Color.GRAY);
-            add.setEnabled(false);
-        } else {
-            refresh.setColorFilter(ThemeUtils.getThemeColor(this, R.attr.colorAccent));
-            add.setEnabled(true);
-        }
-        add.setActionView(update);
-
-        updateProxies();
-    }
-
-    void updateProxies() {
-        Menu menu = navigationView.getMenu();
-        LayoutInflater inflater = LayoutInflater.from(this);
-
-        final SharedPreferences shared = PreferenceManager.getDefaultSharedPreferences(this);
-        String proxy = shared.getString(MainApplication.PREFERENCE_PROXY, "");
-
-        MenuItem google = menu.findItem(R.id.nav_google);
-        View sw = inflater.inflate(R.layout.proxy_switch, null);
-        final Switch w = (Switch) sw.findViewById(R.id.proxy_switch);
-        w.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                SharedPreferences.Editor edit = shared.edit();
-                if (w.isChecked()) {
-                    edit.putString(MainApplication.PREFERENCE_PROXY, GoogleProxy.NAME);
-                } else {
-                    edit.putString(MainApplication.PREFERENCE_PROXY, "");
-                }
-                edit.commit();
-            }
-        });
-        w.setChecked(proxy.equals(GoogleProxy.NAME));
-        google.setEnabled(true);
-        google.setActionView(sw);
-    }
-
-    void refreshEngines(final boolean auto) {
-        if (update != null) {
-            update.interrupt();
-        }
-        update = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                boolean a = auto;
-
-                handler.post(new Runnable() {
-                    @Override
-                    public void run() {
-                        updateManager();
-                    }
-                });
-                try {
-                    engies.refresh();
-                } catch (final RuntimeException e) {
-                    Log.e(TAG, "Update Engine", e);
-                    // only report errors for current active update thread
-                    if (update == Thread.currentThread()) {
-                        handler.post(new Runnable() {
-                            @Override
-                            public void run() {
-                                Throwable t = e;
-                                while (t.getCause() != null)
-                                    t = t.getCause();
-                                String msg = t.getMessage();
-                                Toast.makeText(MainActivity.this, msg, Toast.LENGTH_SHORT).show();
-                            }
-                        });
-                    }
-                    a = true; // hide update toast on error
-                }
-                final boolean b = a;
-                handler.post(new Runnable() {
-                    @Override
-                    public void run() {
-                        update = null;
-                        if (!b) {
-                            if (!engies.updates())
-                                Toast.makeText(MainActivity.this, R.string.no_updates, Toast.LENGTH_SHORT).show();
-                        }
-                        updateManager();
-                    }
-                });
-            }
-        }, "Engines Update");
-        update.start();
-    }
-
     public boolean active(ListAdapter s) {
         Adapter a = list.getAdapter();
         if (a != null && a instanceof HeaderGridView.HeaderViewGridAdapter) {
@@ -1540,27 +964,47 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
         return s == a;
     }
 
-    @Override
-    public int getUnreadCount() {
-        int count = 0;
-        if (torrents != null)
-            count += torrents.getUnreadCount();
-        if (engies != null) {
-            for (int i = 0; i < engies.getCount(); i++) {
-                count += engies.get(i).getUnreadCount();
-            }
-        }
-        return count;
-    }
-
     public void updateUnread() {
-        unread.update();
-        updateManager();
+        drawer.updateUnread();
+        drawer.updateManager();
     }
 
     void torrentUnread(Storage.Torrent tt) {
         if (active(torrents)) {
             tt.message = false;
         }
+    }
+
+    public Torrents getTorrents() {
+        return torrents;
+    }
+
+    public EnginesManager getEngines() {
+        return engies;
+    }
+
+    public void show(NavigatorInterface set) {
+        Adapter a = list.getAdapter();
+        if (a != null && a instanceof HeaderGridView.HeaderViewGridAdapter) {
+            a = ((HeaderGridView.HeaderViewGridAdapter) a).getWrappedAdapter();
+        }
+
+        if (a != null && a instanceof MainActivity.NavigatorInterface) {
+            ((MainActivity.NavigatorInterface) a).remove(list);
+        }
+
+        empty.setVisibility(View.GONE);
+
+        if (set instanceof Torrents) {
+            list.setEmptyView(empty);
+        } else {
+            list.setEmptyView(null);
+        }
+
+        set.install(list);
+    }
+
+    public Drawer getDrawer() {
+        return drawer;
     }
 }
