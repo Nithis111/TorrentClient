@@ -498,6 +498,6 @@ public class Torrents extends BaseAdapter implements DialogInterface.OnDismissLi
 
     @Override
     public int getUnreadCount() {
-        return getStorage().getUnreadCount();
+        return getStorage().getUnreadCount()+1;
     }
 }

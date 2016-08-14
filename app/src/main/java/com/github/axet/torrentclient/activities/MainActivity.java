@@ -165,7 +165,7 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
 
         setAppTheme(getAppTheme());
 
-        setContentView(R.layout.activity_main);
+        setContentView(R.layout.app_bar_main);
 
         // ATTENTION: This was auto-generated to implement the App Indexing API.
         // See https://g.co/AppIndexing/AndroidStudio for more information.

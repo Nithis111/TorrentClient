@@ -12,17 +12,11 @@ import android.graphics.drawable.Drawable;
 import android.os.Environment;
 import android.os.Handler;
 import android.preference.PreferenceManager;
-import android.support.design.widget.NavigationView;
-import android.support.v4.view.GravityCompat;
-import android.support.v4.widget.DrawerLayout;
-import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.graphics.drawable.DrawerArrowDrawable;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.LayoutInflater;
-import android.view.Menu;
-import android.view.MenuItem;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.ImageView;
@@ -38,6 +32,11 @@ import com.github.axet.torrentclient.R;
 import com.github.axet.torrentclient.activities.MainActivity;
 import com.github.axet.torrentclient.navigators.Search;
 import com.github.axet.torrentclient.navigators.Torrents;
+import com.github.axet.torrentclient.widgets.PrimaryDrawerItem;
+import com.github.axet.torrentclient.widgets.SectionPlusDrawerItem;
+import com.mikepenz.materialdrawer.DrawerBuilder;
+import com.mikepenz.materialdrawer.model.SectionDrawerItem;
+import com.mikepenz.materialdrawer.model.interfaces.IDrawerItem;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -47,7 +46,7 @@ import java.util.List;
 import go.libtorrent.Libtorrent;
 
 // Reduce MainActivity size, move code related to Drawer here
-public class Drawer implements NavigationView.OnNavigationItemSelectedListener, UnreadCountDrawable.UnreadCount {
+public class Drawer implements com.mikepenz.materialdrawer.Drawer.OnDrawerItemClickListener, UnreadCountDrawable.UnreadCount {
     public static final String TAG = Drawer.class.getSimpleName();
 
     static final long INFO_MANUAL_REFRESH = 5 * 1000;
@@ -58,10 +57,8 @@ public class Drawer implements NavigationView.OnNavigationItemSelectedListener, 
     MainActivity main;
     Handler handler = new Handler();
 
-    NavigationView navigationView;
-    DrawerLayout drawerLayout;
     View navigationHeader;
-    DrawerLayout drawer;
+    com.mikepenz.materialdrawer.Drawer drawer;
     UnreadCountDrawable unread;
 
     Thread update;
@@ -104,57 +101,48 @@ public class Drawer implements NavigationView.OnNavigationItemSelectedListener, 
     public Drawer(final MainActivity main, final Toolbar toolbar) {
         this.context = main;
         this.main = main;
-        this.drawer = (DrawerLayout) main.findViewById(R.id.drawer_layout);
 
-        ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
-                main, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close) {
-            @Override
-            public void syncState() {
-                super.syncState();
-                Drawable navigationIcon = toolbar.getNavigationIcon();
-                unread = new UnreadCountDrawable(context, navigationIcon, Drawer.this);
-                unread.setPadding(ThemeUtils.dp2px(main, 15));
-                toolbar.setNavigationIcon(unread);
-            }
-        };
-        drawer.setDrawerListener(toggle);
-        toggle.syncState();
+        LayoutInflater inflater = LayoutInflater.from(context);
 
-        navigationView = (NavigationView) main.findViewById(R.id.nav_view);
-        navigationView.setNavigationItemSelectedListener(this);
+        navigationHeader = inflater.inflate(R.layout.nav_header_main, null, false);
 
-        drawerLayout = (DrawerLayout) main.findViewById(R.id.drawer_layout);
-        drawerLayout.addDrawerListener(new DrawerLayout.DrawerListener() {
-            @Override
-            public void onDrawerSlide(View drawerView, float slideOffset) {
-                View view = main.getCurrentFocus();
-                if (view != null) {
-                    InputMethodManager imm = (InputMethodManager) context.getSystemService(Context.INPUT_METHOD_SERVICE);
-                    imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
-                }
-            }
+        drawer = new DrawerBuilder()
+                .withActivity(main)
+                .withToolbar(toolbar)
+                .withHeader(navigationHeader)
+                .withActionBarDrawerToggle(true)
+                .withActionBarDrawerToggleAnimated(true)
+                .withOnDrawerListener(new com.mikepenz.materialdrawer.Drawer.OnDrawerListener() {
+                    @Override
+                    public void onDrawerSlide(View drawerView, float slideOffset) {
+                        View view = main.getCurrentFocus();
+                        if (view != null) {
+                            InputMethodManager imm = (InputMethodManager) context.getSystemService(Context.INPUT_METHOD_SERVICE);
+                            imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
+                        }
+                    }
 
-            @Override
-            public void onDrawerOpened(View drawerView) {
-                long time = System.currentTimeMillis();
-                EnginesManager engies = main.getEngines();
-                long t = engies.getTime();
-                if (t + ENGINES_AUTO_REFRESH < time) {
-                    if (update == null)
-                        refreshEngines(navigationView.getMenu(), true);
-                }
-            }
+                    @Override
+                    public void onDrawerOpened(View drawerView) {
+                        long time = System.currentTimeMillis();
+                        EnginesManager engies = main.getEngines();
+                        long t = engies.getTime();
+                        if (t + ENGINES_AUTO_REFRESH < time) {
+                            refreshEngines(true);
+                        }
+                    }
 
-            @Override
-            public void onDrawerClosed(View drawerView) {
-            }
+                    @Override
+                    public void onDrawerClosed(View drawerView) {
+                    }
+                })
+                .withOnDrawerItemClickListener(this)
+                .build();
 
-            @Override
-            public void onDrawerStateChanged(int newState) {
-            }
-        });
-
-        navigationHeader = navigationView.getHeaderView(0);
+        Drawable navigationIcon = toolbar.getNavigationIcon();
+        unread = new UnreadCountDrawable(context, navigationIcon, Drawer.this);
+        unread.setPadding(ThemeUtils.dp2px(main, 15));
+        toolbar.setNavigationIcon(unread);
 
         TextView ver = (TextView) navigationHeader.findViewById(R.id.nav_version);
         try {
@@ -167,19 +155,19 @@ public class Drawer implements NavigationView.OnNavigationItemSelectedListener, 
     }
 
     public void setCheckedItem(int id) {
-        navigationView.setCheckedItem(id);
+        drawer.setSelection(id, false);
     }
 
     public boolean isDrawerOpen() {
-        return drawer.isDrawerOpen(GravityCompat.START);
+        return drawer.isDrawerOpen();
     }
 
     public void openDrawer() {
-        drawer.openDrawer(GravityCompat.START);
+        drawer.openDrawer();
     }
 
     public void closeDrawer() {
-        drawer.closeDrawer(GravityCompat.START);
+        drawer.closeDrawer();
     }
 
     public void updateUnread() {
@@ -187,30 +175,24 @@ public class Drawer implements NavigationView.OnNavigationItemSelectedListener, 
     }
 
     public void updateManager() {
-        Menu menu = navigationView.getMenu();
+        drawer.removeAllItems();
+
+        LayoutInflater inflater = LayoutInflater.from(context);
+
         final Torrents torrents = main.getTorrents();
         if (torrents != null) {
-            MenuItem tt = menu.findItem(R.id.nav_torrents);
-            UnreadCountDrawable unread = new UnreadCountDrawable(context, R.drawable.ic_storage_black_24dp, torrents);
-            tt.setIcon(unread);
+            PrimaryDrawerItem item = new PrimaryDrawerItem();
+            item.withName(R.string.torrents);
+            item.withIdentifier(R.id.nav_torrents);
+            item.withIcon(new UnreadCountDrawable(context, R.drawable.ic_storage_black_24dp, torrents));
+            item.withIconTintingEnabled(true);
+            item.withSetSelected(main.active(torrents));
+            drawer.addItem(item);
         }
-        updateManager(menu);
-        updateProxies();
-    }
 
-    public void updateManager(final Menu menu) {
         KeyguardManager myKM = (KeyguardManager) context.getSystemService(Context.KEYGUARD_SERVICE);
         boolean locked = myKM.inKeyguardRestrictedInputMode();
 
-        for (int i = menu.size() - 1; i >= 0; i--) {
-            MenuItem m = menu.getItem(i);
-            int id = m.getItemId();
-            if (id > 0 && id < 0x00ffffff) {
-                menu.removeItem(id);
-            }
-        }
-
-        LayoutInflater inflater = LayoutInflater.from(context);
         final EnginesManager engines = main.getEngines();
 
         for (int i = 0; i < engines.getCount(); i++) {
@@ -218,20 +200,16 @@ public class Drawer implements NavigationView.OnNavigationItemSelectedListener, 
             final SearchEngine engine = search.getEngine();
             // save to set < 0x00ffffff. check View.generateViewId()
             int id = i + 1;
-            int order = 1;
-            MenuItem item = menu.add(R.id.group_torrents, id, order, engine.getName());
-            UnreadCountDrawable unread = new UnreadCountDrawable(context, R.drawable.share, search);
-            item.setIcon(unread);
-            final View view = inflater.inflate(R.layout.search_engine, null);
+            PrimaryDrawerItem item = new PrimaryDrawerItem(inflater.inflate(R.layout.search_engine, null, false));
+            item.withName(engine.getName());
+            item.withIdentifier(id);
+            item.withIconTintingEnabled(true);
+            item.withIcon(new UnreadCountDrawable(context, R.drawable.share, search));
+            item.withSetSelected(main.active(search));
+            final View view = item.v;
             final View panel = view.findViewById(R.id.search_engine_panel);
             final View release = view.findViewById(R.id.search_engine_new);
             View progress = view.findViewById(R.id.search_engine_progress);
-
-            if (main.active(search)) {
-                item.setChecked(true);
-            } else {
-                item.setChecked(false);
-            }
 
             final int fi = i;
             release.setOnClickListener(new View.OnClickListener() {
@@ -249,7 +227,7 @@ public class Drawer implements NavigationView.OnNavigationItemSelectedListener, 
                                 @Override
                                 public void run() {
                                     updateOne = null;
-                                    updateManager(menu);
+                                    updateManager();
                                     Search search = engines.get(fi);
                                     SearchEngine engine = search.getEngine();
                                     Toast.makeText(context, engine.getName() + context.getString(R.string.engine_updated) + engine.getVersion(), Toast.LENGTH_SHORT).show();
@@ -295,7 +273,7 @@ public class Drawer implements NavigationView.OnNavigationItemSelectedListener, 
                             search.close();
 
                             engines.save();
-                            updateManager(menu);
+                            updateManager();
                         }
                     });
                     builder.setNegativeButton(R.string.no, new DialogInterface.OnClickListener() {
@@ -317,12 +295,14 @@ public class Drawer implements NavigationView.OnNavigationItemSelectedListener, 
             } else {
                 trash.setColorFilter(ThemeUtils.getThemeColor(context, R.attr.colorAccent));
             }
-            item.setActionView(view);
+            drawer.addItem(item);
         }
-        // reset group. add recent items to toggle group
-        menu.setGroupCheckable(R.id.group_torrents, true, true);
 
-        MenuItem add = menu.findItem(R.id.nav_add);
+        updateProxies();
+
+        drawer.addItem(new SectionDrawerItem().withName(R.string.action_settings));
+
+        boolean enabled = false;
         View update = inflater.inflate(R.layout.search_update, null);
         final ProgressBar progress = (ProgressBar) update.findViewById(R.id.search_update_progress);
         ImageView refresh = (ImageView) update.findViewById(R.id.search_update_refresh);
@@ -332,9 +312,9 @@ public class Drawer implements NavigationView.OnNavigationItemSelectedListener, 
                 if (Drawer.this.update != null) {
                     Drawer.this.update.interrupt();
                     Drawer.this.update = null;
-                    updateManager(menu);
+                    updateManager();
                 } else {
-                    refreshEngines(menu, false);
+                    refreshEngines(false);
                 }
             }
         });
@@ -352,15 +332,15 @@ public class Drawer implements NavigationView.OnNavigationItemSelectedListener, 
                 }
             });
             refresh.setColorFilter(Color.GRAY);
-            add.setEnabled(false);
+            enabled = false;
         } else {
             refresh.setColorFilter(ThemeUtils.getThemeColor(context, R.attr.colorAccent));
-            add.setEnabled(true);
+            enabled = true;
         }
-        add.setActionView(update);
+        drawer.addItem(new PrimaryDrawerItem(update).withName(R.string.add_search_engine).withEnabled(enabled).withIcon(R.drawable.ic_add_black_24dp).withIconTintingEnabled(true).withSelectable(false).withIdentifier(R.id.nav_add));
     }
 
-    public void refreshEngines(final Menu menu, final boolean auto) {
+    public void refreshEngines(final boolean auto) {
         if (update != null) {
             if (auto)
                 return;
@@ -376,7 +356,7 @@ public class Drawer implements NavigationView.OnNavigationItemSelectedListener, 
                 handler.post(new Runnable() {
                     @Override
                     public void run() {
-                        updateManager(menu);
+                        updateManager();
                     }
                 });
                 try {
@@ -407,7 +387,7 @@ public class Drawer implements NavigationView.OnNavigationItemSelectedListener, 
                             if (!engines.updates())
                                 Toast.makeText(context, R.string.no_updates, Toast.LENGTH_SHORT).show();
                         }
-                        updateManager(menu);
+                        updateManager();
                     }
                 });
             }
@@ -415,21 +395,15 @@ public class Drawer implements NavigationView.OnNavigationItemSelectedListener, 
         update.start();
     }
 
-
     void updateProxies() {
-        Menu menu = navigationView.getMenu();
         LayoutInflater inflater = LayoutInflater.from(context);
 
-//        View plus = inflater.inflate(R.layout.search_plus, null, false);
-//        MenuItem proxies = menu.findItem(R.id.nav_proxies);
-//        proxies.setShowAsActionFlags(MenuItem.SHOW_AS_ACTION_ALWAYS);
-//        proxies.setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
-//        proxies.setActionView(plus);
+        View up = inflater.inflate(R.layout.search_plus, null);
+        drawer.addItem(new SectionPlusDrawerItem(up).withName(R.string.web_proxy_s));
 
         final SharedPreferences shared = PreferenceManager.getDefaultSharedPreferences(context);
         String proxy = shared.getString(MainApplication.PREFERENCE_PROXY, "");
 
-        MenuItem google = menu.findItem(R.id.nav_google);
         View sw = inflater.inflate(R.layout.proxy_switch, null);
         final Switch w = (Switch) sw.findViewById(R.id.proxy_switch);
         w.setOnClickListener(new View.OnClickListener() {
@@ -445,8 +419,7 @@ public class Drawer implements NavigationView.OnNavigationItemSelectedListener, 
             }
         });
         w.setChecked(proxy.equals(GoogleProxy.NAME));
-        google.setEnabled(true);
-        google.setActionView(sw);
+        drawer.addItem(new PrimaryDrawerItem(sw).withName("Google Data Saver").withIcon(R.drawable.ic_vpn_key_black_24dp).withIconTintingEnabled(true).withSelectable(false));
     }
 
     public void openDrawer(Search search) {
@@ -456,7 +429,6 @@ public class Drawer implements NavigationView.OnNavigationItemSelectedListener, 
             if (engies.get(i) == search) {
                 int id = i + 1;
                 setCheckedItem(id);
-
                 main.show(search);
                 return;
             }
@@ -502,7 +474,7 @@ public class Drawer implements NavigationView.OnNavigationItemSelectedListener, 
         }
 
         if (infoOld == null || !Arrays.equals(info.toArray(), infoOld.toArray())) {
-            if (drawer.isDrawerOpen(GravityCompat.START)) { // only probe port when drawer is open
+            if (drawer.isDrawerOpen()) { // only probe port when drawer is open
                 if (infoThread != null) {
                     return;
                 }
@@ -539,10 +511,10 @@ public class Drawer implements NavigationView.OnNavigationItemSelectedListener, 
         }
     }
 
-    @SuppressWarnings("StatementWithEmptyBody")
+
     @Override
-    public boolean onNavigationItemSelected(MenuItem item) {
-        int id = item.getItemId();
+    public boolean onItemClick(View view, int position, IDrawerItem drawerItem) {
+        long id = drawerItem.getIdentifier();
 
         final EnginesManager engies = main.getEngines();
 
@@ -555,7 +527,7 @@ public class Drawer implements NavigationView.OnNavigationItemSelectedListener, 
         }
 
         if (id > 0 && id < 0x00ffffff) {
-            int pos = id - 1;
+            int pos = (int) (id - 1);
             Search search = engies.get(pos);
             main.show(search);
             closeDrawer();
