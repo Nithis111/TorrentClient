@@ -14,6 +14,8 @@
   "news": {
     // GET
     "get": "http://rutracker.org/forum/viewforum.php?f=1960",
+    // form a grid instead of list
+    "grid": "a.topictitle",
     // get news list
     "list": "a.topictitle",
     // get title of item
@@ -27,6 +29,8 @@
   "top": {
     // GET method of 'tops'
     "get": "tops",
+    // form a grid instead of list
+    "grid": "a.topictitle",
     "list": "a.topictitle",
     "title": "regex(<a[^>]*>(.*)</a>)",
     "details": "regex(.*href=\"([^\"]*)\".*)",
@@ -70,6 +74,8 @@
     "json_post_search": "nm",
     // optional. js we need to execute after page loaded
     "js": "if(document.querySelectorAll('a[href^=\\\\.\\\\/profile\\\\.php]').length==0){alert('Not Logged In')};ee=document.querySelectorAll('a.tLink');for(i=0;i<ee.length;i++){e=ee[i];h=e.getAttribute('href');h='http://rutracker.org/forum/'+h;e.setAttribute('href',h);};",
+    // form a grid instead of list
+    "grid": "a.topictitle",
     // list torrents selector
     "list": ".forumline.tablesorter tbody tr",
     // title of torrent
