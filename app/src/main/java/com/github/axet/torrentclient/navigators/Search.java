@@ -30,6 +30,7 @@ import android.widget.TextView;
 
 import com.github.axet.androidlibrary.widgets.HeaderGridView;
 import com.github.axet.androidlibrary.widgets.ThemeUtils;
+import com.github.axet.androidlibrary.widgets.UnreadCountDrawable;
 import com.github.axet.androidlibrary.widgets.WebViewCustom;
 import com.github.axet.torrentclient.R;
 import com.github.axet.torrentclient.activities.MainActivity;
@@ -38,7 +39,6 @@ import com.github.axet.torrentclient.app.MainApplication;
 import com.github.axet.torrentclient.app.SearchEngine;
 import com.github.axet.torrentclient.dialogs.BrowserDialogFragment;
 import com.github.axet.torrentclient.dialogs.LoginDialogFragment;
-import com.github.axet.torrentclient.widgets.UnreadCountDrawable;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -704,7 +704,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
                     Looper.loop();
                 } catch (final RuntimeException e) {
                     if (thread != null) // ignore errors on abort()
-                        error(e);
+                        post(e);
                 } finally {
                     handler.post(new Runnable() {
                         @Override
@@ -941,15 +941,14 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
                     if (dialog != null)
                         return;
 
-                    final Map<String, String> s = engine.getMap("search");
-                    String js = s.get("details_js");
-                    String js_post = s.get("details_js_post");
+                    String head = nextSearch.get("details_head");
+                    String js = nextSearch.get("details_js");
+                    String js_post = nextSearch.get("details_js_post");
 
                     String html = "<html>";
-                    html += "<meta name=\"viewport\" content=\"initial-scale=1.0,user-scalable=no,maximum-scale=1,width=device-width\">";
-                    html += "<body>";
-                    html += item.details_html;
-                    html += "</body></html>";
+                    if (head != null)
+                        html += "<head>" + head + "<head>";
+                    html += "<body>" + item.details_html + "</body></html>";
 
                     BrowserDialogFragment d = BrowserDialogFragment.createHtml(item.base, html, js, js_post);
                     dialog = d;
@@ -987,21 +986,21 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
                 if (BrowserDialogFragment.logIgnore(msg))
                     return super.onConsoleMessage(msg, lineNumber, sourceID);
                 if (sourceID == null || sourceID.isEmpty() || sourceID.startsWith(INJECTS_URL)) {
-                    error(msg + "\nLine:" + lineNumber + "\n" + formatInjectError(sourceID, lineNumber));
+                    Error(msg + "\nLine:" + lineNumber + "\n" + formatInjectError(sourceID, lineNumber));
                 } else if (exec.json != null) { // we uploaded json, then html errors is our responsability
                     String[] lines = web.getHtml().split("\n");
                     int t = lineNumber - 1;
                     String line = "";
                     if (t > 0 && t < lines.length)
                         line = "\n" + lines[t];
-                    error(msg + "\nLine:" + lineNumber + line);
+                    Search.this.post(msg + "\nLine:" + lineNumber + line);
                 }
                 return super.onConsoleMessage(msg, lineNumber, sourceID);
             }
 
             @Override
             public boolean onJsAlert(WebView view, String url, String message, JsResult result) {
-                error(message);
+                Error(message);
                 return super.onJsAlert(view, url, message, result);
             }
         };
@@ -1206,7 +1205,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
                                 try {
                                     searchList(s, type, url, html);
                                 } catch (final RuntimeException e) {
-                                    error(e);
+                                    Error(e);
                                 } finally {
                                     if (done != null)
                                         done.run();
@@ -1243,7 +1242,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
                                     try {
                                         searchList(s, type, url, html);
                                     } catch (final RuntimeException e) {
-                                        error(e);
+                                        Error(e);
                                     } finally {
                                         if (done != null)
                                             done.run();
@@ -1267,7 +1266,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
                 try {
                     searchList(s, type, url, html);
                 } catch (final RuntimeException e) {
-                    error(e);
+                    Error(e);
                 } finally {
                     if (done != null)
                         done.run();
@@ -1417,26 +1416,39 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         return Html.fromHtml(a).toString().trim();
     }
 
-    public void error(final Throwable e) {
+    public void post(final Throwable e) {
         handler.post(new Runnable() {
             @Override
             public void run() {
-                if (main.active(Search.this)) {
-                    main.post(e);
-                } else {
-                    Throwable t = e;
-                    while (t.getCause() != null)
-                        t = t.getCause();
-                    message.add(t.getMessage());
-                    main.updateUnread();
-                }
+                Error(e);
             }
         });
     }
 
-    public void error(String msg) {
+    public void post(final String msg) {
+        handler.post(new Runnable() {
+            @Override
+            public void run() {
+                Error(msg);
+            }
+        });
+    }
+
+    public void Error(final Throwable e) {
+        if (main.active(Search.this)) {
+            main.Error(e);
+        } else {
+            Throwable t = e;
+            while (t.getCause() != null)
+                t = t.getCause();
+            message.add(t.getMessage());
+            main.updateUnread();
+        }
+    }
+
+    public void Error(String msg) {
         if (main.active(this)) {
-            main.post(msg);
+            main.Error(msg);
         } else {
             message.add(msg);
             main.updateUnread();
