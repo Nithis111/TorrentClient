@@ -39,6 +39,7 @@ import com.mikepenz.materialdrawer.model.SectionDrawerItem;
 import com.mikepenz.materialdrawer.model.interfaces.IDrawerItem;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -381,7 +382,10 @@ public class Drawer implements com.mikepenz.materialdrawer.Drawer.OnDrawerItemCl
                                 Throwable t = e;
                                 while (t.getCause() != null)
                                     t = t.getCause();
-                                String msg = t.getMessage();
+                                String msg = "'" + e.getMessage() + "' ";
+                                if (t instanceof FileNotFoundException)
+                                    msg += " not found ";
+                                msg += t.getMessage();
                                 Toast.makeText(context, msg, Toast.LENGTH_SHORT).show();
                             }
                         });
