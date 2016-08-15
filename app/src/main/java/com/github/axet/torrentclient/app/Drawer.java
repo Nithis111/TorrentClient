@@ -1,6 +1,5 @@
 package com.github.axet.torrentclient.app;
 
-import android.app.Activity;
 import android.app.KeyguardManager;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -13,15 +12,12 @@ import android.os.Environment;
 import android.os.Handler;
 import android.preference.PreferenceManager;
 import android.support.v7.app.AlertDialog;
-import android.support.v7.graphics.drawable.DrawerArrowDrawable;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.ImageView;
-import android.widget.ProgressBar;
-import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -32,9 +28,13 @@ import com.github.axet.torrentclient.R;
 import com.github.axet.torrentclient.activities.MainActivity;
 import com.github.axet.torrentclient.navigators.Search;
 import com.github.axet.torrentclient.navigators.Torrents;
-import com.github.axet.torrentclient.widgets.PrimaryDrawerItem;
+import com.github.axet.torrentclient.widgets.AddDrawerItem;
+import com.github.axet.torrentclient.widgets.ProxyDrawerItem;
+import com.github.axet.torrentclient.widgets.SearchDrawerItem;
 import com.github.axet.torrentclient.widgets.SectionPlusDrawerItem;
+import com.mikepenz.fastadapter.adapters.ItemAdapter;
 import com.mikepenz.materialdrawer.DrawerBuilder;
+import com.mikepenz.materialdrawer.model.PrimaryDrawerItem;
 import com.mikepenz.materialdrawer.model.SectionDrawerItem;
 import com.mikepenz.materialdrawer.model.interfaces.IDrawerItem;
 
@@ -69,34 +69,6 @@ public class Drawer implements com.mikepenz.materialdrawer.Drawer.OnDrawerItemCl
     List<String> infoOld;
     boolean infoPort;
     long infoTime; // last time checked
-
-    interface DrawerToggle {
-        void setPosition(float position);
-
-        float getPosition();
-    }
-
-    static class DrawerArrowDrawableToggle extends DrawerArrowDrawable implements DrawerToggle {
-        private final Activity mActivity;
-
-        public DrawerArrowDrawableToggle(Activity activity, Context themedContext) {
-            super(themedContext);
-            mActivity = activity;
-        }
-
-        public void setPosition(float position) {
-            if (position == 1f) {
-                setVerticalMirror(true);
-            } else if (position == 0f) {
-                setVerticalMirror(false);
-            }
-            setProgress(position);
-        }
-
-        public float getPosition() {
-            return getProgress();
-        }
-    }
 
     public Drawer(final MainActivity main, final Toolbar toolbar) {
         this.context = main;
@@ -175,23 +147,24 @@ public class Drawer implements com.mikepenz.materialdrawer.Drawer.OnDrawerItemCl
     }
 
     public void updateManager() {
-        drawer.removeAllItems();
+        List<IDrawerItem> list = new ArrayList<>();
 
         LayoutInflater inflater = LayoutInflater.from(context);
 
         final Torrents torrents = main.getTorrents();
         if (torrents != null) {
             PrimaryDrawerItem item = new PrimaryDrawerItem();
-            item.withName(R.string.torrents);
             item.withIdentifier(R.id.nav_torrents);
+            item.withName(R.string.torrents);
             item.withIcon(new UnreadCountDrawable(context, R.drawable.ic_storage_black_24dp, torrents));
             item.withIconTintingEnabled(true);
+            item.withSelectable(true);
             item.withSetSelected(main.active(torrents));
-            drawer.addItem(item);
+            list.add(item);
         }
 
         KeyguardManager myKM = (KeyguardManager) context.getSystemService(Context.KEYGUARD_SERVICE);
-        boolean locked = myKM.inKeyguardRestrictedInputMode();
+        final boolean locked = myKM.inKeyguardRestrictedInputMode();
 
         final EnginesManager engines = main.getEngines();
 
@@ -200,144 +173,181 @@ public class Drawer implements com.mikepenz.materialdrawer.Drawer.OnDrawerItemCl
             final SearchEngine engine = search.getEngine();
             // save to set < 0x00ffffff. check View.generateViewId()
             int id = i + 1;
-            PrimaryDrawerItem item = new PrimaryDrawerItem(inflater.inflate(R.layout.search_engine, null, false));
-            item.withName(engine.getName());
-            item.withIdentifier(id);
-            item.withIconTintingEnabled(true);
-            item.withIcon(new UnreadCountDrawable(context, R.drawable.share, search));
-            item.withSetSelected(main.active(search));
-            final View view = item.v;
-            final View panel = view.findViewById(R.id.search_engine_panel);
-            final View release = view.findViewById(R.id.search_engine_new);
-            View progress = view.findViewById(R.id.search_engine_progress);
 
             final int fi = i;
-            release.setOnClickListener(new View.OnClickListener() {
+            SearchDrawerItem item = new SearchDrawerItem() {
                 @Override
-                public void onClick(View v) {
-                    if (updateOne != null) {
-                        updateOne.interrupt();
-                    }
-                    updateOneIndex = fi;
-                    updateOne = new Thread(new Runnable() {
+                public void bindView(ViewHolder viewHolder) {
+                    super.bindView(viewHolder);
+
+                    viewHolder.release.setOnClickListener(new View.OnClickListener() {
                         @Override
-                        public void run() {
-                            engines.update(fi);
-                            handler.post(new Runnable() {
+                        public void onClick(View v) {
+                            if (updateOne != null) {
+                                updateOne.interrupt();
+                            }
+                            updateOneIndex = fi;
+                            updateOne = new Thread(new Runnable() {
                                 @Override
                                 public void run() {
-                                    updateOne = null;
+                                    engines.update(fi);
+                                    handler.post(new Runnable() {
+                                        @Override
+                                        public void run() {
+                                            updateOne = null;
+                                            updateManager();
+                                            Search search = engines.get(fi);
+                                            SearchEngine engine = search.getEngine();
+                                            Toast.makeText(context, engine.getName() + context.getString(R.string.engine_updated) + engine.getVersion(), Toast.LENGTH_SHORT).show();
+                                        }
+                                    });
+                                }
+                            }, "Update One");
+                            updateOne.start();
+                        }
+                    });
+
+                    viewHolder.panel.setVisibility(View.GONE);
+                    if (updateOne != null && updateOneIndex == fi) {
+                        viewHolder.progress.setVisibility(View.VISIBLE);
+                        viewHolder.panel.setVisibility(View.VISIBLE);
+                    } else {
+                        viewHolder.progress.setVisibility(View.INVISIBLE);
+                    }
+
+                    if (engines.getUpdate(fi)) {
+                        viewHolder.release.setVisibility(View.VISIBLE);
+                        viewHolder.panel.setVisibility(View.VISIBLE);
+                    } else {
+                        viewHolder.release.setVisibility(View.INVISIBLE);
+                    }
+
+                    viewHolder.trash.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+                            AlertDialog.Builder builder = new AlertDialog.Builder(context);
+                            builder.setTitle(context.getString(R.string.delete_search));
+
+                            String name = engine.getName();
+
+                            builder.setMessage(name + "\n\n" + context.getString(R.string.are_you_sure));
+                            builder.setPositiveButton(R.string.yes, new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialog, int which) {
+                                    dialog.cancel();
+
+                                    engines.remove(search);
+                                    search.close();
+
+                                    engines.save();
                                     updateManager();
-                                    Search search = engines.get(fi);
-                                    SearchEngine engine = search.getEngine();
-                                    Toast.makeText(context, engine.getName() + context.getString(R.string.engine_updated) + engine.getVersion(), Toast.LENGTH_SHORT).show();
                                 }
                             });
-                        }
-                    }, "Update One");
-                    updateOne.start();
-                }
-            });
-
-            panel.setVisibility(View.GONE);
-            if (updateOne != null && updateOneIndex == i) {
-                progress.setVisibility(View.VISIBLE);
-                panel.setVisibility(View.VISIBLE);
-            } else {
-                progress.setVisibility(View.INVISIBLE);
-            }
-
-            if (engines.getUpdate(i)) {
-                release.setVisibility(View.VISIBLE);
-                panel.setVisibility(View.VISIBLE);
-            } else {
-                release.setVisibility(View.INVISIBLE);
-            }
-
-            ImageView trash = (ImageView) view.findViewById(R.id.search_engine_trash);
-            trash.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    AlertDialog.Builder builder = new AlertDialog.Builder(context);
-                    builder.setTitle(context.getString(R.string.delete_search));
-
-                    String name = engine.getName();
-
-                    builder.setMessage(name + "\n\n" + context.getString(R.string.are_you_sure));
-                    builder.setPositiveButton(R.string.yes, new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialog, int which) {
-                            dialog.cancel();
-
-                            engines.remove(search);
-                            search.close();
-
-                            engines.save();
-                            updateManager();
+                            builder.setNegativeButton(R.string.no, new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialog, int which) {
+                                    dialog.cancel();
+                                }
+                            });
+                            builder.show();
                         }
                     });
-                    builder.setNegativeButton(R.string.no, new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialog, int which) {
-                            dialog.cancel();
-                        }
-                    });
-                    builder.show();
+                    if (locked) {
+                        viewHolder.trash.setOnClickListener(new View.OnClickListener() {
+                            @Override
+                            public void onClick(View v) {
+                            }
+                        });
+                        viewHolder.trash.setColorFilter(Color.GRAY);
+                    } else {
+                        viewHolder.trash.setColorFilter(ThemeUtils.getThemeColor(context, R.attr.colorAccent));
+                    }
                 }
-            });
-            if (locked) {
-                trash.setOnClickListener(new View.OnClickListener() {
+            };
+            item.withIdentifier(id);
+            item.withName(engine.getName());
+            item.withIconTintingEnabled(true);
+            item.withIcon(new UnreadCountDrawable(context, R.drawable.share, search));
+            item.withSelectable(true);
+            item.withSetSelected(main.active(search));
+            list.add(item);
+        }
+
+        updateProxies(list);
+
+        list.add(new SectionDrawerItem()
+                .withIdentifier(R.string.action_settings)
+                .withName(R.string.action_settings));
+
+        AddDrawerItem item = new AddDrawerItem() {
+            @Override
+            public void bindView(ViewHolder viewHolder) {
+                super.bindView(viewHolder);
+
+                viewHolder.update.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
+                        if (Drawer.this.update != null) {
+                            Drawer.this.update.interrupt();
+                            Drawer.this.update = null;
+                            updateManager();
+                        } else {
+                            refreshEngines(false);
+                        }
                     }
                 });
-                trash.setColorFilter(Color.GRAY);
-            } else {
-                trash.setColorFilter(ThemeUtils.getThemeColor(context, R.attr.colorAccent));
-            }
-            drawer.addItem(item);
-        }
-
-        updateProxies();
-
-        drawer.addItem(new SectionDrawerItem().withName(R.string.action_settings));
-
-        boolean enabled = false;
-        View update = inflater.inflate(R.layout.search_update, null);
-        final ProgressBar progress = (ProgressBar) update.findViewById(R.id.search_update_progress);
-        ImageView refresh = (ImageView) update.findViewById(R.id.search_update_refresh);
-        update.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
                 if (Drawer.this.update != null) {
-                    Drawer.this.update.interrupt();
-                    Drawer.this.update = null;
-                    updateManager();
+                    viewHolder.progress.setVisibility(View.VISIBLE);
+                    viewHolder.refresh.setVisibility(View.INVISIBLE);
                 } else {
-                    refreshEngines(false);
+                    viewHolder.progress.setVisibility(View.INVISIBLE);
+                    viewHolder.refresh.setVisibility(View.VISIBLE);
+                }
+                if (locked) {
+                    viewHolder.update.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+                        }
+                    });
+                    viewHolder.refresh.setColorFilter(Color.GRAY);
+                    viewHolder.update.setEnabled(false);
+                } else {
+                    viewHolder.refresh.setColorFilter(ThemeUtils.getThemeColor(context, R.attr.colorAccent));
+                    viewHolder.update.setEnabled(true);
                 }
             }
-        });
-        if (Drawer.this.update != null) {
-            progress.setVisibility(View.VISIBLE);
-            refresh.setVisibility(View.INVISIBLE);
-        } else {
-            progress.setVisibility(View.INVISIBLE);
-            refresh.setVisibility(View.VISIBLE);
-        }
-        if (locked) {
-            update.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
+        };
+        item.withIdentifier(R.id.nav_add)
+                .withName(R.string.add_search_engine)
+                .withIcon(R.drawable.ic_add_black_24dp)
+                .withIconTintingEnabled(true)
+                .withSelectable(false);
+        list.add(item);
+
+        ItemAdapter<IDrawerItem> ad = drawer.getItemAdapter();
+        for (int i = ad.getAdapterItemCount() - 1; i >= 0; i--) {
+            boolean delete = true;
+            for (int k = 0; k < list.size(); k++) {
+                if (list.get(k).getIdentifier() == ad.getAdapterItem(i).getIdentifier()) {
+                    delete = false;
+                    ad.set(ad.getGlobalPosition(i), list.get(k));
                 }
-            });
-            refresh.setColorFilter(Color.GRAY);
-            enabled = false;
-        } else {
-            refresh.setColorFilter(ThemeUtils.getThemeColor(context, R.attr.colorAccent));
-            enabled = true;
+            }
+            if (delete) {
+                ad.remove(ad.getGlobalPosition(i));
+            }
         }
-        drawer.addItem(new PrimaryDrawerItem(update).withName(R.string.add_search_engine).withEnabled(enabled).withIcon(R.drawable.ic_add_black_24dp).withIconTintingEnabled(true).withSelectable(false).withIdentifier(R.id.nav_add));
+        for (int k = 0; k < list.size(); k++) {
+            boolean add = true;
+            for (int i = 0; i < ad.getAdapterItemCount(); i++) {
+                if (list.get(k).getIdentifier() == ad.getAdapterItem(i).getIdentifier()) {
+                    add = false;
+                }
+            }
+            if (add) {
+                ad.add(ad.getGlobalPosition(k), list.get(k));
+            }
+        }
     }
 
     public void refreshEngines(final boolean auto) {
@@ -395,31 +405,43 @@ public class Drawer implements com.mikepenz.materialdrawer.Drawer.OnDrawerItemCl
         update.start();
     }
 
-    void updateProxies() {
+    void updateProxies(List<IDrawerItem> list) {
         LayoutInflater inflater = LayoutInflater.from(context);
 
         View up = inflater.inflate(R.layout.search_plus, null);
-        drawer.addItem(new SectionPlusDrawerItem(up).withName(R.string.web_proxy_s));
+        list.add(new SectionPlusDrawerItem(up)
+                .withIdentifier(R.string.web_proxy_s)
+                .withName(R.string.web_proxy_s));
 
         final SharedPreferences shared = PreferenceManager.getDefaultSharedPreferences(context);
-        String proxy = shared.getString(MainApplication.PREFERENCE_PROXY, "");
+        final String proxy = shared.getString(MainApplication.PREFERENCE_PROXY, "");
 
-        View sw = inflater.inflate(R.layout.proxy_switch, null);
-        final Switch w = (Switch) sw.findViewById(R.id.proxy_switch);
-        w.setOnClickListener(new View.OnClickListener() {
+        ProxyDrawerItem item = new ProxyDrawerItem() {
             @Override
-            public void onClick(View v) {
-                SharedPreferences.Editor edit = shared.edit();
-                if (w.isChecked()) {
-                    edit.putString(MainApplication.PREFERENCE_PROXY, GoogleProxy.NAME);
-                } else {
-                    edit.putString(MainApplication.PREFERENCE_PROXY, "");
-                }
-                edit.commit();
+            public void bindView(final ViewHolder viewHolder) {
+                super.bindView(viewHolder);
+
+                viewHolder.w.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        SharedPreferences.Editor edit = shared.edit();
+                        if (viewHolder.w.isChecked()) {
+                            edit.putString(MainApplication.PREFERENCE_PROXY, GoogleProxy.NAME);
+                        } else {
+                            edit.putString(MainApplication.PREFERENCE_PROXY, "");
+                        }
+                        edit.commit();
+                    }
+                });
+                viewHolder.w.setChecked(proxy.equals(GoogleProxy.NAME));
             }
-        });
-        w.setChecked(proxy.equals(GoogleProxy.NAME));
-        drawer.addItem(new PrimaryDrawerItem(sw).withName("Google Data Saver").withIcon(R.drawable.ic_vpn_key_black_24dp).withIconTintingEnabled(true).withSelectable(false));
+        };
+        item.withIdentifier(R.drawable.ic_vpn_key_black_24dp);
+        item.withName("Google Data Saver");
+        item.withIcon(R.drawable.ic_vpn_key_black_24dp);
+        item.withIconTintingEnabled(true);
+        item.withSelectable(false);
+        list.add(item);
     }
 
     public void openDrawer(Search search) {

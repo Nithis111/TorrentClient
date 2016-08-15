@@ -18,7 +18,7 @@ public class SectionPlusDrawerItem extends com.mikepenz.materialdrawer.model.Sec
 
     @Override
     public int getType() {
-        return R.id.search_plus_id;
+        return R.id.search_plus;
     }
 
     @Override
