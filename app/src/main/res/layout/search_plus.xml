@@ -36,6 +36,7 @@
             android:textSize="@dimen/material_drawer_item_section_text"/>
 
         <ImageView
+            android:visibility="gone"
             android:id="@+id/search_update_refresh"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
