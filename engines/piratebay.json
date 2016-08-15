@@ -1,6 +1,6 @@
 {
-  "version": 8,
-  "name": "thepiratebay.org",
+  "version": 9,
+  "name": "The Pirate Bay",
   "home": {
     "get": "https://thepiratebay.org/"
   },
@@ -9,6 +9,7 @@
     "list": "div.post",
     "title": "h3",
     "details_html": "regex((.*))",
+    "details_head": "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">",
     "date": "div.meta:regex(.*Posted (.*) by .*)"
   },
   "top": {

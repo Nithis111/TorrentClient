@@ -941,15 +941,14 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
                     if (dialog != null)
                         return;
 
-                    final Map<String, String> s = engine.getMap("search");
-                    String js = s.get("details_js");
-                    String js_post = s.get("details_js_post");
+                    String head = nextSearch.get("details_head");
+                    String js = nextSearch.get("details_js");
+                    String js_post = nextSearch.get("details_js_post");
 
                     String html = "<html>";
-                    html += "<meta name=\"viewport\" content=\"initial-scale=1.0,user-scalable=no,maximum-scale=1,width=device-width\">";
-                    html += "<body>";
-                    html += item.details_html;
-                    html += "</body></html>";
+                    if (head != null)
+                        html += "<head>" + head + "<head>";
+                    html += "<body>" + item.details_html + "</body></html>";
 
                     BrowserDialogFragment d = BrowserDialogFragment.createHtml(item.base, html, js, js_post);
                     dialog = d;
