@@ -127,7 +127,7 @@ public class Drawer implements com.mikepenz.materialdrawer.Drawer.OnDrawerItemCl
         }
     }
 
-    public void setCheckedItem(int id) {
+    public void setCheckedItem(long id) {
         drawer.setSelection(id, false);
     }
 
@@ -147,9 +147,9 @@ public class Drawer implements com.mikepenz.materialdrawer.Drawer.OnDrawerItemCl
         unread.update();
     }
 
-    int counter = 1;
+    long counter = 1;
 
-    long getEngineId(List<IDrawerItem> ll, Search s) {
+    long getEngineId(Search s) {
         ArrayList<IDrawerItem> list = new ArrayList<IDrawerItem>(drawer.getDrawerItems());
         for (int i = 0; i < list.size(); i++) {
             IDrawerItem item = list.get(i);
@@ -157,14 +157,15 @@ public class Drawer implements com.mikepenz.materialdrawer.Drawer.OnDrawerItemCl
             if (search == s) {
                 return item.getIdentifier();
             }
-            if (item.getIdentifier() == counter) {
-                counter++;
-                // save to set < 0x00ffffff. check View.generateViewId()
-                if (counter >= 0x00ffffff)
-                    counter = 1;
-                i = -1; // restart search
-            }
         }
+        return -1;
+    }
+
+    long getEngineId(List<IDrawerItem> ll, Search s) {
+        ArrayList<IDrawerItem> list = new ArrayList<>(drawer.getDrawerItems());
+        long id = getEngineId(s);
+        if (id != -1)
+            return id;
         list.addAll(ll);
         for (int i = 0; i < list.size(); i++) {
             IDrawerItem item = list.get(i);
@@ -482,8 +483,7 @@ public class Drawer implements com.mikepenz.materialdrawer.Drawer.OnDrawerItemCl
         EnginesManager engies = main.getEngines();
         for (int i = 0; i < engies.getCount(); i++) {
             if (engies.get(i) == search) {
-                int id = i + 1;
-                setCheckedItem(id);
+                setCheckedItem(getEngineId(search));
                 main.show(search);
                 return;
             }
