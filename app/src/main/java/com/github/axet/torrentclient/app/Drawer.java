@@ -147,10 +147,40 @@ public class Drawer implements com.mikepenz.materialdrawer.Drawer.OnDrawerItemCl
         unread.update();
     }
 
+    int counter = 1;
+
+    long getEngineId(List<IDrawerItem> ll, Search s) {
+        ArrayList<IDrawerItem> list = new ArrayList<IDrawerItem>(drawer.getDrawerItems());
+        for (int i = 0; i < list.size(); i++) {
+            IDrawerItem item = list.get(i);
+            Search search = (Search) item.getTag();
+            if (search == s) {
+                return item.getIdentifier();
+            }
+            if (item.getIdentifier() == counter) {
+                counter++;
+                // save to set < 0x00ffffff. check View.generateViewId()
+                if (counter >= 0x00ffffff)
+                    counter = 1;
+                i = -1; // restart search
+            }
+        }
+        list.addAll(ll);
+        for (int i = 0; i < list.size(); i++) {
+            IDrawerItem item = list.get(i);
+            if (item.getIdentifier() == counter) {
+                counter++;
+                // save to set < 0x00ffffff. check View.generateViewId()
+                if (counter >= 0x00ffffff)
+                    counter = 1;
+                i = -1; // restart search
+            }
+        }
+        return counter;
+    }
+
     public void updateManager() {
         List<IDrawerItem> list = new ArrayList<>();
-
-        LayoutInflater inflater = LayoutInflater.from(context);
 
         final Torrents torrents = main.getTorrents();
         if (torrents != null) {
@@ -172,8 +202,6 @@ public class Drawer implements com.mikepenz.materialdrawer.Drawer.OnDrawerItemCl
         for (int i = 0; i < engines.getCount(); i++) {
             final Search search = engines.get(i);
             final SearchEngine engine = search.getEngine();
-            // save to set < 0x00ffffff. check View.generateViewId()
-            int id = i + 1;
 
             final int fi = i;
             SearchDrawerItem item = new SearchDrawerItem() {
@@ -265,7 +293,8 @@ public class Drawer implements com.mikepenz.materialdrawer.Drawer.OnDrawerItemCl
                     }
                 }
             };
-            item.withIdentifier(id);
+            item.withIdentifier(getEngineId(list, search));
+            item.withTag(search);
             item.withName(engine.getName());
             item.withIconTintingEnabled(true);
             item.withIcon(new UnreadCountDrawable(context, R.drawable.share, search));
@@ -384,7 +413,7 @@ public class Drawer implements com.mikepenz.materialdrawer.Drawer.OnDrawerItemCl
                                     t = t.getCause();
                                 String msg = "'" + e.getMessage() + "' ";
                                 if (t instanceof FileNotFoundException)
-                                    msg += " not found ";
+                                    msg += "not found ";
                                 msg += t.getMessage();
                                 Toast.makeText(context, msg, Toast.LENGTH_SHORT).show();
                             }
@@ -552,9 +581,8 @@ public class Drawer implements com.mikepenz.materialdrawer.Drawer.OnDrawerItemCl
             return true;
         }
 
-        if (id > 0 && id < 0x00ffffff) {
-            int pos = (int) (id - 1);
-            Search search = engies.get(pos);
+        if (drawerItem.getTag() != null) {
+            Search search = (Search) drawerItem.getTag();
             main.show(search);
             closeDrawer();
             return true;
