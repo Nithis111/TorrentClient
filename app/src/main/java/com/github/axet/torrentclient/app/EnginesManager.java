@@ -66,6 +66,10 @@ public class EnginesManager {
         return list.get(i).search;
     }
 
+    public String getURL(int i) {
+        return list.get(i).url;
+    }
+
     public boolean getUpdate(int i) {
         return list.get(i).update;
     }
