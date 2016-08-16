@@ -927,10 +927,9 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
 
                     String url = item.details;
 
-                    final Map<String, String> s = engine.getMap("search");
-                    String head = s.get("details_head");
-                    String js = s.get("details_js");
-                    String js_post = s.get("details_js_post");
+                    String head = nextSearch.get("details_head");
+                    String js = nextSearch.get("details_js");
+                    String js_post = nextSearch.get("details_js_post");
 
                     BrowserDialogFragment d = BrowserDialogFragment.create(head, url, http.getCookies(), js, js_post);
                     dialog = d;
