@@ -260,7 +260,7 @@ public class BrowserDialogFragment extends DialogFragment implements MainActivit
             @Override
             public HttpClient.DownloadResponse shouldInterceptRequest(WebView view, String url) {
                 if (url.equals(html_base)) {
-                    return new HttpClient.DownloadResponse(HttpClient.CONTENTTYPE_HTML, Charset.defaultCharset().name(), html);
+                    return getBase(html_base, html);
                 }
                 return super.shouldInterceptRequest(view, url);
             }
