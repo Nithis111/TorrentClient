@@ -395,8 +395,11 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
                 Map<String, String> home = Search.this.engine.getMap("home");
 
                 String url = home.get("get");
+                String head = home.get("head");
+                String js = home.get("js");
+                String js_post = home.get("js_post");
 
-                BrowserDialogFragment d = BrowserDialogFragment.create(url, http.getCookies(), null, null);
+                BrowserDialogFragment d = BrowserDialogFragment.create(head, url, http.getCookies(), js, js_post);
                 dialog = d;
                 d.show(main.getSupportFragmentManager(), "");
             }
@@ -412,6 +415,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
                 Map<String, String> login = Search.this.engine.getMap("login");
 
                 String url = login.get("details");
+                String head = login.get("details_head");
 
                 String l = null;
                 String p = null;
@@ -424,11 +428,11 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
                 // TODO get
 
                 if (l == null && p == null) {
-                    LoginDialogFragment d = LoginDialogFragment.create(url, http.getCookies());
+                    LoginDialogFragment d = LoginDialogFragment.create(head, url, http.getCookies());
                     dialog = d;
                     d.show(main.getSupportFragmentManager(), "");
                 } else {
-                    LoginDialogFragment d = LoginDialogFragment.create(url, http.getCookies(), lastLogin);
+                    LoginDialogFragment d = LoginDialogFragment.create(head, url, http.getCookies(), lastLogin);
                     dialog = d;
                     d.show(main.getSupportFragmentManager(), "");
                 }
@@ -924,10 +928,11 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
                     String url = item.details;
 
                     final Map<String, String> s = engine.getMap("search");
+                    String head = s.get("details_head");
                     String js = s.get("details_js");
                     String js_post = s.get("details_js_post");
 
-                    BrowserDialogFragment d = BrowserDialogFragment.create(url, http.getCookies(), js, js_post);
+                    BrowserDialogFragment d = BrowserDialogFragment.create(head, url, http.getCookies(), js, js_post);
                     dialog = d;
                     d.show(main.getSupportFragmentManager(), "");
                 }
@@ -945,12 +950,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
                     String js = nextSearch.get("details_js");
                     String js_post = nextSearch.get("details_js_post");
 
-                    String html = "<html>";
-                    if (head != null)
-                        html += "<head>" + head + "<head>";
-                    html += "<body>" + item.details_html + "</body></html>";
-
-                    BrowserDialogFragment d = BrowserDialogFragment.createHtml(item.base, html, js, js_post);
+                    BrowserDialogFragment d = BrowserDialogFragment.createHtml(item.base, head, item.details_html, js, js_post);
                     dialog = d;
                     d.show(main.getSupportFragmentManager(), "");
                 }

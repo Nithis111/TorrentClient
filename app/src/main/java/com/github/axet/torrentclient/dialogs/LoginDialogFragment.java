@@ -42,20 +42,22 @@ public class LoginDialogFragment extends BrowserDialogFragment {
         }
     }
 
-    public static LoginDialogFragment create(String url, String cookies, String lastlogin) {
+    public static LoginDialogFragment create(String head, String url, String cookies, String lastlogin) {
         LoginDialogFragment f = new LoginDialogFragment();
         Bundle args = new Bundle();
         args.putString("url", url);
+        args.putString("head", head);
         args.putString("cookies", cookies);
         args.putString("login", lastlogin);
         f.setArguments(args);
         return f;
     }
 
-    public static LoginDialogFragment create(String url, String cookies) {
+    public static LoginDialogFragment create(String head, String url, String cookies) {
         LoginDialogFragment f = new LoginDialogFragment();
         Bundle args = new Bundle();
         args.putString("url", url);
+        args.putString("head", head);
         args.putString("cookies", cookies);
         args.putBoolean("browser", true);
         f.setArguments(args);

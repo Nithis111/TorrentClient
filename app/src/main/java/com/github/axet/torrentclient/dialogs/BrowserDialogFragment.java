@@ -36,8 +36,6 @@ import com.github.axet.torrentclient.activities.MainActivity;
 import com.github.axet.torrentclient.app.GoogleProxy;
 import com.github.axet.torrentclient.app.MainApplication;
 
-import java.nio.charset.Charset;
-
 public class BrowserDialogFragment extends DialogFragment implements MainActivity.TorrentFragmentInterface {
     public static String TAG = BrowserDialogFragment.class.getSimpleName();
 
@@ -61,9 +59,10 @@ public class BrowserDialogFragment extends DialogFragment implements MainActivit
         return false;
     }
 
-    public static BrowserDialogFragment create(String url, String cookies, String js, String js_post) {
+    public static BrowserDialogFragment create(String head, String url, String cookies, String js, String js_post) {
         BrowserDialogFragment f = new BrowserDialogFragment();
         Bundle args = new Bundle();
+        args.putString("head", head);
         args.putString("url", url);
         args.putString("js", js);
         args.putString("js_post", js_post);
@@ -72,10 +71,11 @@ public class BrowserDialogFragment extends DialogFragment implements MainActivit
         return f;
     }
 
-    public static BrowserDialogFragment createHtml(String html_base, String html, String js, String js_post) {
+    public static BrowserDialogFragment createHtml(String html_base, String head, String html, String js, String js_post) {
         BrowserDialogFragment f = new BrowserDialogFragment();
         Bundle args = new Bundle();
         args.putString("base", html_base);
+        args.putString("head", head);
         args.putString("html", html);
         args.putString("js", js);
         args.putString("js_post", js_post);
@@ -156,6 +156,7 @@ public class BrowserDialogFragment extends DialogFragment implements MainActivit
         RelativeLayout r = (RelativeLayout) v.findViewById(R.id.search_details_base);
 
         final String url = getArguments().getString("url");
+        final String head = getArguments().getString("head");
         final String html = getArguments().getString("html");
         final String html_base = getArguments().getString("base", ABOUT_HTML);
 
@@ -265,8 +266,11 @@ public class BrowserDialogFragment extends DialogFragment implements MainActivit
                 return super.shouldInterceptRequest(view, url);
             }
         };
+
         web.setInject(script);
         web.setInjectPost(script_post);
+        web.setHead(head);
+
         status.setText("");
 
         final SharedPreferences shared = PreferenceManager.getDefaultSharedPreferences(getContext());
