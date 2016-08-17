@@ -2,7 +2,7 @@
 
 Torrent Client simple UI. Additional 'Search Engines' can be found here:
 
-* [Search Engines](http://axet.github.io/android-torrent-client/)
+* [Search Engines](https://axet.github.io/android-torrent-client/)
 
 # Google Play
 
