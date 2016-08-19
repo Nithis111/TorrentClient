@@ -34,7 +34,6 @@ public class TrackersFragment extends Fragment implements MainActivity.TorrentFr
     ListView list;
 
     class Files extends BaseAdapter {
-
         @Override
         public int getCount() {
             return ff.size();
@@ -191,5 +190,10 @@ public class TrackersFragment extends Fragment implements MainActivity.TorrentFr
             ff.add(tt);
         }
         files.notifyDataSetChanged();
+    }
+
+    @Override
+    public void close() {
+
     }
 }

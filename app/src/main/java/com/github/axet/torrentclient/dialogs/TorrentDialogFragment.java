@@ -123,6 +123,7 @@ public class TorrentDialogFragment extends DialogFragment implements MainActivit
         pager = null;
     }
 
+    @Override
     public void update() {
         // dialog maybe created but onCreateView not yet called
         if (pager == null)
@@ -134,6 +135,11 @@ public class TorrentDialogFragment extends DialogFragment implements MainActivit
         if (f == null)
             return;
         f.update();
+    }
+
+    @Override
+    public void close() {
+
     }
 
     @Override
