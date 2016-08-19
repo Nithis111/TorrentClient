@@ -107,6 +107,8 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
 
     public interface TorrentFragmentInterface {
         void update();
+
+        void close();
     }
 
     public interface NavigatorInterface {
@@ -150,7 +152,6 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
 
     public void setAppTheme(int id) {
         super.setTheme(id);
-
         themeId = id;
     }
 
@@ -214,13 +215,6 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
                         final AtomicLong i = new AtomicLong(0);
                         progress.setMax((int) pieces.get());
 
-                        MainActivity.this.dialog = new TorrentFragmentInterface() {
-                            @Override
-                            public void update() {
-                                progress.setProgress((int) i.get());
-                            }
-                        };
-
                         final Thread t = new Thread(new Runnable() {
                             @Override
                             public void run() {
@@ -231,14 +225,28 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
 
                                     if (Thread.currentThread().isInterrupted()) {
                                         Libtorrent.CloseMetaInfo();
-                                        progress.dismiss();
+                                        handler.post(new Runnable() {
+                                            @Override
+                                            public void run() {
+                                                if (progress.getOwnerActivity() == null) // when app was destoryed
+                                                    return;
+                                                progress.dismiss();
+                                            }
+                                        });
                                         return;
                                     }
 
                                     if (!Libtorrent.HashMetaInfo(i.get())) {
                                         activity.post(Libtorrent.Error());
                                         Libtorrent.CloseMetaInfo();
-                                        progress.dismiss();
+                                        handler.post(new Runnable() {
+                                            @Override
+                                            public void run() {
+                                                if (progress.getOwnerActivity() == null) // when app was destoryed
+                                                    return;
+                                                progress.dismiss();
+                                            }
+                                        });
                                         return;
                                     }
                                 }
@@ -246,6 +254,8 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
                                 handler.post(new Runnable() {
                                     @Override
                                     public void run() {
+                                        if (progress.getOwnerActivity() == null) // when app was destoryed
+                                            return;
                                         MainActivity.this.dialog = null;
                                         activity.createTorrentFromMetaInfo(pp);
                                         Libtorrent.CloseMetaInfo();
@@ -254,6 +264,18 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
                                 });
                             }
                         });
+
+                        MainActivity.this.dialog = new TorrentFragmentInterface() {
+                            @Override
+                            public void update() {
+                                progress.setProgress((int) i.get());
+                            }
+
+                            @Override
+                            public void close() {
+                                t.interrupt();
+                            }
+                        };
 
                         progress.setOnDismissListener(new DialogInterface.OnDismissListener() {
                             @Override
@@ -471,6 +493,11 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
             }
             // prevent delayed delayedInit
             delayedInit = null;
+        }
+
+        if (dialog != null) {
+            dialog.close();
+            dialog = null;
         }
 
         if (engies != null) {

@@ -12,8 +12,8 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ProgressBar;
 
+import com.github.axet.androidlibrary.net.HttpClient;
 import com.github.axet.torrentclient.activities.MainActivity;
-import com.github.axet.torrentclient.app.Storage;
 
 import org.apache.commons.io.IOUtils;
 
@@ -21,10 +21,12 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.URL;
+import java.net.URLConnection;
 import java.net.URLDecoder;
 
 public class OpenIntentDialogFragment extends DialogFragment {
     Handler handler = new Handler();
+    Thread t;
 
     @Override
     public void onDismiss(DialogInterface dialog) {
@@ -36,7 +38,7 @@ public class OpenIntentDialogFragment extends DialogFragment {
     public void onStart() {
         super.onStart();
 
-        Thread t = new Thread(new Runnable() {
+        t = new Thread(new Runnable() {
             @Override
             public void run() {
                 final MainActivity activity = (MainActivity) getActivity();
@@ -48,6 +50,9 @@ public class OpenIntentDialogFragment extends DialogFragment {
                 handler.post(new Runnable() {
                     @Override
                     public void run() {
+                        final MainActivity activity = (MainActivity) getActivity();
+                        if (activity == null) // when app was destoryed
+                            return;
                         dismiss();
                     }
                 });
@@ -58,7 +63,8 @@ public class OpenIntentDialogFragment extends DialogFragment {
 
     public void openURL(final String str) {
         final MainActivity activity = (MainActivity) getActivity();
-        final Storage storage = activity.getStorage();
+        if (activity == null) // when app was destoryed
+            return;
 
         if (str.startsWith("magnet")) {
             handler.post(new Runnable() {
@@ -88,7 +94,10 @@ public class OpenIntentDialogFragment extends DialogFragment {
 
         if (str.startsWith("http")) {
             try {
-                final byte[] buf = IOUtils.toByteArray(new URL(str));
+                URL url = new URL(str);
+                URLConnection conn = url.openConnection();
+                conn.setConnectTimeout(HttpClient.CONNECTION_TIMEOUT);
+                final byte[] buf = IOUtils.toByteArray(conn);
                 handler.post(new Runnable() {
                     @Override
                     public void run() {

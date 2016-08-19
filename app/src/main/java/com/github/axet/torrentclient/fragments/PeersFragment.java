@@ -156,4 +156,9 @@ public class PeersFragment extends Fragment implements MainActivity.TorrentFragm
 
         files.notifyDataSetChanged();
     }
+
+    @Override
+    public void close() {
+
+    }
 }

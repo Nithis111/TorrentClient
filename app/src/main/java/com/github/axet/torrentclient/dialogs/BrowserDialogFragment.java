@@ -109,10 +109,16 @@ public class BrowserDialogFragment extends DialogFragment implements MainActivit
         }
     }
 
+    @Override
     public void update() {
         // dialog maybe created but onCreateView not yet called
         if (pager == null)
             return;
+    }
+
+    @Override
+    public void close() {
+
     }
 
     @Override

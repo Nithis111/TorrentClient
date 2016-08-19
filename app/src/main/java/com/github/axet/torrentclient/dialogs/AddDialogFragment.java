@@ -475,4 +475,9 @@ public class AddDialogFragment extends DialogFragment implements MainActivity.To
             name.setText(n);
         }
     }
+
+    @Override
+    public void close() {
+
+    }
 }

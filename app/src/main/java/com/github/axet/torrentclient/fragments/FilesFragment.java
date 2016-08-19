@@ -243,4 +243,9 @@ public class FilesFragment extends Fragment implements MainActivity.TorrentFragm
         Collections.sort(ff, new SortFiles());
         files.notifyDataSetChanged();
     }
+
+    @Override
+    public void close() {
+
+    }
 }

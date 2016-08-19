@@ -144,6 +144,7 @@ public class DetailsFragment extends Fragment implements MainActivity.TorrentFra
         return v;
     }
 
+    @Override
     public void update() {
         final long t = getArguments().getLong("torrent");
 
@@ -285,5 +286,10 @@ public class DetailsFragment extends Fragment implements MainActivity.TorrentFra
         downloading.setText(MainApplication.formatDuration(getContext(), b.getDownloading() / 1000000));
 
         seeding.setText(MainApplication.formatDuration(getContext(), b.getSeeding() / 1000000));
+    }
+
+    @Override
+    public void close() {
+
     }
 }
