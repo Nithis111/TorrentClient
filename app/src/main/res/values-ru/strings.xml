@@ -141,4 +141,5 @@
 
     <string name="web_proxy_s">Web Прокси</string>
     <string name="load_more">Дальше</string>
+    <string name="select_folder">Выберите папку</string>
 </resources>
