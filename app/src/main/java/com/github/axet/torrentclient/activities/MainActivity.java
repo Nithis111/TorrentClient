@@ -210,7 +210,12 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
                         progress.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
 
                         String path = p.getPath();
-                        final String pp = new File(p.getPath()).getParentFile().getPath();
+                        File parent = new File(path).getParentFile();
+                        if (parent == null) {
+                            Error(getString(R.string.select_folder));
+                            return;
+                        }
+                        final String pp = parent.getPath();
                         final AtomicLong pieces = new AtomicLong(Libtorrent.CreateMetaInfo(path));
                         final AtomicLong i = new AtomicLong(0);
                         progress.setMax((int) pieces.get());
