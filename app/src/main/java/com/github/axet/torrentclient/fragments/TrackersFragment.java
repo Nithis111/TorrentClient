@@ -19,6 +19,7 @@ import com.github.axet.torrentclient.app.MainApplication;
 import java.util.ArrayList;
 
 import go.libtorrent.Libtorrent;
+import go.libtorrent.Tracker;
 
 public class TrackersFragment extends Fragment implements MainActivity.TorrentFragmentInterface {
     View v;
@@ -29,7 +30,7 @@ public class TrackersFragment extends Fragment implements MainActivity.TorrentFr
     TextView lpd;
     View add;
 
-    ArrayList<Libtorrent.Tracker> ff = new ArrayList<>();
+    ArrayList<Tracker> ff = new ArrayList<>();
     Files files;
     ListView list;
 
@@ -40,7 +41,7 @@ public class TrackersFragment extends Fragment implements MainActivity.TorrentFr
         }
 
         @Override
-        public Libtorrent.Tracker getItem(int i) {
+        public Tracker getItem(int i) {
             return ff.get(i);
         }
 
@@ -70,7 +71,7 @@ public class TrackersFragment extends Fragment implements MainActivity.TorrentFr
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
                             dialog.cancel();
-                            Libtorrent.TorrentTrackerRemove(t, ff.get(i).getAddr());
+                            Libtorrent.torrentTrackerRemove(t, ff.get(i).getAddr());
                             update();
                         }
                     });
@@ -89,7 +90,7 @@ public class TrackersFragment extends Fragment implements MainActivity.TorrentFr
             TextView nextAnnounce = (TextView) view.findViewById(R.id.torrent_trackers_nextannounce);
             TextView lastScrape = (TextView) view.findViewById(R.id.torrent_trackers_lastscrape);
 
-            Libtorrent.Tracker f = getItem(i);
+            Tracker f = getItem(i);
 
             url.setText(f.getAddr());
 
@@ -146,7 +147,7 @@ public class TrackersFragment extends Fragment implements MainActivity.TorrentFr
                 e.setPositiveButton(new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
-                        Libtorrent.TorrentTrackerAdd(t, e.getText());
+                        Libtorrent.torrentTrackerAdd(t, e.getText());
                         update();
                     }
                 });
@@ -164,16 +165,16 @@ public class TrackersFragment extends Fragment implements MainActivity.TorrentFr
         final long t = getArguments().getLong("torrent");
 
         ff.clear();
-        long l = Libtorrent.TorrentTrackersCount(t);
+        long l = Libtorrent.torrentTrackersCount(t);
         for (long i = 0; i < l; i++) {
-            Libtorrent.Tracker tt = Libtorrent.TorrentTrackers(t, i);
+            Tracker tt = Libtorrent.torrentTrackers(t, i);
             String url = tt.getAddr();
             if (url.equals("PEX")) {
-                MainApplication.setText(pex, Libtorrent.TorrentActive(t) ? tt.getPeers() + "" : "");
+                MainApplication.setText(pex, Libtorrent.torrentActive(t) ? tt.getPeers() + "" : "");
                 continue;
             }
             if (url.equals("LPD")) {
-                MainApplication.setText(lpd, Libtorrent.TorrentActive(t) ? tt.getPeers() + "" : "");
+                MainApplication.setText(lpd, Libtorrent.torrentActive(t) ? tt.getPeers() + "" : "");
                 continue;
             }
             if (url.equals("DHT")) {

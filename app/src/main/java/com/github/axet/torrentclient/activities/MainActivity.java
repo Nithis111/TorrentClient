@@ -118,19 +118,19 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
     }
 
     public void checkTorrent(long t) {
-        if (Libtorrent.TorrentStatus(t) == Libtorrent.StatusChecking) {
-            Libtorrent.StopTorrent(t);
+        if (Libtorrent.torrentStatus(t) == Libtorrent.StatusChecking) {
+            Libtorrent.stopTorrent(t);
             Toast.makeText(this, R.string.stop_checking, Toast.LENGTH_SHORT).show();
             return;
         }
-        Libtorrent.CheckTorrent(t);
+        Libtorrent.checkTorrent(t);
         Toast.makeText(this, R.string.start_checking, Toast.LENGTH_SHORT).show();
     }
 
     public void renameDialog(final Long f) {
         final OpenFileDialog.EditTextDialog e = new OpenFileDialog.EditTextDialog(this);
         e.setTitle(getString(R.string.rename_torrent));
-        e.setText(Libtorrent.TorrentName(f));
+        e.setText(Libtorrent.torrentName(f));
         e.setPositiveButton(new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
@@ -139,7 +139,7 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
                 name = new File(name).getName();
                 if (name.isEmpty())
                     return;
-                Libtorrent.TorrentRename(f, name);
+                Libtorrent.torrentRename(f, name);
                 torrents.notifyDataSetChanged();
             }
         });
@@ -216,7 +216,7 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
                             return;
                         }
                         final String pp = parent.getPath();
-                        final AtomicLong pieces = new AtomicLong(Libtorrent.CreateMetaInfo(path));
+                        final AtomicLong pieces = new AtomicLong(Libtorrent.createMetaInfo(path));
                         final AtomicLong i = new AtomicLong(0);
                         progress.setMax((int) pieces.get());
 
@@ -229,7 +229,7 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
                                     Thread.yield();
 
                                     if (Thread.currentThread().isInterrupted()) {
-                                        Libtorrent.CloseMetaInfo();
+                                        Libtorrent.closeMetaInfo();
                                         handler.post(new Runnable() {
                                             @Override
                                             public void run() {
@@ -241,9 +241,9 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
                                         return;
                                     }
 
-                                    if (!Libtorrent.HashMetaInfo(i.get())) {
-                                        activity.post(Libtorrent.Error());
-                                        Libtorrent.CloseMetaInfo();
+                                    if (!Libtorrent.hashMetaInfo(i.get())) {
+                                        activity.post(Libtorrent.error());
+                                        Libtorrent.closeMetaInfo();
                                         handler.post(new Runnable() {
                                             @Override
                                             public void run() {
@@ -263,7 +263,7 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
                                             return;
                                         MainActivity.this.dialog = null;
                                         activity.createTorrentFromMetaInfo(pp);
-                                        Libtorrent.CloseMetaInfo();
+                                        Libtorrent.closeMetaInfo();
                                         progress.dismiss();
                                     }
                                 });
@@ -324,10 +324,10 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
 
                         shared.edit().putString(MainApplication.PREFERENCE_LAST_PATH, p.getParent()).commit();
 
-                        long t = Libtorrent.AddTorrent(p.getPath());
+                        long t = Libtorrent.addTorrent(p.getPath());
 
                         if (t == -1) {
-                            Error(Libtorrent.Error());
+                            Error(Libtorrent.error());
                             return;
                         }
 
@@ -461,7 +461,7 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
     @Override
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
         if (key.equals(MainApplication.PREFERENCE_ANNOUNCE)) {
-            Libtorrent.SetDefaultAnnouncesList(sharedPreferences.getString(MainApplication.PREFERENCE_ANNOUNCE, ""));
+            Libtorrent.setDefaultAnnouncesList(sharedPreferences.getString(MainApplication.PREFERENCE_ANNOUNCE, ""));
         }
         if (key.equals(MainApplication.PREFERENCE_WIFI)) {
             if (!sharedPreferences.getBoolean(MainApplication.PREFERENCE_WIFI, true))
@@ -572,7 +572,7 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
     }
 
     public void Error(String err) {
-        Log.e(TAG, Libtorrent.Error());
+        Log.e(TAG, Libtorrent.error());
 
         new AlertDialog.Builder(MainActivity.this)
                 .setTitle(R.string.error)
@@ -893,9 +893,9 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
                     return;
 
                 String p = getStorage().getStoragePath().getPath();
-                long t = Libtorrent.AddMagnet(p, s);
+                long t = Libtorrent.addMagnet(p, s);
                 if (t == -1) {
-                    throw new RuntimeException(Libtorrent.Error());
+                    throw new RuntimeException(Libtorrent.error());
                 }
 
                 addTorrentDialog(t, p);
@@ -925,9 +925,9 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
         try {
             if (dialog) {
                 String s = getStorage().getStoragePath().getPath();
-                long t = Libtorrent.AddTorrentFromBytes(s, buf);
+                long t = Libtorrent.addTorrentFromBytes(s, buf);
                 if (t == -1) {
-                    throw new RuntimeException(Libtorrent.Error());
+                    throw new RuntimeException(Libtorrent.error());
                 }
                 addTorrentDialog(t, s);
             } else {
@@ -972,9 +972,9 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
 
     public void createTorrentFromMetaInfo(String pp) {
         final SharedPreferences shared = PreferenceManager.getDefaultSharedPreferences(MainActivity.this);
-        final long t = Libtorrent.CreateTorrentFromMetaInfo();
+        final long t = Libtorrent.createTorrentFromMetaInfo();
         if (t == -1) {
-            Error(Libtorrent.Error());
+            Error(Libtorrent.error());
             return;
         }
         if (shared.getBoolean(MainApplication.PREFERENCE_DIALOG, false)) {

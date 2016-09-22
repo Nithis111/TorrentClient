@@ -42,7 +42,9 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
+import go.libtorrent.BytesInfo;
 import go.libtorrent.Libtorrent;
+import go.libtorrent.StatsTorrent;
 
 public class Storage {
     public static final String TAG = Storage.class.getSimpleName();
@@ -89,31 +91,31 @@ public class Storage {
         }
 
         public String name() {
-            String name = Libtorrent.TorrentName(t);
+            String name = Libtorrent.torrentName(t);
             // can be empy for magnet links, show hash instead
             if (name.isEmpty()) {
-                name = Libtorrent.TorrentHash(t);
+                name = Libtorrent.torrentHash(t);
             }
             return name;
         }
 
         public void start() {
-            if (!Libtorrent.StartTorrent(t))
-                throw new RuntimeException(Libtorrent.Error());
-            Libtorrent.StatsTorrent b = Libtorrent.TorrentStats(t);
+            if (!Libtorrent.startTorrent(t))
+                throw new RuntimeException(Libtorrent.error());
+            StatsTorrent b = Libtorrent.torrentStats(t);
             downloaded.start(b.getDownloaded());
             uploaded.start(b.getUploaded());
         }
 
         public void update() {
-            Libtorrent.StatsTorrent b = Libtorrent.TorrentStats(t);
+            StatsTorrent b = Libtorrent.torrentStats(t);
             downloaded.step(b.getDownloaded());
             uploaded.step(b.getUploaded());
         }
 
         public void stop() {
-            Libtorrent.StopTorrent(t);
-            Libtorrent.StatsTorrent b = Libtorrent.TorrentStats(t);
+            Libtorrent.stopTorrent(t);
+            StatsTorrent b = Libtorrent.torrentStats(t);
             downloaded.end(b.getDownloaded());
             uploaded.end(b.getUploaded());
         }
@@ -122,21 +124,21 @@ public class Storage {
         public String status() {
             String str = "";
 
-            switch (Libtorrent.TorrentStatus(t)) {
+            switch (Libtorrent.torrentStatus(t)) {
                 case Libtorrent.StatusQueued:
                 case Libtorrent.StatusChecking:
                 case Libtorrent.StatusPaused:
                 case Libtorrent.StatusSeeding:
-                    if (Libtorrent.MetaTorrent(t))
-                        str += MainApplication.formatSize(context, Libtorrent.TorrentBytesLength(t)) + " · ";
+                    if (Libtorrent.metaTorrent(t))
+                        str += MainApplication.formatSize(context, Libtorrent.torrentBytesLength(t)) + " · ";
 
                     str += "↓ " + MainApplication.formatSize(context, downloaded.getCurrentSpeed()) + context.getString(R.string.per_second);
                     str += " · ↑ " + MainApplication.formatSize(context, uploaded.getCurrentSpeed()) + context.getString(R.string.per_second);
                     break;
                 case Libtorrent.StatusDownloading:
                     long c = 0;
-                    if (Libtorrent.MetaTorrent(t))
-                        c = Libtorrent.TorrentPendingBytesLength(t) - Libtorrent.TorrentPendingBytesCompleted(t);
+                    if (Libtorrent.metaTorrent(t))
+                        c = Libtorrent.torrentPendingBytesLength(t) - Libtorrent.torrentPendingBytesCompleted(t);
                     int a = downloaded.getAverageSpeed();
                     if (c > 0 && a > 0) {
                         long diff = c * 1000 / a;
@@ -155,8 +157,8 @@ public class Storage {
         public String toString() {
             String str = name();
 
-            if (Libtorrent.MetaTorrent(t))
-                str += " · " + MainApplication.formatSize(context, Libtorrent.TorrentBytesLength(t));
+            if (Libtorrent.metaTorrent(t))
+                str += " · " + MainApplication.formatSize(context, Libtorrent.torrentBytesLength(t));
 
             str += " · (" + getProgress() + "%)";
 
@@ -164,11 +166,11 @@ public class Storage {
         }
 
         public static int getProgress(long t) {
-            if (Libtorrent.MetaTorrent(t)) {
-                long p = Libtorrent.TorrentPendingBytesLength(t);
+            if (Libtorrent.metaTorrent(t)) {
+                long p = Libtorrent.torrentPendingBytesLength(t);
                 if (p == 0)
                     return 0;
-                return (int) (Libtorrent.TorrentPendingBytesCompleted(t) * 100 / p);
+                return (int) (Libtorrent.torrentPendingBytesCompleted(t) * 100 / p);
             }
             return 0;
         }
@@ -184,13 +186,13 @@ public class Storage {
 
         @Override
         public int compare(Torrent lhs, Torrent rhs) {
-            Boolean lseed = Libtorrent.PendingCompleted(lhs.t);
-            Boolean rseed = Libtorrent.PendingCompleted(rhs.t);
+            Boolean lseed = Libtorrent.pendingCompleted(lhs.t);
+            Boolean rseed = Libtorrent.pendingCompleted(rhs.t);
 
             // booth done
             if (lseed && rseed) {
-                Long ltime = Libtorrent.TorrentStats(lhs.t).getSeeding();
-                Long rtime = Libtorrent.TorrentStats(rhs.t).getSeeding();
+                Long ltime = Libtorrent.torrentStats(lhs.t).getSeeding();
+                Long rtime = Libtorrent.torrentStats(rhs.t).getSeeding();
 
                 // seed time desc
                 return rtime.compareTo(ltime);
@@ -226,7 +228,7 @@ public class Storage {
     }
 
     public void update() {
-        Libtorrent.BytesInfo b = Libtorrent.Stats();
+        BytesInfo b = Libtorrent.stats();
 
         downloaded.step(b.getDownloaded());
         uploaded.step(b.getUploaded());
@@ -237,7 +239,7 @@ public class Storage {
         header += "\n";
         for (int i = 0; i < count(); i++) {
             Storage.Torrent t = torrent(i);
-            if (Libtorrent.TorrentActive(t.t)) {
+            if (Libtorrent.torrentActive(t.t)) {
                 header += "(" + t.getProgress() + "%) ";
             }
         }
@@ -264,9 +266,9 @@ public class Storage {
 
             byte[] b = Base64.decode(state, Base64.DEFAULT);
 
-            long t = Libtorrent.LoadTorrent(path, b);
+            long t = Libtorrent.loadTorrent(path, b);
             if (t == -1) {
-                Log.d(TAG, Libtorrent.Error());
+                Log.d(TAG, Libtorrent.error());
                 continue;
             }
             Torrent tt = new Torrent(context, t, path, message);
@@ -304,9 +306,9 @@ public class Storage {
 
     void save(SharedPreferences.Editor edit, int i) {
         Torrent t = torrents.get(i);
-        byte[] b = Libtorrent.SaveTorrent(t.t);
+        byte[] b = Libtorrent.saveTorrent(t.t);
         String state = Base64.encodeToString(b, Base64.DEFAULT);
-        edit.putInt("TORRENT_" + i + "_STATUS", Libtorrent.TorrentStatus(t.t));
+        edit.putInt("TORRENT_" + i + "_STATUS", Libtorrent.torrentStatus(t.t));
         edit.putString("TORRENT_" + i + "_STATE", state);
         edit.putString("TORRENT_" + i + "_PATH", t.path);
         edit.putBoolean("TORRENT_" + i + "_MESSAGE", t.message);
@@ -318,18 +320,18 @@ public class Storage {
         try {
             PackageInfo pInfo = context.getPackageManager().getPackageInfo(context.getPackageName(), 0);
             String version = pInfo.versionName;
-            Libtorrent.SetClientVersion(context.getString(R.string.app_name) + " " + version);
+            Libtorrent.setClientVersion(context.getString(R.string.app_name) + " " + version);
         } catch (PackageManager.NameNotFoundException e) {
         }
 
         Libtorrent.setBindAddr(":0");
 
-        if (!Libtorrent.Create()) {
-            throw new RuntimeException(Libtorrent.Error());
+        if (!Libtorrent.create()) {
+            throw new RuntimeException(Libtorrent.error());
         }
 
         final SharedPreferences shared = PreferenceManager.getDefaultSharedPreferences(context);
-        Libtorrent.SetDefaultAnnouncesList(shared.getString(MainApplication.PREFERENCE_ANNOUNCE, ""));
+        Libtorrent.setDefaultAnnouncesList(shared.getString(MainApplication.PREFERENCE_ANNOUNCE, ""));
 
         boolean wifi = shared.getBoolean(MainApplication.PREFERENCE_WIFI, true);
 
@@ -435,7 +437,7 @@ public class Storage {
 
     boolean active() {
         for (Torrent t : torrents) {
-            if (Libtorrent.TorrentActive(t.t))
+            if (Libtorrent.torrentActive(t.t))
                 return true;
         }
         return false;
@@ -466,7 +468,7 @@ public class Storage {
 
         torrents.clear();
 
-        Libtorrent.Close();
+        Libtorrent.close();
 
         if (mcastLock != null) {
             mcastLock.release();
@@ -508,7 +510,7 @@ public class Storage {
     public void remove(Torrent t) {
         torrents.remove(t);
 
-        Libtorrent.RemoveTorrent(t.t);
+        Libtorrent.removeTorrent(t.t);
 
         t.t = -1;
 
@@ -583,8 +585,8 @@ public class Storage {
             Torrent torrent = torrents.get(i);
 
             if (torrent.path.startsWith(l.getPath())) {
-                Libtorrent.StopTorrent(torrent.t);
-                String name = Libtorrent.TorrentName(torrent.t);
+                Libtorrent.stopTorrent(torrent.t);
+                String name = Libtorrent.torrentName(torrent.t);
                 File f = new File(torrent.path, name);
                 File tt = getNextFile(t, f);
                 touch = true;
@@ -604,7 +606,7 @@ public class Storage {
             save();
 
             for (Torrent torrent : torrents) {
-                Libtorrent.RemoveTorrent(torrent.t);
+                Libtorrent.removeTorrent(torrent.t);
             }
 
             torrents.clear();
@@ -764,7 +766,7 @@ public class Storage {
             mcastLock = null;
         }
 
-        Libtorrent.Pause();
+        Libtorrent.pause();
     }
 
     public void resume() {
@@ -778,7 +780,7 @@ public class Storage {
             }
         }
 
-        Libtorrent.Resume();
+        Libtorrent.resume();
 
         if (active()) {
             saveUpdate();
@@ -844,9 +846,9 @@ public class Storage {
 
     public Torrent addMagnet(String s) {
         String p = getStoragePath().getPath();
-        long t = Libtorrent.AddMagnet(p, s);
+        long t = Libtorrent.addMagnet(p, s);
         if (t == -1) {
-            throw new RuntimeException(Libtorrent.Error());
+            throw new RuntimeException(Libtorrent.error());
         }
         Torrent tt = new Storage.Torrent(context, t, p, true);
         add(tt);
@@ -855,9 +857,9 @@ public class Storage {
 
     public Torrent addTorrentFromBytes(byte[] buf) {
         String s = getStoragePath().getPath();
-        long t = Libtorrent.AddTorrentFromBytes(s, buf);
+        long t = Libtorrent.addTorrentFromBytes(s, buf);
         if (t == -1) {
-            throw new RuntimeException(Libtorrent.Error());
+            throw new RuntimeException(Libtorrent.error());
         }
         Torrent tt = new Storage.Torrent(context, t, s, true);
         add(tt);
@@ -866,9 +868,9 @@ public class Storage {
 
     public void addTorrentFromURL(String p) {
         String s = getStoragePath().getPath();
-        long t = Libtorrent.AddTorrentFromURL(s, p);
+        long t = Libtorrent.addTorrentFromURL(s, p);
         if (t == -1) {
-            throw new RuntimeException(Libtorrent.Error());
+            throw new RuntimeException(Libtorrent.error());
         }
         add(new Storage.Torrent(context, t, s, true));
     }

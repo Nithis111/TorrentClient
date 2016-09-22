@@ -37,9 +37,9 @@ public class FilesFragment extends Fragment implements MainActivity.TorrentFragm
 
     static class TorFile {
         public long index;
-        public Libtorrent.File file;
+        public go.libtorrent.File file;
 
-        public TorFile(long i, Libtorrent.File f) {
+        public TorFile(long i, go.libtorrent.File f) {
             this.file = f;
             this.index = i;
         }
@@ -107,7 +107,7 @@ public class FilesFragment extends Fragment implements MainActivity.TorrentFragm
             check.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    Libtorrent.TorrentFilesCheck(t, f.index, check.isChecked());
+                    Libtorrent.torrentFilesCheck(t, f.index, check.isChecked());
                 }
             });
 
@@ -125,7 +125,7 @@ public class FilesFragment extends Fragment implements MainActivity.TorrentFragm
             fc.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    Libtorrent.TorrentFilesCheck(t, f.index, check.isChecked());
+                    Libtorrent.torrentFilesCheck(t, f.index, check.isChecked());
                 }
             });
 
@@ -184,8 +184,8 @@ public class FilesFragment extends Fragment implements MainActivity.TorrentFragm
         download.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (!Libtorrent.DownloadMetadata(t)) {
-                    ((MainActivity) getActivity().getApplicationContext()).Error(Libtorrent.Error());
+                if (!Libtorrent.downloadMetadata(t)) {
+                    ((MainActivity) getActivity().getApplicationContext()).Error(Libtorrent.error());
                     return;
                 }
             }
@@ -204,7 +204,7 @@ public class FilesFragment extends Fragment implements MainActivity.TorrentFragm
             @Override
             public void onClick(View v) {
                 for (TorFile f : ff) {
-                    Libtorrent.TorrentFilesCheck(t, f.index, false);
+                    Libtorrent.torrentFilesCheck(t, f.index, false);
                 }
                 files.notifyDataSetChanged();
             }
@@ -215,7 +215,7 @@ public class FilesFragment extends Fragment implements MainActivity.TorrentFragm
             @Override
             public void onClick(View v) {
                 for (TorFile f : ff) {
-                    Libtorrent.TorrentFilesCheck(t, f.index, true);
+                    Libtorrent.torrentFilesCheck(t, f.index, true);
                 }
                 files.notifyDataSetChanged();
             }
@@ -229,16 +229,16 @@ public class FilesFragment extends Fragment implements MainActivity.TorrentFragm
     public void update() {
         long t = getArguments().getLong("torrent");
 
-        download.setVisibility(Libtorrent.MetaTorrent(t) ? View.GONE : View.VISIBLE);
-        toolbar.setVisibility(Libtorrent.MetaTorrent(t) ? View.VISIBLE : View.GONE);
+        download.setVisibility(Libtorrent.metaTorrent(t) ? View.GONE : View.VISIBLE);
+        toolbar.setVisibility(Libtorrent.metaTorrent(t) ? View.VISIBLE : View.GONE);
 
-        torrentName = Libtorrent.TorrentName(t);
+        torrentName = Libtorrent.torrentName(t);
 
-        long l = Libtorrent.TorrentFilesCount(t);
+        long l = Libtorrent.torrentFilesCount(t);
 
         ff.clear();
         for (long i = 0; i < l; i++) {
-            ff.add(new TorFile(i, Libtorrent.TorrentFiles(t, i)));
+            ff.add(new TorFile(i, Libtorrent.torrentFiles(t, i)));
         }
         Collections.sort(ff, new SortFiles());
         files.notifyDataSetChanged();

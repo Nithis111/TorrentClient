@@ -117,7 +117,7 @@ public class Torrents extends BaseAdapter implements DialogInterface.OnDismissLi
     public void updateStorage() {
         for (int i = 0; i < getCount(); i++) {
             Storage.Torrent t = getItem(i);
-            if (Libtorrent.TorrentActive(t.t)) {
+            if (Libtorrent.torrentActive(t.t)) {
                 t.update();
             }
         }
@@ -197,10 +197,10 @@ public class Torrents extends BaseAdapter implements DialogInterface.OnDismissLi
                 AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
                 builder.setTitle(R.string.delete_torrent);
 
-                String name = Libtorrent.MetaTorrent(t.t) ? ".../" + t.name() : t.name();
+                String name = Libtorrent.metaTorrent(t.t) ? ".../" + t.name() : t.name();
 
                 builder.setMessage(name + "\n\n" + context.getString(R.string.are_you_sure));
-                if (Libtorrent.MetaTorrent(t.t)) {
+                if (Libtorrent.metaTorrent(t.t)) {
                     builder.setNeutralButton(R.string.delete_with_data, new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
@@ -256,17 +256,17 @@ public class Torrents extends BaseAdapter implements DialogInterface.OnDismissLi
         play.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                int s = Libtorrent.TorrentStatus(t.t);
+                int s = Libtorrent.torrentStatus(t.t);
 
                 if (s == Libtorrent.StatusChecking) {
-                    Libtorrent.StopTorrent(t.t);
+                    Libtorrent.stopTorrent(t.t);
                     notifyDataSetChanged();
                     return;
                 }
 
                 if (s == Libtorrent.StatusQueued) {
                     // are we on wifi pause mode?
-                    if (Libtorrent.Paused()) // drop torrent from queue
+                    if (Libtorrent.paused()) // drop torrent from queue
                         getStorage().stop(t);
                     else // nope, we are on library pause, start torrent
                         getStorage().start(t);
@@ -295,7 +295,7 @@ public class Torrents extends BaseAdapter implements DialogInterface.OnDismissLi
             String text = "";
 
             Drawable d = null;
-            switch (Libtorrent.TorrentStatus(t.t)) {
+            switch (Libtorrent.torrentStatus(t.t)) {
                 case Libtorrent.StatusChecking:
                     d = ContextCompat.getDrawable(getContext(), R.drawable.ic_pause_24dp);
                     color = Color.YELLOW;
@@ -347,7 +347,7 @@ public class Torrents extends BaseAdapter implements DialogInterface.OnDismissLi
                     main.renameDialog(t.t);
                 }
             });
-            if (!Libtorrent.MetaTorrent(t.t)) {
+            if (!Libtorrent.metaTorrent(t.t)) {
                 rename.setColorFilter(Color.GRAY);
                 rename.setOnClickListener(null);
             } else {
@@ -380,8 +380,8 @@ public class Torrents extends BaseAdapter implements DialogInterface.OnDismissLi
                     Intent emailIntent = new Intent(Intent.ACTION_SEND);
                     emailIntent.setType("text/plain");
                     emailIntent.putExtra(Intent.EXTRA_EMAIL, "");
-                    emailIntent.putExtra(Intent.EXTRA_SUBJECT, Libtorrent.TorrentName(t.t));
-                    emailIntent.putExtra(Intent.EXTRA_TEXT, Libtorrent.TorrentMagnet(t.t));
+                    emailIntent.putExtra(Intent.EXTRA_SUBJECT, Libtorrent.torrentName(t.t));
+                    emailIntent.putExtra(Intent.EXTRA_TEXT, Libtorrent.torrentMagnet(t.t));
 
                     shareProvider.setShareIntent(emailIntent);
 
