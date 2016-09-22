@@ -492,9 +492,9 @@ public class Drawer implements com.mikepenz.materialdrawer.Drawer.OnDrawerItemCl
 
     public void updateHeader() {
         ArrayList<String> info = new ArrayList<>();
-        long c = Libtorrent.PortCount();
+        long c = Libtorrent.portCount();
         for (long i = 0; i < c; i++) {
-            info.add(Libtorrent.Port(i));
+            info.add(Libtorrent.port(i));
         }
 
         String str = "";
@@ -537,7 +537,7 @@ public class Drawer implements com.mikepenz.materialdrawer.Drawer.OnDrawerItemCl
                 infoThread = new Thread(new Runnable() {
                     @Override
                     public void run() {
-                        final boolean b = Libtorrent.PortCheck();
+                        final boolean b = Libtorrent.portCheck();
                         handler.post(new Runnable() {
                             @Override
                             public void run() {

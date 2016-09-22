@@ -19,12 +19,13 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 import go.libtorrent.Libtorrent;
+import go.libtorrent.Peer;
 
 public class PeersFragment extends Fragment implements MainActivity.TorrentFragmentInterface {
     View v;
     ListView list;
 
-    ArrayList<Libtorrent.Peer> ff = new ArrayList<>();
+    ArrayList<Peer> ff = new ArrayList<>();
     HashMap<String, SpeedInfo> dinfo = new HashMap<>();
     HashMap<String, SpeedInfo> uinfo = new HashMap<>();
 
@@ -38,7 +39,7 @@ public class PeersFragment extends Fragment implements MainActivity.TorrentFragm
         }
 
         @Override
-        public Libtorrent.Peer getItem(int i) {
+        public Peer getItem(int i) {
             return ff.get(i);
         }
 
@@ -65,7 +66,7 @@ public class PeersFragment extends Fragment implements MainActivity.TorrentFragm
             TextView d = (TextView) view.findViewById(R.id.torrent_peer_downloaded);
             TextView u = (TextView) view.findViewById(R.id.torrent_peer_uploaded);
 
-            Libtorrent.Peer f = getItem(i);
+            Peer f = getItem(i);
 
             String a = f.getAddr();
 
@@ -91,8 +92,8 @@ public class PeersFragment extends Fragment implements MainActivity.TorrentFragm
 
             String str = "";
 
-            if (Libtorrent.MetaTorrent(t))
-                str += f.getPiecesCompleted() * 100 / Libtorrent.TorrentPiecesCount(t) + "% ";
+            if (Libtorrent.metaTorrent(t))
+                str += f.getPiecesCompleted() * 100 / Libtorrent.torrentPiecesCount(t) + "% ";
 
             if (f.getSupportsEncryption())
                 str += "(E)";
@@ -131,13 +132,13 @@ public class PeersFragment extends Fragment implements MainActivity.TorrentFragm
     public void update() {
         long t = getArguments().getLong("torrent");
 
-        long l = Libtorrent.TorrentPeersCount(t);
+        long l = Libtorrent.torrentPeersCount(t);
 
         ArrayList<String> addrs = new ArrayList<>();
 
         ff.clear();
         for (long i = 0; i < l; i++) {
-            Libtorrent.Peer p = Libtorrent.TorrentPeers(t, i);
+            Peer p = Libtorrent.torrentPeers(t, i);
             ff.add(p);
             addrs.add(p.getAddr());
         }

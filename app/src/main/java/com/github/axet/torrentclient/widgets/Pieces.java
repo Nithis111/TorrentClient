@@ -62,14 +62,14 @@ public class Pieces extends View {
     }
 
     public void setTorrent(long t) {
-        if (!Libtorrent.MetaTorrent(t))
+        if (!Libtorrent.metaTorrent(t))
             return;
 
         cells = CELLS;
 
         int len = cells * cells;
 
-        long l = Libtorrent.TorrentPiecesCount(t);
+        long l = Libtorrent.torrentPiecesCount(t);
 
         if (l < len) {
             int c = (int) Math.pow(l, 0.5);
@@ -84,10 +84,10 @@ public class Pieces extends View {
 
         pieces = new ArrayList<>();
 
-        l = Libtorrent.TorrentPiecesCompactCount(t, step);
+        l = Libtorrent.torrentPiecesCompactCount(t, step);
 
         for (long i = 0; i < l; i++) {
-            pieces.add(Libtorrent.TorrentPiecesCompact(t, i));
+            pieces.add(Libtorrent.torrentPiecesCompact(t, i));
         }
 
         invalidate();

@@ -29,7 +29,9 @@ import com.github.axet.torrentclient.widgets.Pieces;
 
 import java.io.File;
 
+import go.libtorrent.InfoTorrent;
 import go.libtorrent.Libtorrent;
+import go.libtorrent.StatsTorrent;
 
 public class DetailsFragment extends Fragment implements MainActivity.TorrentFragmentInterface {
     View v;
@@ -84,7 +86,7 @@ public class DetailsFragment extends Fragment implements MainActivity.TorrentFra
 
         final long t = getArguments().getLong("torrent");
 
-        final String h = Libtorrent.TorrentHash(t);
+        final String h = Libtorrent.torrentHash(t);
         hash.setText(h);
 
         View hashCopy = v.findViewById(R.id.torrent_hash_copy);
@@ -101,8 +103,8 @@ public class DetailsFragment extends Fragment implements MainActivity.TorrentFra
         meta.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (!Libtorrent.DownloadMetadata(t)) {
-                    ((MainActivity) getActivity().getApplicationContext()).Error(Libtorrent.Error());
+                if (!Libtorrent.downloadMetadata(t)) {
+                    ((MainActivity) getActivity().getApplicationContext()).Error(Libtorrent.error());
                     return;
                 }
             }
@@ -156,7 +158,7 @@ public class DetailsFragment extends Fragment implements MainActivity.TorrentFra
             pathImage.setColorFilter(ThemeUtils.getThemeColor(getContext(), R.attr.colorAccent));
         }
 
-        if (Libtorrent.MetaTorrent(t)) {
+        if (Libtorrent.metaTorrent(t)) {
             meta.setVisibility(View.GONE);
             parts.setVisibility(View.VISIBLE);
         } else {
@@ -167,7 +169,7 @@ public class DetailsFragment extends Fragment implements MainActivity.TorrentFra
         final Runnable checkUpdate = new Runnable() {
             @Override
             public void run() {
-                int s = Libtorrent.TorrentStatus(t);
+                int s = Libtorrent.torrentStatus(t);
                 switch (s) {
                     case Libtorrent.StatusChecking:
                         check.setImageDrawable(ContextCompat.getDrawable(getContext(), R.drawable.ic_stop_black_24dp));
@@ -200,13 +202,13 @@ public class DetailsFragment extends Fragment implements MainActivity.TorrentFra
 
         pview.setTorrent(t);
 
-        name.setText(Libtorrent.TorrentName(t));
+        name.setText(Libtorrent.torrentName(t));
 
-        MainApplication.setText(size, !Libtorrent.MetaTorrent(t) ? "" : MainApplication.formatSize(getContext(), Libtorrent.TorrentBytesLength(t)));
+        MainApplication.setText(size, !Libtorrent.metaTorrent(t) ? "" : MainApplication.formatSize(getContext(), Libtorrent.torrentBytesLength(t)));
 
-        MainApplication.setText(pieces, !Libtorrent.MetaTorrent(t) ? "" : Libtorrent.TorrentPiecesCount(t) + " / " + MainApplication.formatSize(getContext(), Libtorrent.TorrentPieceLength(t)));
+        MainApplication.setText(pieces, !Libtorrent.metaTorrent(t) ? "" : Libtorrent.torrentPiecesCount(t) + " / " + MainApplication.formatSize(getContext(), Libtorrent.torrentPieceLength(t)));
 
-        Libtorrent.InfoTorrent i = Libtorrent.TorrentInfo(t);
+        InfoTorrent i = Libtorrent.torrentInfo(t);
 
         MainApplication.setText(creator, i.getCreator());
 
@@ -242,7 +244,7 @@ public class DetailsFragment extends Fragment implements MainActivity.TorrentFra
             }
         });
 
-        switch (Libtorrent.TorrentStatus(t)) {
+        switch (Libtorrent.torrentStatus(t)) {
             case Libtorrent.StatusQueued:
                 status.setText(R.string.status_queue);
                 break;
@@ -262,22 +264,22 @@ public class DetailsFragment extends Fragment implements MainActivity.TorrentFra
 
         progress.setText(String.format("%d%%", Storage.Torrent.getProgress(t)));
 
-        Libtorrent.StatsTorrent b = Libtorrent.TorrentStats(t);
+        StatsTorrent b = Libtorrent.torrentStats(t);
         downloaded.setText(MainApplication.formatSize(getContext(), b.getDownloaded()));
 
         uploaded.setText(MainApplication.formatSize(getContext(), b.getUploaded()));
 
         float r = 0;
-        if (Libtorrent.MetaTorrent(t)) {
-            if (b.getDownloaded() >= Libtorrent.TorrentBytesLength(t)) {
+        if (Libtorrent.metaTorrent(t)) {
+            if (b.getDownloaded() >= Libtorrent.torrentBytesLength(t)) {
                 r = b.getUploaded() / (float) b.getDownloaded();
             } else {
-                r = b.getUploaded() / (float) Libtorrent.TorrentBytesLength(t);
+                r = b.getUploaded() / (float) Libtorrent.torrentBytesLength(t);
             }
         }
         ratio.setText(String.format("%.2f", r));
 
-        Libtorrent.InfoTorrent info = Libtorrent.TorrentInfo(t);
+        InfoTorrent info = Libtorrent.torrentInfo(t);
 
         MainApplication.setDate(added, info.getDateAdded());
 
