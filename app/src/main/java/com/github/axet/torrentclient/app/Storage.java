@@ -155,6 +155,9 @@ public class Storage {
         }
 
         public String toString() {
+            if (t == -1) // prevent debugger crash
+                return "(deleted)";
+
             String str = name();
 
             if (Libtorrent.metaTorrent(t))
