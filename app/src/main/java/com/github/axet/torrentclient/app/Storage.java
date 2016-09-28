@@ -142,12 +142,14 @@ public class Storage {
                     if (Libtorrent.metaTorrent(t))
                         c = Libtorrent.torrentPendingBytesLength(t) - Libtorrent.torrentPendingBytesCompleted(t);
                     int a = downloaded.getAverageSpeed();
+                    String left = "∞";
                     if (c > 0 && a > 0) {
                         long diff = c * 1000 / a;
-                        str += "" + ((MainApplication) context.getApplicationContext()).formatDuration(context, diff) + "";
-                    } else {
-                        str += "∞";
+                        int diffDays = (int) (diff / (24 * 60 * 60 * 1000));
+                        if (diffDays < 30)
+                            left = "" + ((MainApplication) context.getApplicationContext()).formatDuration(context, diff) + "";
                     }
+                    str += left;
                     str += " · ↓ " + MainApplication.formatSize(context, downloaded.getCurrentSpeed()) + context.getString(R.string.per_second);
                     str += " · ↑ " + MainApplication.formatSize(context, uploaded.getCurrentSpeed()) + context.getString(R.string.per_second);
                     break;

@@ -169,13 +169,11 @@ public class EnginesManager {
         list.clear();
 
         final SharedPreferences shared = PreferenceManager.getDefaultSharedPreferences(context);
-        int count = shared.getInt("ENGINE_COUNT", -1);
-        if (count == -1) // <=2.4.0
-            count = shared.getInt("engine_count", 0);
+        int count = shared.getInt("engine_count", 0);
         for (int i = 0; i < count; i++) {
             try {
                 JSONObject o = new JSONObject();
-                String json = shared.getString("ENGINE_" + i, "");
+                String json = shared.getString("engine_" + i, "");
                 if (json.isEmpty()) { // <=2.4.0
                     String data = shared.getString("engine_" + i + "_data", "");
                     String state = shared.getString("engine_" + i + "_state", "");
@@ -221,7 +219,7 @@ public class EnginesManager {
 
         final SharedPreferences shared = PreferenceManager.getDefaultSharedPreferences(context);
         SharedPreferences.Editor edit = shared.edit();
-        edit.putInt("ENGINE_COUNT", list.size());
+        edit.putInt("engine_count", list.size());
         for (int i = 0; i < list.size(); i++) {
             try {
                 Item item = list.get(i);
@@ -232,7 +230,7 @@ public class EnginesManager {
                 o.put("state", search.save());
                 o.put("url", item.url);
                 o.put("time", item.time);
-                edit.putString("ENGINE_" + i, o.toString());
+                edit.putString("engine_" + i, o.toString());
             } catch (JSONException e) {
                 throw new RuntimeException(e);
             }
