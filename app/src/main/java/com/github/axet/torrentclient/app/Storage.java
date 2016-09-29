@@ -258,11 +258,13 @@ public class Storage {
         ArrayList<Torrent> resume = new ArrayList<>();
 
         final SharedPreferences shared = PreferenceManager.getDefaultSharedPreferences(context);
-        int count = shared.getInt("TORRENT_COUNT", 0);
+        int count = shared.getInt("torrent_count", -1);
+        if (count == -1) // <=2.4.0
+            count = shared.getInt("TORRENT_COUNT", 0);
         for (int i = 0; i < count; i++) {
             try {
                 JSONObject o = new JSONObject();
-                String json = shared.getString("TORRENT_" + i, "");
+                String json = shared.getString("torrent_" + i, "");
                 if (json.isEmpty()) { // <=2.4.0
                     String path = shared.getString("TORRENT_" + i + "_PATH", "");
 
@@ -311,7 +313,7 @@ public class Storage {
         Log.d(TAG, "save()");
         final SharedPreferences shared = PreferenceManager.getDefaultSharedPreferences(context);
         SharedPreferences.Editor edit = shared.edit();
-        edit.putInt("TORRENT_COUNT", torrents.size());
+        edit.putInt("torrent_count", torrents.size());
         for (int i = 0; i < torrents.size(); i++) {
             save(edit, i);
         }
@@ -335,7 +337,7 @@ public class Storage {
             o.put("state", state);
             o.put("path", t.path);
             o.put("message", t.message);
-            edit.putString("TORRENT_" + i, o.toString());
+            edit.putString("torrent_" + i, o.toString());
         } catch (JSONException e) {
             throw new RuntimeException(e);
         }
