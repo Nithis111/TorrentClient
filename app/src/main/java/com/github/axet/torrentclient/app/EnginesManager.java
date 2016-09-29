@@ -15,6 +15,8 @@ import com.github.axet.torrentclient.activities.MainActivity;
 import com.github.axet.torrentclient.navigators.Search;
 
 import org.apache.commons.io.IOUtils;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -169,19 +171,33 @@ public class EnginesManager {
         final SharedPreferences shared = PreferenceManager.getDefaultSharedPreferences(context);
         int count = shared.getInt("engine_count", 0);
         for (int i = 0; i < count; i++) {
-            String data = shared.getString("engine_" + i + "_data", "");
-            String state = shared.getString("engine_" + i + "_state", "");
-            String url = shared.getString("engine_" + i + "_url", "");
-            long time = shared.getLong("engine_" + i + "_time", 0);
+            try {
+                JSONObject o = new JSONObject();
+                String json = shared.getString("engine_" + i, "");
+                if (json.isEmpty()) { // <=2.4.0
+                    String data = shared.getString("engine_" + i + "_data", "");
+                    String state = shared.getString("engine_" + i + "_state", "");
+                    String url = shared.getString("engine_" + i + "_url", "");
+                    long time = shared.getLong("engine_" + i + "_time", 0);
+                    o.put("data", data);
+                    o.put("state", state);
+                    o.put("url", url);
+                    o.put("time", time);
+                } else {
+                    o = new JSONObject(json);
+                }
 
-            SearchEngine engine = new SearchEngine();
-            engine.loadJson(data);
+                SearchEngine engine = new SearchEngine();
+                engine.loadJson(o.getString("data"));
 
-            Search search = new Search(main);
-            search.setEngine(engine);
-            search.load(state);
+                Search search = new Search(main);
+                search.setEngine(engine);
+                search.load(o.getString("state"));
 
-            list.add(new Item(search, url, time));
+                list.add(new Item(search, o.getString("url"), time));
+            } catch (JSONException e) {
+                throw new RuntimeException(e);
+            }
         }
 
         this.time = shared.getLong("time", 0);
@@ -205,13 +221,19 @@ public class EnginesManager {
         SharedPreferences.Editor edit = shared.edit();
         edit.putInt("engine_count", list.size());
         for (int i = 0; i < list.size(); i++) {
-            Item item = list.get(i);
-            Search search = item.search;
-            SearchEngine engine = search.getEngine();
-            edit.putString("engine_" + i + "_data", engine.save());
-            edit.putString("engine_" + i + "_state", search.save());
-            edit.putString("engine_" + i + "_url", item.url);
-            edit.putLong("engine_" + i + "_time", item.time);
+            try {
+                Item item = list.get(i);
+                Search search = item.search;
+                SearchEngine engine = search.getEngine();
+                JSONObject o = new JSONObject();
+                o.put("data", engine.save());
+                o.put("state", search.save());
+                o.put("url", item.url);
+                o.put("time", item.time);
+                edit.putString("engine_" + i, o.toString());
+            } catch (JSONException e) {
+                throw new RuntimeException(e);
+            }
         }
         edit.putLong("time", time);
         edit.commit();

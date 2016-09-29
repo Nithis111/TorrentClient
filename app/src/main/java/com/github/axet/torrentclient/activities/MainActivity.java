@@ -212,7 +212,7 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
                         String path = p.getPath();
                         File parent = new File(path).getParentFile();
                         if (parent == null) {
-                            Error(getString(R.string.select_folder));
+                            Error("root folder can't be selected");
                             return;
                         }
                         final String pp = parent.getPath();

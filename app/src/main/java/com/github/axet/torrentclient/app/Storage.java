@@ -24,6 +24,8 @@ import com.github.axet.torrentclient.R;
 import com.github.axet.torrentclient.services.TorrentService;
 
 import org.apache.commons.io.FileUtils;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -140,12 +142,14 @@ public class Storage {
                     if (Libtorrent.metaTorrent(t))
                         c = Libtorrent.torrentPendingBytesLength(t) - Libtorrent.torrentPendingBytesCompleted(t);
                     int a = downloaded.getAverageSpeed();
+                    String left = "∞";
                     if (c > 0 && a > 0) {
                         long diff = c * 1000 / a;
-                        str += "" + ((MainApplication) context.getApplicationContext()).formatDuration(context, diff) + "";
-                    } else {
-                        str += "∞";
+                        int diffDays = (int) (diff / (24 * 60 * 60 * 1000));
+                        if (diffDays < 30)
+                            left = "" + ((MainApplication) context.getApplicationContext()).formatDuration(context, diff) + "";
                     }
+                    str += left;
                     str += " · ↓ " + MainApplication.formatSize(context, downloaded.getCurrentSpeed()) + context.getString(R.string.per_second);
                     str += " · ↑ " + MainApplication.formatSize(context, uploaded.getCurrentSpeed()) + context.getString(R.string.per_second);
                     break;
@@ -155,6 +159,9 @@ public class Storage {
         }
 
         public String toString() {
+            if (t == -1) // prevent debugger crash
+                return "(deleted)";
+
             String str = name();
 
             if (Libtorrent.metaTorrent(t))
@@ -251,31 +258,47 @@ public class Storage {
         ArrayList<Torrent> resume = new ArrayList<>();
 
         final SharedPreferences shared = PreferenceManager.getDefaultSharedPreferences(context);
-        int count = shared.getInt("TORRENT_COUNT", 0);
+        int count = shared.getInt("torrent_count", -1);
+        if (count == -1) // <=2.4.0
+            count = shared.getInt("TORRENT_COUNT", 0);
         for (int i = 0; i < count; i++) {
-            String path = shared.getString("TORRENT_" + i + "_PATH", "");
+            try {
+                JSONObject o = new JSONObject();
+                String json = shared.getString("torrent_" + i, "");
+                if (json.isEmpty()) { // <=2.4.0
+                    String path = shared.getString("TORRENT_" + i + "_PATH", "");
 
-            if (path.isEmpty())
-                path = getStoragePath().getPath();
+                    if (path.isEmpty())
+                        path = getStoragePath().getPath();
 
-            String state = shared.getString("TORRENT_" + i + "_STATE", "");
+                    String state = shared.getString("TORRENT_" + i + "_STATE", "");
 
-            int status = shared.getInt("TORRENT_" + i + "_STATUS", 0);
+                    int status = shared.getInt("TORRENT_" + i + "_STATUS", 0);
 
-            boolean message = shared.getBoolean("TORRENT_" + i + "_MESSAGE", false);
+                    boolean message = shared.getBoolean("TORRENT_" + i + "_MESSAGE", false);
+                    o.put("path", path);
+                    o.put("state", state);
+                    o.put("status", status);
+                    o.put("message", message);
+                } else {
+                    o = new JSONObject(json);
+                }
 
-            byte[] b = Base64.decode(state, Base64.DEFAULT);
+                byte[] b = Base64.decode(o.getString("state"), Base64.DEFAULT);
 
-            long t = Libtorrent.loadTorrent(path, b);
-            if (t == -1) {
-                Log.d(TAG, Libtorrent.error());
-                continue;
-            }
-            Torrent tt = new Torrent(context, t, path, message);
-            torrents.add(tt);
+                long t = Libtorrent.loadTorrent(o.getString("path"), b);
+                if (t == -1) {
+                    Log.d(TAG, Libtorrent.error());
+                    continue;
+                }
+                Torrent tt = new Torrent(context, t, o.getString("path"), o.getBoolean("message"));
+                torrents.add(tt);
 
-            if (status != Libtorrent.StatusPaused) {
-                resume.add(tt);
+                if (o.getInt("status") != Libtorrent.StatusPaused) {
+                    resume.add(tt);
+                }
+            } catch (JSONException e) {
+                throw new RuntimeException(e);
             }
         }
 
@@ -290,7 +313,7 @@ public class Storage {
         Log.d(TAG, "save()");
         final SharedPreferences shared = PreferenceManager.getDefaultSharedPreferences(context);
         SharedPreferences.Editor edit = shared.edit();
-        edit.putInt("TORRENT_COUNT", torrents.size());
+        edit.putInt("torrent_count", torrents.size());
         for (int i = 0; i < torrents.size(); i++) {
             save(edit, i);
         }
@@ -308,10 +331,16 @@ public class Storage {
         Torrent t = torrents.get(i);
         byte[] b = Libtorrent.saveTorrent(t.t);
         String state = Base64.encodeToString(b, Base64.DEFAULT);
-        edit.putInt("TORRENT_" + i + "_STATUS", Libtorrent.torrentStatus(t.t));
-        edit.putString("TORRENT_" + i + "_STATE", state);
-        edit.putString("TORRENT_" + i + "_PATH", t.path);
-        edit.putBoolean("TORRENT_" + i + "_MESSAGE", t.message);
+        try {
+            JSONObject o = new JSONObject();
+            o.put("status", Libtorrent.torrentStatus(t.t));
+            o.put("state", state);
+            o.put("path", t.path);
+            o.put("message", t.message);
+            edit.putString("torrent_" + i, o.toString());
+        } catch (JSONException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public void create() {
