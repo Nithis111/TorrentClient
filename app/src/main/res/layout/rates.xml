@@ -16,7 +16,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_span="3"
-                android:text="Rates"
+                android:text="@string/rates"
                 android:textStyle="bold" />
         </TableRow>
 
@@ -26,7 +26,30 @@
                 android:layout_width="120dp"
                 android:layout_height="wrap_content"
                 android:layout_gravity="right|center_vertical"
-                android:text="Upload rate:" />
+                android:text="@string/download_rate" />
+
+            <EditText
+                android:id="@+id/download_rate"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:ems="5"
+                android:inputType="number" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="left|center_vertical"
+                android:layout_marginLeft="5dp"
+                android:text="@string/kb_s" />
+        </TableRow>
+
+        <TableRow>
+
+            <TextView
+                android:layout_width="120dp"
+                android:layout_height="wrap_content"
+                android:layout_gravity="right|center_vertical"
+                android:text="@string/upload_rate" />
 
             <EditText
                 android:id="@+id/upload_rate"
@@ -41,36 +64,14 @@
                 android:layout_height="wrap_content"
                 android:layout_gravity="left|center_vertical"
                 android:layout_marginLeft="5dp"
-                android:text="KB/s" />
+                android:text="@string/kb_s" />
         </TableRow>
 
-        <TableRow>
-
-            <TextView
-                android:layout_width="120dp"
-                android:layout_height="wrap_content"
-                android:layout_gravity="right|center_vertical"
-                android:text="Download rate:" />
-
-            <EditText
-                android:id="@+id/download_rate"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:ems="5"
-                android:inputType="number" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="left|center_vertical"
-                android:layout_marginLeft="5dp"
-                android:text="KB/s" />
-        </TableRow>
     </TableLayout>
 
     <CheckBox
         android:id="@+id/speedlimit"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Enable Speed Limit" />
+        android:text="@string/enable_speed_limit" />
 </LinearLayout>

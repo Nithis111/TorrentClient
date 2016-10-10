@@ -141,4 +141,10 @@
 
     <string name="web_proxy_s">Web Прокси</string>
     <string name="load_more">Дальше</string>
+    <string name="unlimited">Без ограничения</string>
+    <string name="kb_s">кб/с</string>
+    <string name="upload_rate">Скорость отдачи:</string>
+    <string name="enable_speed_limit">Включить ограничение скорости</string>
+    <string name="rates">Лимиты</string>
+    <string name="download_rate">Скорость скачивания:</string>
 </resources>
