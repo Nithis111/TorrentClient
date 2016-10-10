@@ -95,31 +95,29 @@ public class RatesDialogFragment extends DialogFragment {
         speedlimit = (CheckBox) vv.findViewById(R.id.speedlimit);
 
         final SharedPreferences shared = PreferenceManager.getDefaultSharedPreferences(getContext());
-        int u = shared.getInt(MainApplication.PREFERENCE_UPLOAD, -1);
+        int u = shared.getInt(MainApplication.PREFERENCE_UPLOAD, 50);
         if (u > 0) {
             upload.setText(u + "");
         } else {
             upload.setText("");
-            upload.setHint("Unlimited");
+            upload.setHint(R.string.unlimited);
         }
 
-        u = shared.getInt(MainApplication.PREFERENCE_DOWNLOAD, -1);
+        u = shared.getInt(MainApplication.PREFERENCE_DOWNLOAD, 100);
         if (u > 0) {
             download.setText(u + "");
         } else {
             download.setText("");
-            download.setHint("Unlimited");
+            download.setHint(R.string.unlimited);
         }
 
         upload.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {
-
             }
 
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
-
             }
 
             @Override
@@ -131,12 +129,10 @@ public class RatesDialogFragment extends DialogFragment {
         download.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {
-
             }
 
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
-
             }
 
             @Override

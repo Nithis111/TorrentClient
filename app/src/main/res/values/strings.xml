@@ -136,4 +136,10 @@
     <string name="cookies_cleared">Cookies Cleared</string>
     <string name="web_proxy_s">Web Proxy\'s</string>
     <string name="load_more">Load More</string>
+    <string name="unlimited">Unlimited</string>
+    <string name="kb_s">KB/s</string>
+    <string name="upload_rate">Upload rate:</string>
+    <string name="enable_speed_limit">Enable Speed Limit</string>
+    <string name="rates">Rates</string>
+    <string name="download_rate">Download rate:</string>
 </resources>
