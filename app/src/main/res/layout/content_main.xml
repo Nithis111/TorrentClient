@@ -11,19 +11,34 @@
     tools:context=".activities.MainActivity"
     tools:showIn="@layout/activity_main">
 
-    <TextView
-        android:id="@+id/space_left"
+    <LinearLayout
+        android:id="@+id/space_left_group"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_centerHorizontal="true"
-        android:padding="5dp"
-        android:text="32G free · ↓ 1.6 Mb/s · ↑ 0.6 Mb/s" />
+        android:layout_centerHorizontal="true">
+
+        <TextView
+            android:id="@+id/space_left"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:padding="5dp"
+            android:text="32G free · ↓ 1.6 Mb/s · ↑ 0.6 Mb/s" />
+
+        <ImageView
+            android:id="@+id/turtle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:padding="5dp"
+            android:src="@drawable/turtle"
+            android:tint="@android:color/darker_gray" />
+    </LinearLayout>
 
     <View
         android:id="@+id/space"
         android:layout_width="match_parent"
         android:layout_height="1dp"
-        android:layout_below="@id/space_left"
+        android:layout_below="@id/space_left_group"
         android:background="@android:color/darker_gray" />
 
     <TextView
