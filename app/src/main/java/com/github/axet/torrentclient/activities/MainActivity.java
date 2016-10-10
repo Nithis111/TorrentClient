@@ -11,6 +11,7 @@ import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
+import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.net.Uri;
 import android.os.Bundle;
@@ -30,6 +31,7 @@ import android.view.WindowManager;
 import android.widget.AbsListView;
 import android.widget.Adapter;
 import android.widget.HeaderViewListAdapter;
+import android.widget.ImageView;
 import android.widget.ListAdapter;
 import android.widget.ProgressBar;
 import android.widget.TextView;
@@ -47,6 +49,7 @@ import com.github.axet.torrentclient.app.Storage;
 import com.github.axet.torrentclient.dialogs.AddDialogFragment;
 import com.github.axet.torrentclient.dialogs.CreateDialogFragment;
 import com.github.axet.torrentclient.dialogs.OpenIntentDialogFragment;
+import com.github.axet.torrentclient.dialogs.RatesDialogFragment;
 import com.github.axet.torrentclient.navigators.Torrents;
 import com.google.android.gms.appindexing.Action;
 import com.google.android.gms.appindexing.AppIndex;
@@ -88,6 +91,9 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
     FloatingActionsMenu fab;
     FloatingActionButton create;
     FloatingActionButton add;
+
+    TextView freespace;
+    ImageView turtle;
 
     // delayedIntent delayedIntent
     Intent delayedIntent;
@@ -372,6 +378,32 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
         list.setVisibility(View.GONE);
         fab.setVisibility(View.GONE);
 
+        freespace = (TextView) findViewById(R.id.space_left);
+        turtle = (ImageView) findViewById(R.id.turtle);
+
+        freespace.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                showRates();
+            }
+        });
+        turtle.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                final SharedPreferences shared = PreferenceManager.getDefaultSharedPreferences(MainActivity.this);
+                boolean b = shared.getBoolean(MainApplication.PREFERENCE_SPEEDLIMIT, false);
+                b = !b;
+                boolean bb = shared.getInt(MainApplication.PREFERENCE_UPLOAD, -1) == -1 && shared.getInt(MainApplication.PREFERENCE_DOWNLOAD, -1) == -1;
+                if (b && bb) {
+                    showRates();
+                    return;
+                }
+                SharedPreferences.Editor edit = shared.edit();
+                edit.putBoolean(MainApplication.PREFERENCE_SPEEDLIMIT, b);
+                edit.commit();
+            }
+        });
+
         screenreceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
@@ -471,6 +503,13 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
                 if (!getStorage().isConnectedWifi()) // are we on wifi?
                     getStorage().pause(); // no, pause all
             }
+        }
+        if (key.equals(MainApplication.PREFERENCE_SPEEDLIMIT)) {
+            updateHeader(getStorage());
+            getStorage().updateRates();
+        }
+        if(key.equals(MainApplication.PREFERENCE_UPLOAD) || key.equals(MainApplication.PREFERENCE_DOWNLOAD)) {
+            getStorage().updateRates();
         }
     }
 
@@ -841,8 +880,14 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
     }
 
     void updateHeader(Storage s) {
-        TextView text = (TextView) findViewById(R.id.space_left);
-        text.setText(s.formatHeader());
+        freespace.setText(s.formatHeader());
+
+        final SharedPreferences shared = PreferenceManager.getDefaultSharedPreferences(this);
+        if (shared.getBoolean(MainApplication.PREFERENCE_SPEEDLIMIT, false))
+            turtle.setColorFilter(0xff017aff);
+        else
+            turtle.setColorFilter(Color.GRAY);
+
         drawer.updateHeader();
     }
 
@@ -1038,5 +1083,12 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
 
     public Drawer getDrawer() {
         return drawer;
+    }
+
+    public void showRates() {
+        RatesDialogFragment dialog = new RatesDialogFragment();
+        Bundle args = new Bundle();
+        dialog.setArguments(args);
+        dialog.show(getSupportFragmentManager(), "");
     }
 }

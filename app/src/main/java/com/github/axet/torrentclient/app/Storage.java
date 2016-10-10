@@ -359,6 +359,8 @@ public class Storage {
             throw new RuntimeException(Libtorrent.error());
         }
 
+        updateRates();
+
         final SharedPreferences shared = PreferenceManager.getDefaultSharedPreferences(context);
         Libtorrent.setDefaultAnnouncesList(shared.getString(MainApplication.PREFERENCE_ANNOUNCE, ""));
 
@@ -949,6 +951,17 @@ public class Storage {
     public void clearUnreadCount() {
         for (int i = 0; i < torrents.size(); i++) {
             torrents.get(i).message = false;
+        }
+    }
+
+    public void updateRates() {
+        final SharedPreferences shared = PreferenceManager.getDefaultSharedPreferences(context);
+        if (!shared.getBoolean(MainApplication.PREFERENCE_SPEEDLIMIT, false)) {
+            Libtorrent.setUploadRate(-1);
+            Libtorrent.setDownloadRate(-1);
+        } else {
+            Libtorrent.setUploadRate(shared.getInt(MainApplication.PREFERENCE_UPLOAD, -1) * 1024);
+            Libtorrent.setDownloadRate(shared.getInt(MainApplication.PREFERENCE_DOWNLOAD, -1) * 1024);
         }
     }
 }
