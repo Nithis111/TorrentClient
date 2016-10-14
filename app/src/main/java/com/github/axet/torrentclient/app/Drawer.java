@@ -596,7 +596,7 @@ public class Drawer implements com.mikepenz.materialdrawer.Drawer.OnDrawerItemCl
             final SharedPreferences shared = PreferenceManager.getDefaultSharedPreferences(context);
 
             if (path == null || path.isEmpty()) {
-                path = shared.getString(MainApplication.PREFERENCE_LAST_PATH, Environment.getExternalStorageDirectory().getPath());
+                path = MainApplication.getPreferenceLastPath(context);
             }
 
             f.setCurrentPath(new File(path));

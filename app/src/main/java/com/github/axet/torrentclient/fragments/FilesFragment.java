@@ -113,7 +113,10 @@ public class FilesFragment extends Fragment implements MainActivity.TorrentFragm
 
             TextView percent = (TextView) view.findViewById(R.id.torrent_files_percent);
             percent.setEnabled(false);
-            MainApplication.setText(percent, (f.file.getBytesCompleted() * 100 / f.file.getLength()) + "%");
+            if (f.file.getLength() > 0)
+                MainApplication.setText(percent, (f.file.getBytesCompleted() * 100 / f.file.getLength()) + "%");
+            else
+                MainApplication.setText(percent, "100%");
 
             TextView size = (TextView) view.findViewById(R.id.torrent_files_size);
             size.setText(getContext().getString(R.string.size_tab) + " " + MainApplication.formatSize(getContext(), f.file.getLength()));

@@ -201,7 +201,7 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
                 final SharedPreferences shared = PreferenceManager.getDefaultSharedPreferences(MainActivity.this);
 
                 if (path == null || path.isEmpty()) {
-                    path = shared.getString(MainApplication.PREFERENCE_LAST_PATH, Environment.getExternalStorageDirectory().getPath());
+                    path = MainApplication.getPreferenceLastPath(MainActivity.this);
                 }
 
                 f.setCurrentPath(new File(path));
@@ -213,6 +213,7 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
                         shared.edit().putString(MainApplication.PREFERENCE_LAST_PATH, p.getParent()).commit();
 
                         final ProgressDialog progress = new ProgressDialog(MainActivity.this);
+                        progress.setOwnerActivity(MainActivity.this);
                         progress.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
 
                         String path = p.getPath();
@@ -239,8 +240,10 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
                                         handler.post(new Runnable() {
                                             @Override
                                             public void run() {
-                                                if (progress.getOwnerActivity() == null) // when app was destoryed
+                                                if (progress.getOwnerActivity() == null) { // when app was destoryed
+                                                    Log.d(TAG, "App Destoryed, Close Meta");
                                                     return;
+                                                }
                                                 progress.dismiss();
                                             }
                                         });
@@ -253,8 +256,10 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
                                         handler.post(new Runnable() {
                                             @Override
                                             public void run() {
-                                                if (progress.getOwnerActivity() == null) // when app was destoryed
+                                                if (progress.getOwnerActivity() == null) { // when app was destoryed
+                                                    Log.d(TAG, "App Destoryed, Close Meta");
                                                     return;
+                                                }
                                                 progress.dismiss();
                                             }
                                         });
@@ -265,8 +270,10 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
                                 handler.post(new Runnable() {
                                     @Override
                                     public void run() {
-                                        if (progress.getOwnerActivity() == null) // when app was destoryed
+                                        if (progress.getOwnerActivity() == null) { // when app was destoryed
+                                            Log.d(TAG, "App Destoryed, Close Meta");
                                             return;
+                                        }
                                         MainActivity.this.dialog = null;
                                         activity.createTorrentFromMetaInfo(pp);
                                         Libtorrent.closeMetaInfo();
@@ -319,7 +326,7 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
                 final SharedPreferences shared = PreferenceManager.getDefaultSharedPreferences(MainActivity.this);
 
                 if (path == null || path.isEmpty()) {
-                    path = shared.getString(MainApplication.PREFERENCE_LAST_PATH, Environment.getExternalStorageDirectory().getPath());
+                    path = MainApplication.getPreferenceLastPath(MainActivity.this);
                 }
 
                 f.setCurrentPath(new File(path));
@@ -508,7 +515,7 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
             updateHeader(getStorage());
             getStorage().updateRates();
         }
-        if(key.equals(MainApplication.PREFERENCE_UPLOAD) || key.equals(MainApplication.PREFERENCE_DOWNLOAD)) {
+        if (key.equals(MainApplication.PREFERENCE_UPLOAD) || key.equals(MainApplication.PREFERENCE_DOWNLOAD)) {
             getStorage().updateRates();
         }
     }
