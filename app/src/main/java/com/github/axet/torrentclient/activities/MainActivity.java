@@ -15,7 +15,6 @@ import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.net.Uri;
 import android.os.Bundle;
-import android.os.Environment;
 import android.os.Handler;
 import android.preference.PreferenceManager;
 import android.support.v4.app.ActivityCompat;
@@ -56,6 +55,7 @@ import com.google.android.gms.appindexing.AppIndex;
 import com.google.android.gms.common.api.GoogleApiClient;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -219,11 +219,21 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
                         String path = p.getPath();
                         File parent = new File(path).getParentFile();
                         if (parent == null) {
-                            Error("root folder can't be selected");
-                            return;
+                            parent = new File("/");
+                            path = ".";
+                        }
+                        try {
+                            File f = new File(path);
+                            path = f.getCanonicalPath(); // resolve symlink
+                        } catch (IOException e) {
+                            // ignore
                         }
                         final String pp = parent.getPath();
                         final AtomicLong pieces = new AtomicLong(Libtorrent.createMetaInfo(path));
+                        if (pieces.get() == -1) {
+                            Error(Libtorrent.error());
+                            return;
+                        }
                         final AtomicLong i = new AtomicLong(0);
                         progress.setMax((int) pieces.get());
 
