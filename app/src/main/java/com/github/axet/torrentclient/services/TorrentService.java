@@ -155,6 +155,7 @@ public class TorrentService extends Service {
                 .setOngoing(true)
                 .setContentTitle(getString(R.string.app_name))
                 .setSmallIcon(R.drawable.ic_application_icon)
+                .setContentText(title)
                 .setContent(view);
 
         if (Build.VERSION.SDK_INT >= 21)
