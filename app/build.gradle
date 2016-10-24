@@ -5,6 +5,7 @@ android {
     buildToolsVersion "23.0.3"
 
     defaultConfig {
+        multiDexEnabled true
         applicationId "com.github.axet.torrentclient"
         minSdkVersion 16
         targetSdkVersion 23
@@ -47,6 +48,6 @@ dependencies {
     compile 'com.getbase:floatingactionbutton:1.10.1'
     compile 'org.apmem.tools:layouts:1.10@aar'
     compile('com.mikepenz:materialdrawer:5.4.0@aar') { transitive = true }
-    compile 'com.github.axet:android-library:1.5.0' // compile project(':android-library')
+    compile 'com.github.axet:android-library:1.6.0' // compile project(':android-library')
     compile project(":libtorrent")
 }

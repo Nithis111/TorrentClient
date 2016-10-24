@@ -8,6 +8,7 @@ import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.os.Environment;
 import android.preference.PreferenceManager;
+import android.support.multidex.MultiDexApplication;
 import android.util.Log;
 import android.view.View;
 import android.widget.TextView;
@@ -22,7 +23,7 @@ import java.security.AccessController;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-public class MainApplication extends Application {
+public class MainApplication extends MultiDexApplication {
     final String TAG = MainApplication.class.getSimpleName();
 
     public static final String UTF8 = "UTF8";

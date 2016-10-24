@@ -28,15 +28,18 @@ import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
+import com.github.axet.androidlibrary.net.HttpClient;
 import com.github.axet.androidlibrary.widgets.HeaderGridView;
 import com.github.axet.androidlibrary.widgets.ThemeUtils;
 import com.github.axet.androidlibrary.widgets.UnreadCountDrawable;
 import com.github.axet.androidlibrary.widgets.WebViewCustom;
 import com.github.axet.torrentclient.R;
 import com.github.axet.torrentclient.activities.MainActivity;
-import com.github.axet.torrentclient.app.GoogleProxy;
 import com.github.axet.torrentclient.app.MainApplication;
 import com.github.axet.torrentclient.app.SearchEngine;
+import com.github.axet.torrentclient.net.GoogleProxy;
+import com.github.axet.torrentclient.net.HttpProxyClient;
+import com.github.axet.torrentclient.net.TorProxy;
 import com.github.axet.torrentclient.dialogs.BrowserDialogFragment;
 import com.github.axet.torrentclient.dialogs.LoginDialogFragment;
 
@@ -87,7 +90,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
     Thread thread;
     Looper threadLooper;
 
-    GoogleProxy http;
+    HttpProxyClient http;
     WebViewCustom web;
     SearchEngine engine;
     Handler handler;
@@ -211,14 +214,14 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
 
         final SharedPreferences shared = PreferenceManager.getDefaultSharedPreferences(context);
 
-        http = new GoogleProxy() {
+        http = new HttpProxyClient() {
             @Override
             protected CloseableHttpClient build(HttpClientBuilder builder) {
                 builder.setUserAgent(Search.USER_AGENT); // search requests shold go from desktop browser
                 return super.build(builder);
             }
         };
-        http.enabled = shared.getString(MainApplication.PREFERENCE_PROXY, "").equals(GoogleProxy.NAME);
+        http.update(context);
 
         shared.registerOnSharedPreferenceChangeListener(this);
     }
@@ -1461,6 +1464,6 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
 
     @Override
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
-        http.enabled = sharedPreferences.getString(MainApplication.PREFERENCE_PROXY, "").equals(GoogleProxy.NAME);
+        http.update(context);
     }
 }
