@@ -1021,7 +1021,10 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         web.addJavascriptInterface(exec, "torrentclient");
         // Uncaught SecurityError: Failed to read the 'cookie' property from 'Document': Cookies are disabled inside 'data:' URLs.
         // called when page loaded with loadData()
-        web.loadHtmlWithBaseURL(url, html, url);
+        if (html == null)
+            web.loadHtmlWithBaseURL(url, "", url);
+        else
+            web.loadHtmlWithBaseURL(url, html, url);
     }
 
     public void login(String login, String pass, final Runnable done) throws IOException {

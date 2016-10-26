@@ -322,7 +322,7 @@ public class Torrents extends BaseAdapter implements DialogInterface.OnDismissLi
                     text = "Seed";
                     break;
             }
-            PorterDuffColorFilter filter = new PorterDuffColorFilter(0x60000000 | (0xFFFFFF & color), PorterDuff.Mode.MULTIPLY);
+            PorterDuffColorFilter filter = new PorterDuffColorFilter(0xa0000000 | (0xFFFFFF & color), PorterDuff.Mode.MULTIPLY);
             stateImage.setColorFilter(filter);
             stateImage.setImageDrawable(d);
 
