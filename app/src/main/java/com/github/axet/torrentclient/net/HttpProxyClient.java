@@ -19,6 +19,7 @@ import cz.msebera.android.httpclient.client.config.RequestConfig;
 import cz.msebera.android.httpclient.client.methods.CloseableHttpResponse;
 import cz.msebera.android.httpclient.client.methods.HttpRequestBase;
 import cz.msebera.android.httpclient.client.methods.HttpUriRequest;
+import cz.msebera.android.httpclient.client.methods.RequestBuilder;
 import cz.msebera.android.httpclient.client.protocol.HttpClientContext;
 import cz.msebera.android.httpclient.config.Registry;
 import cz.msebera.android.httpclient.config.RegistryBuilder;
@@ -69,7 +70,7 @@ public class HttpProxyClient extends HttpClient {
         super.create();
     }
 
-    RequestConfig filter(RequestConfig config) {
+    static RequestConfig filter(RequestConfig config) {
         if (config == null)
             return null;
         config = RequestConfig.copy(config).setProxy(null).build();
@@ -78,20 +79,30 @@ public class HttpProxyClient extends HttpClient {
 
     public void filter(HttpRequest request, HttpContext context) {
         if (!enabled) {
-            if (request instanceof HttpRequestBase) {
-                HttpRequestBase m = (HttpRequestBase) request;
-                RequestConfig config = filter(m.getConfig());
-                if (config != null) {
-                    m.setConfig(config);
-                }
-            }
-            RequestConfig config = filter((RequestConfig) context.getAttribute(HttpClientContext.REQUEST_CONFIG));
-            if (config != null) {
-                context.setAttribute(HttpClientContext.REQUEST_CONFIG, config);
-            }
+            clear(request, context);
         } else {
             proxy.filter(request, context);
         }
+    }
+
+    public static void clear(HttpRequest request, HttpContext context) {
+        if (request instanceof HttpRequestBase) {
+            HttpRequestBase m = (HttpRequestBase) request;
+            RequestConfig config = filter(m.getConfig());
+            if (config != null) {
+                m.setConfig(config);
+            }
+        }
+        RequestConfig config = filter((RequestConfig) context.getAttribute(HttpClientContext.REQUEST_CONFIG));
+        if (config != null) {
+            context.setAttribute(HttpClientContext.REQUEST_CONFIG, config);
+        }
+    }
+
+    @Override
+    public RequestConfig build(RequestConfig.Builder builder) {
+        builder.setCircularRedirectsAllowed(true);
+        return super.build(builder);
     }
 
     @Override

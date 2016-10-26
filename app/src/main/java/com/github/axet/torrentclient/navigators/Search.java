@@ -37,11 +37,9 @@ import com.github.axet.torrentclient.R;
 import com.github.axet.torrentclient.activities.MainActivity;
 import com.github.axet.torrentclient.app.MainApplication;
 import com.github.axet.torrentclient.app.SearchEngine;
-import com.github.axet.torrentclient.net.GoogleProxy;
-import com.github.axet.torrentclient.net.HttpProxyClient;
-import com.github.axet.torrentclient.net.TorProxy;
 import com.github.axet.torrentclient.dialogs.BrowserDialogFragment;
 import com.github.axet.torrentclient.dialogs.LoginDialogFragment;
+import com.github.axet.torrentclient.net.HttpProxyClient;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -962,7 +960,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         return convertView;
     }
 
-    public void inject(final String url, final String html, String js, String js_post, final Inject exec) {
+    public void inject(final String url, final HttpClient.DownloadResponse html, String js, String js_post, final Inject exec) {
         Log.d(TAG, "inject()");
 
         String result = ";\n\ntorrentclient.result(document.documentElement.outerHTML);";
@@ -970,12 +968,14 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         String script = null;
         if (js != null) {
             script = js;
-            if (js_post == null) // add exec result() only once
-                script += result;
         }
         String script_post = null;
         if (js_post != null) {
             script_post = js_post + result;
+        } else if (js != null) {
+            script += result;
+        } else { // we must have result() called no matter what
+            script = result;
         }
 
         if (web != null) {
@@ -1004,6 +1004,15 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
             public boolean onJsAlert(WebView view, String url, String message, JsResult result) {
                 Error(message);
                 return super.onJsAlert(view, url, message, result);
+            }
+
+            @Override
+            protected String loadBase(Document doc) {
+                Elements links = doc.select("meta[http-equiv=refresh]");
+                if (!links.isEmpty()) { // do not inject redirect pages
+                    return doc.outerHtml();
+                }
+                return super.loadBase(doc);
             }
         };
         web.setHttpClient(http);
@@ -1035,7 +1044,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
                     map.put(URLDecoder.decode(m[0].trim(), MainApplication.UTF8), URLDecoder.decode(m[1].trim(), MainApplication.UTF8));
                 }
             }
-            final String html = http.post(null, post, map);
+            final HttpClient.DownloadResponse html = http.postResponse(null, post, map);
 
             final String js = s.get("js");
             final String js_post = s.get("js_post");
@@ -1125,7 +1134,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
     }
 
     public void search(final Map<String, String> s, String type, String url, String search, final Runnable done) {
-        String html = null;
+        HttpClient.DownloadResponse html = null;
         String json = null;
 
         if (type.equals("post")) {
@@ -1145,10 +1154,12 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
                     }
                 }
             }
-            html = http.post(null, url, map);
+            html = http.postResponse(null, url, map);
+            html.download();
         }
         if (type.equals("get")) {
-            html = http.get(null, url);
+            html = http.getResponse(null, url);
+            html.download();
         }
         if (type.equals("json_get")) {
             json = http.get(null, url).trim();
@@ -1197,7 +1208,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         handler.post(new Runnable() {
             @Override
             public void run() {
-                inject(url, "", js, js_post, new Inject(json) {
+                inject(url, null, js, js_post, new Inject(json) {
                     @JavascriptInterface
                     public void result(final String html) {
                         super.result(html);
@@ -1225,12 +1236,12 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         });
     }
 
-    public void searchHtml(final Map<String, String> s, final String type, final String url, final String html, final Runnable done) {
+    public void searchHtml(final Map<String, String> s, final String type, final String url, final HttpClient.DownloadResponse html, final Runnable done) {
         this.nextLast.add(url);
 
         final String js = s.get("js");
         final String js_post = s.get("js_post");
-        if (js != null || js_post != null) {
+        if (js != null || js_post != null || html.getError() != null) {
             handler.post(new Runnable() {
                 @Override
                 public void run() {
@@ -1275,6 +1286,10 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
                 }
             }
         });
+    }
+
+    void searchList(Map<String, String> s, String type, String url, HttpClient.DownloadResponse html) {
+        searchList(s, type, url, html == null ? "" : html.getHtml());
     }
 
     // UI thread

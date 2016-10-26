@@ -28,7 +28,6 @@ import com.github.axet.torrentclient.activities.MainActivity;
 import com.github.axet.torrentclient.navigators.Search;
 import com.github.axet.torrentclient.navigators.Torrents;
 import com.github.axet.torrentclient.net.GoogleProxy;
-import com.github.axet.torrentclient.net.TorProxy;
 import com.github.axet.torrentclient.widgets.AddDrawerItem;
 import com.github.axet.torrentclient.widgets.ProxyDrawerItem;
 import com.github.axet.torrentclient.widgets.SearchDrawerItem;

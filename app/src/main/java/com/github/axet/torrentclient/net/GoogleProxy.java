@@ -3,14 +3,7 @@ package com.github.axet.torrentclient.net;
 import com.github.axet.androidlibrary.crypto.MD5;
 
 import cz.msebera.android.httpclient.HttpRequest;
-import cz.msebera.android.httpclient.HttpResponse;
-import cz.msebera.android.httpclient.ProtocolException;
-import cz.msebera.android.httpclient.client.config.RequestConfig;
-import cz.msebera.android.httpclient.client.methods.HttpRequestBase;
 import cz.msebera.android.httpclient.client.methods.HttpUriRequest;
-import cz.msebera.android.httpclient.client.protocol.HttpClientContext;
-import cz.msebera.android.httpclient.impl.client.HttpClientBuilder;
-import cz.msebera.android.httpclient.impl.client.LaxRedirectStrategy;
 import cz.msebera.android.httpclient.protocol.HttpContext;
 
 public class GoogleProxy implements Proxy {
@@ -31,8 +24,8 @@ public class GoogleProxy implements Proxy {
     public void filter(HttpRequest request, HttpContext context) {
         if (request instanceof HttpUriRequest) {
             HttpUriRequest uri = (HttpUriRequest) request;
-            if (uri.getURI().getScheme().equals("https")) {
-                // Google Data Saver plugin does not work for sites on https
+            if (uri.getURI().getScheme().equals("https")) { // Google Data Saver plugin does not work for sites on https
+                HttpProxyClient.clear(request, context);
             } else {
                 authHeader(request);
             }

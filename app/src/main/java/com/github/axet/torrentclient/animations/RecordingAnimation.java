@@ -7,8 +7,8 @@ import android.view.View;
 import android.view.animation.Transformation;
 
 import com.github.axet.androidlibrary.animations.MarginAnimation;
-import com.github.axet.torrentclient.R;
 import com.github.axet.androidlibrary.widgets.HeaderGridView;
+import com.github.axet.torrentclient.R;
 
 public class RecordingAnimation extends MarginAnimation {
     HeaderGridView list;

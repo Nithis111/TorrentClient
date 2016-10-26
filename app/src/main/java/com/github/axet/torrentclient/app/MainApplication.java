@@ -8,7 +8,6 @@ import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.os.Environment;
 import android.preference.PreferenceManager;
-import android.support.multidex.MultiDexApplication;
 import android.util.Log;
 import android.view.View;
 import android.widget.TextView;
@@ -17,9 +16,6 @@ import com.github.axet.androidlibrary.widgets.ThemeUtils;
 import com.github.axet.torrentclient.R;
 
 import java.io.File;
-import java.io.FilePermission;
-import java.security.AccessControlException;
-import java.security.AccessController;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
@@ -260,7 +256,7 @@ public class MainApplication extends Application {
         final SharedPreferences shared = PreferenceManager.getDefaultSharedPreferences(context);
         String def = Environment.getExternalStorageDirectory().getPath();
         String path = shared.getString(MainApplication.PREFERENCE_LAST_PATH, def);
-        if(!new File(path).canRead()) {
+        if (!new File(path).canRead()) {
             return def;
         }
         return path;
