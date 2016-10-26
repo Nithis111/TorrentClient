@@ -142,6 +142,6 @@
     <string name="enable_speed_limit">Enable Speed Limit</string>
     <string name="rates">Rates</string>
     <string name="download_rate">Download rate:</string>
-    <string name="google_proxy">Google Data Saver</string>
-    <string name="tor_proxy">Tor</string>
+    <string name="google_proxy" translatable="false">Google Data Saver</string>
+    <string name="tor_proxy" translatable="false">Tor</string>
 </resources>
