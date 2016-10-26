@@ -9,32 +9,16 @@ import java.net.Socket;
 
 import cz.msebera.android.httpclient.HttpHost;
 import cz.msebera.android.httpclient.HttpRequest;
-import cz.msebera.android.httpclient.config.Registry;
-import cz.msebera.android.httpclient.config.RegistryBuilder;
 import cz.msebera.android.httpclient.conn.socket.ConnectionSocketFactory;
-import cz.msebera.android.httpclient.conn.socket.PlainConnectionSocketFactory;
-import cz.msebera.android.httpclient.conn.ssl.SSLConnectionSocketFactory;
-import cz.msebera.android.httpclient.impl.client.HttpClientBuilder;
-import cz.msebera.android.httpclient.impl.conn.PoolingHttpClientConnectionManager;
 import cz.msebera.android.httpclient.protocol.HttpContext;
 
-/*
-Android 23 drop SSL_DHE_RSA_WITH_3DES_EDE_CBC_SHA cipher suite.
-
-  - https://developer.android.com/reference/javax/net/ssl/SSLEngine.html
-  - https://github.com/subgraph/Orchid/issues/16
-*/
 public class TorProxy implements Proxy {
 
     public static final String NAME = "tor";
 
+    static int count;
 //    static TorClient client;
 //    OrchidSocketFactory socketFactory;
-
-    static {
-//        client = new TorClient();
-//        client.start();
-    }
 
     public class Orichid implements ConnectionSocketFactory {
         @Override
@@ -49,9 +33,21 @@ public class TorProxy implements Proxy {
     }
 
     public TorProxy(HttpProxyClient c) {
+        if (count == 0) {
+//            client = new TorClient();
+//            client.start();
+        }
         c.http.base = new Orichid();
         c.https.base = new Orichid();
 //        socketFactory = new OrchidSocketFactory(client);
+    }
+
+    @Override
+    public void close() {
+        count--;
+        if (count == 0) {
+            ;
+        }
     }
 
     @Override

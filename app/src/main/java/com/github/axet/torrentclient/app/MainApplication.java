@@ -23,7 +23,7 @@ import java.security.AccessController;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-public class MainApplication extends MultiDexApplication {
+public class MainApplication extends Application {
     final String TAG = MainApplication.class.getSimpleName();
 
     public static final String UTF8 = "UTF8";

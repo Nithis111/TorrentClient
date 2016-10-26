@@ -50,4 +50,6 @@ dependencies {
     compile('com.mikepenz:materialdrawer:5.4.0@aar') { transitive = true }
     compile 'com.github.axet:android-library:1.6.0' // compile project(':android-library')
     compile project(":libtorrent")
+//    compile 'com.subgraph.orchid:orchid:0.9.1'
+//    compile 'com.madgag.spongycastle:prov:1.54.0.0'
 }

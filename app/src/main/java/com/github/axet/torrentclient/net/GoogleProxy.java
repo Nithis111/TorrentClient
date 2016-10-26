@@ -23,6 +23,11 @@ public class GoogleProxy implements Proxy {
         //setProxy("proxy.googlezip.net", 443, "https");
     }
 
+    @Override
+    public void close() {
+    }
+
+    @Override
     public void filter(HttpRequest request, HttpContext context) {
         if (request instanceof HttpUriRequest) {
             HttpUriRequest uri = (HttpUriRequest) request;

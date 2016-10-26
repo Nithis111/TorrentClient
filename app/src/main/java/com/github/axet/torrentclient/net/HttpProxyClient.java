@@ -138,7 +138,7 @@ public class HttpProxyClient extends HttpClient {
             }
         }
 
-        if(!enabled) {
+        if (!enabled) {
             clearProxy();
         }
     }
@@ -146,6 +146,10 @@ public class HttpProxyClient extends HttpClient {
     @Override
     public void clearProxy() {
         super.clearProxy();
+        if (proxy != null) {
+            proxy.close();
+            proxy = null;
+        }
         http.base = PlainConnectionSocketFactory.getSocketFactory();
         https.base = SSLConnectionSocketFactory.getSocketFactory();
     }
