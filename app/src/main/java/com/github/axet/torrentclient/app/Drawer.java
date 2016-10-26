@@ -8,7 +8,6 @@ import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.graphics.drawable.Drawable;
-import android.os.Environment;
 import android.os.Handler;
 import android.preference.PreferenceManager;
 import android.support.v7.app.AlertDialog;
@@ -28,6 +27,7 @@ import com.github.axet.torrentclient.R;
 import com.github.axet.torrentclient.activities.MainActivity;
 import com.github.axet.torrentclient.navigators.Search;
 import com.github.axet.torrentclient.navigators.Torrents;
+import com.github.axet.torrentclient.net.GoogleProxy;
 import com.github.axet.torrentclient.widgets.AddDrawerItem;
 import com.github.axet.torrentclient.widgets.ProxyDrawerItem;
 import com.github.axet.torrentclient.widgets.SearchDrawerItem;
@@ -70,6 +70,8 @@ public class Drawer implements com.mikepenz.materialdrawer.Drawer.OnDrawerItemCl
     List<String> infoOld;
     boolean infoPort;
     long infoTime; // last time checked
+
+    List<ProxyDrawerItem.ViewHolder> viewList = new ArrayList<>();
 
     public Drawer(final MainActivity main, final Toolbar toolbar) {
         this.context = main;
@@ -447,35 +449,47 @@ public class Drawer implements com.mikepenz.materialdrawer.Drawer.OnDrawerItemCl
                 .withIdentifier(R.string.web_proxy_s)
                 .withName(R.string.web_proxy_s));
 
+        ProxyDrawerItem google = createProxy(GoogleProxy.NAME, R.string.google_proxy);
+        list.add(google);
+
+        //ProxyDrawerItem tor = createProxy(TorProxy.NAME, R.string.tor_proxy);
+        //list.add(tor);
+    }
+
+    ProxyDrawerItem createProxy(final String tag, final int res) {
         final SharedPreferences shared = PreferenceManager.getDefaultSharedPreferences(context);
         final String proxy = shared.getString(MainApplication.PREFERENCE_PROXY, "");
-
-        ProxyDrawerItem item = new ProxyDrawerItem() {
+        ProxyDrawerItem google = new ProxyDrawerItem() {
             @Override
             public void bindView(final ViewHolder viewHolder) {
                 super.bindView(viewHolder);
-
+                viewList.add(viewHolder);
                 viewHolder.w.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
                         SharedPreferences.Editor edit = shared.edit();
                         if (viewHolder.w.isChecked()) {
-                            edit.putString(MainApplication.PREFERENCE_PROXY, GoogleProxy.NAME);
+                            edit.putString(MainApplication.PREFERENCE_PROXY, tag);
                         } else {
                             edit.putString(MainApplication.PREFERENCE_PROXY, "");
                         }
                         edit.commit();
+                        for (ViewHolder h : viewList) {
+                            if (h == viewHolder)
+                                continue;
+                            h.w.setChecked(false);
+                        }
                     }
                 });
-                viewHolder.w.setChecked(proxy.equals(GoogleProxy.NAME));
+                viewHolder.w.setChecked(proxy.equals(tag));
             }
         };
-        item.withIdentifier(R.drawable.ic_vpn_key_black_24dp);
-        item.withName("Google Data Saver");
-        item.withIcon(R.drawable.ic_vpn_key_black_24dp);
-        item.withIconTintingEnabled(true);
-        item.withSelectable(false);
-        list.add(item);
+        google.withIdentifier(res);
+        google.withName(res);
+        google.withIcon(R.drawable.ic_vpn_key_black_24dp);
+        google.withIconTintingEnabled(true);
+        google.withSelectable(false);
+        return google;
     }
 
     public void openDrawer(Search search) {

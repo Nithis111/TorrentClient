@@ -3,9 +3,7 @@ package com.github.axet.torrentclient.widgets;
 import android.content.Context;
 import android.support.annotation.LayoutRes;
 import android.view.View;
-import android.view.ViewGroup;
 import android.widget.Switch;
-import android.widget.TextView;
 
 import com.github.axet.torrentclient.R;
 import com.mikepenz.fastadapter.utils.ViewHolderFactory;

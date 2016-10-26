@@ -3,12 +3,10 @@ package com.github.axet.torrentclient.dialogs;
 import android.app.Activity;
 import android.app.Dialog;
 import android.content.DialogInterface;
-import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
-import android.preference.PreferenceManager;
 import android.support.annotation.Nullable;
 import android.support.v4.app.DialogFragment;
 import android.support.v4.view.ViewPager;
@@ -33,8 +31,7 @@ import com.github.axet.androidlibrary.net.HttpClient;
 import com.github.axet.androidlibrary.widgets.WebViewCustom;
 import com.github.axet.torrentclient.R;
 import com.github.axet.torrentclient.activities.MainActivity;
-import com.github.axet.torrentclient.app.GoogleProxy;
-import com.github.axet.torrentclient.app.MainApplication;
+import com.github.axet.torrentclient.net.HttpProxyClient;
 
 public class BrowserDialogFragment extends DialogFragment implements MainActivity.TorrentFragmentInterface {
     public static String TAG = BrowserDialogFragment.class.getSimpleName();
@@ -47,7 +44,7 @@ public class BrowserDialogFragment extends DialogFragment implements MainActivit
     ImageButton back;
     ImageButton forward;
     WebViewCustom web;
-    GoogleProxy http;
+    HttpProxyClient http;
     Thread thread;
     int load;
 
@@ -279,10 +276,8 @@ public class BrowserDialogFragment extends DialogFragment implements MainActivit
 
         status.setText("");
 
-        final SharedPreferences shared = PreferenceManager.getDefaultSharedPreferences(getContext());
-
-        http = new GoogleProxy();
-        http.enabled = shared.getString(MainApplication.PREFERENCE_PROXY, "").equals(GoogleProxy.NAME);
+        http = new HttpProxyClient();
+        http.update(getContext());
         String cc = getArguments().getString("cookies");
         if (cc != null && !cc.isEmpty())
             http.addCookies(cc);
@@ -341,6 +336,7 @@ public class BrowserDialogFragment extends DialogFragment implements MainActivit
                                 }
                             });
                         } catch (RuntimeException e) {
+                            WebViewCustom.logIO(url, e);
                             web.load(WebViewCustom.ABOUT_ERROR, new HttpClient.HttpError(e));
                         }
                     }

@@ -2,7 +2,6 @@ package com.github.axet.torrentclient.widgets;
 
 import android.support.annotation.LayoutRes;
 import android.view.View;
-import android.view.ViewGroup;
 
 import com.github.axet.torrentclient.R;
 
