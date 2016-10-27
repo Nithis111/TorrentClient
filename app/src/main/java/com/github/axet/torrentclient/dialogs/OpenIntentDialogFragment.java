@@ -38,10 +38,11 @@ public class OpenIntentDialogFragment extends DialogFragment {
     public void onStart() {
         super.onStart();
 
+        final MainActivity activity = (MainActivity) getActivity();
+
         t = new Thread(new Runnable() {
             @Override
             public void run() {
-                final MainActivity activity = (MainActivity) getActivity();
                 try {
                     openURL(getArguments().getString("url"));
                 } catch (final RuntimeException e) {
@@ -50,8 +51,7 @@ public class OpenIntentDialogFragment extends DialogFragment {
                 handler.post(new Runnable() {
                     @Override
                     public void run() {
-                        final MainActivity activity = (MainActivity) getActivity();
-                        if (activity == null) // when app was destoryed
+                        if (activity.isFinishing())
                             return;
                         dismiss();
                     }
@@ -70,6 +70,8 @@ public class OpenIntentDialogFragment extends DialogFragment {
             handler.post(new Runnable() {
                 @Override
                 public void run() {
+                    if (activity.isFinishing())
+                        return;
                     activity.addMagnet(str);
                 }
             });
@@ -83,6 +85,8 @@ public class OpenIntentDialogFragment extends DialogFragment {
                 handler.post(new Runnable() {
                     @Override
                     public void run() {
+                        if (activity.isFinishing())
+                            return;
                         activity.addTorrentFromBytes(buf);
                     }
                 });
@@ -101,6 +105,8 @@ public class OpenIntentDialogFragment extends DialogFragment {
                 handler.post(new Runnable() {
                     @Override
                     public void run() {
+                        if (activity.isFinishing())
+                            return;
                         activity.addTorrentFromBytes(buf);
                     }
                 });
@@ -119,6 +125,8 @@ public class OpenIntentDialogFragment extends DialogFragment {
                 handler.post(new Runnable() {
                     @Override
                     public void run() {
+                        if (activity.isFinishing())
+                            return;
                         activity.addTorrentFromBytes(buf);
                     }
                 });
@@ -135,6 +143,8 @@ public class OpenIntentDialogFragment extends DialogFragment {
                 handler.post(new Runnable() {
                     @Override
                     public void run() {
+                        if (activity.isFinishing())
+                            return;
                         activity.addTorrentFromBytes(buf);
                     }
                 });

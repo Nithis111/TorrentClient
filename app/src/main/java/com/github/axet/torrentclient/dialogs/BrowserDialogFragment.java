@@ -337,7 +337,7 @@ public class BrowserDialogFragment extends DialogFragment implements MainActivit
                             });
                         } catch (RuntimeException e) {
                             WebViewCustom.logIO(url, e);
-                            web.load(WebViewCustom.ABOUT_ERROR, new HttpClient.HttpError(e));
+                            web.load(WebViewCustom.ABOUT_ERROR, new HttpClient.HttpError(url, e));
                         }
                     }
                 });

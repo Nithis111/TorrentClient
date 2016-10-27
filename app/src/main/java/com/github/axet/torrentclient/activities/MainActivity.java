@@ -250,10 +250,8 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
                                         handler.post(new Runnable() {
                                             @Override
                                             public void run() {
-                                                if (progress.getOwnerActivity() == null) { // when app was destoryed
-                                                    Log.d(TAG, "App Destoryed, Close Meta");
+                                                if (activity.isFinishing())
                                                     return;
-                                                }
                                                 progress.dismiss();
                                             }
                                         });
@@ -266,10 +264,8 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
                                         handler.post(new Runnable() {
                                             @Override
                                             public void run() {
-                                                if (progress.getOwnerActivity() == null) { // when app was destoryed
-                                                    Log.d(TAG, "App Destoryed, Close Meta");
+                                                if (activity.isFinishing())
                                                     return;
-                                                }
                                                 progress.dismiss();
                                             }
                                         });
@@ -280,10 +276,8 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
                                 handler.post(new Runnable() {
                                     @Override
                                     public void run() {
-                                        if (progress.getOwnerActivity() == null) { // when app was destoryed
-                                            Log.d(TAG, "App Destoryed, Close Meta");
+                                        if (activity.isFinishing())
                                             return;
-                                        }
                                         MainActivity.this.dialog = null;
                                         activity.createTorrentFromMetaInfo(pp);
                                         Libtorrent.closeMetaInfo();
@@ -614,6 +608,8 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
         handler.post(new Runnable() {
             @Override
             public void run() {
+                if (isFinishing())
+                    return;
                 Error(msg);
             }
         });
