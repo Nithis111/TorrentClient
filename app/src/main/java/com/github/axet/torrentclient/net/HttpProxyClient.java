@@ -3,6 +3,7 @@ package com.github.axet.torrentclient.net;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
+import android.util.Log;
 
 import com.github.axet.androidlibrary.net.HttpClient;
 import com.github.axet.torrentclient.app.MainApplication;
@@ -18,6 +19,7 @@ import cz.msebera.android.httpclient.ProtocolException;
 import cz.msebera.android.httpclient.client.config.RequestConfig;
 import cz.msebera.android.httpclient.client.methods.CloseableHttpResponse;
 import cz.msebera.android.httpclient.client.methods.HttpRequestBase;
+import cz.msebera.android.httpclient.client.methods.HttpRequestWrapper;
 import cz.msebera.android.httpclient.client.methods.HttpUriRequest;
 import cz.msebera.android.httpclient.client.methods.RequestBuilder;
 import cz.msebera.android.httpclient.client.protocol.HttpClientContext;
