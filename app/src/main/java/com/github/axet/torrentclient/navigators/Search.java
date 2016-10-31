@@ -1048,6 +1048,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
                 }
             }
             final HttpClient.DownloadResponse html = http.postResponse(null, post, map);
+            html.download();
 
             final String js = s.get("js");
             final String js_post = s.get("js_post");
@@ -1143,8 +1144,9 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         if (type.equals("post")) {
             String t = s.get("post_search");
             HashMap<String, String> map = new HashMap<>();
-            if (search != null)
+            if (search != null) {
                 map.put(t, search);
+            }
             String pp = s.get("post_params");
             if (pp != null) {
                 String[] params = pp.split(";");
