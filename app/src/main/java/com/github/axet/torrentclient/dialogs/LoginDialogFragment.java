@@ -87,12 +87,7 @@ public class LoginDialogFragment extends BrowserDialogFragment {
                 .setPositiveButton(getContext().getString(R.string.ok),
                         new DialogInterface.OnClickListener() {
                             public void onClick(DialogInterface dialog, int whichButton) {
-                                result.ok = true;
-                                if (http != null) // browser never showsup
-                                    result.cookies = http.getCookies();
-                                result.login = getLogin();
-                                result.pass = getPass();
-                                dialog.dismiss();
+                                ok();
                             }
                         }
                 )
@@ -132,8 +127,27 @@ public class LoginDialogFragment extends BrowserDialogFragment {
         createView(LayoutInflater.from(getContext()), v, savedInstanceState);
     }
 
-    void browserButtons() {
+    void ok() {
         AlertDialog d = (AlertDialog) getDialog();
+        if (!result.clear) {
+            result.ok = true;
+            if (http != null) // browser never shows up
+                result.cookies = http.getCookies();
+            result.login = getLogin();
+            result.pass = getPass();
+        }
+        d.dismiss();
+    }
+
+    void browserButtons() {
+        final AlertDialog d = (AlertDialog) getDialog();
+
+        d.setOnCancelListener(new DialogInterface.OnCancelListener() {
+            @Override
+            public void onCancel(DialogInterface dialog) {
+                ok();
+            }
+        });
 
         Button b = d.getButton(AlertDialog.BUTTON_NEUTRAL);
         b.setOnClickListener(new View.OnClickListener() {
@@ -144,6 +158,7 @@ public class LoginDialogFragment extends BrowserDialogFragment {
                 web.removeAllCookies();
 
                 Toast.makeText(getContext(), R.string.cookies_cleared, Toast.LENGTH_SHORT).show();
+                d.dismiss();
             }
         });
         b.setText(R.string.clear_cookies);
