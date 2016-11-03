@@ -129,13 +129,11 @@ public class LoginDialogFragment extends BrowserDialogFragment {
 
     void ok() {
         AlertDialog d = (AlertDialog) getDialog();
-        if (!result.clear) {
-            result.ok = true;
-            if (http != null) // browser never shows up
-                result.cookies = http.getCookies();
-            result.login = getLogin();
-            result.pass = getPass();
-        }
+        result.ok = true;
+        if (http != null) // browser never shows up
+            result.cookies = http.getCookies();
+        result.login = getLogin();
+        result.pass = getPass();
         d.dismiss();
     }
 
@@ -158,7 +156,6 @@ public class LoginDialogFragment extends BrowserDialogFragment {
                 web.removeAllCookies();
 
                 Toast.makeText(getContext(), R.string.cookies_cleared, Toast.LENGTH_SHORT).show();
-                d.dismiss();
             }
         });
         b.setText(R.string.clear_cookies);
