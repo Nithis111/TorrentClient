@@ -209,7 +209,7 @@ public class Torrents extends BaseAdapter implements DialogInterface.OnDismissLi
                                 @Override
                                 public void run() {
                                     if (Torrents.this.dialog != null) { // prevent showing deleted torrent
-                                        Torrents.this.dialog.dismiss();
+                                        Torrents.this.dialog.dismissAllowingStateLoss();
                                     }
                                     t.stop();
                                     File f = new File(t.path, t.name());
@@ -231,7 +231,7 @@ public class Torrents extends BaseAdapter implements DialogInterface.OnDismissLi
                             @Override
                             public void run() {
                                 if (Torrents.this.dialog != null) { // prevent showing deleted torrent
-                                    Torrents.this.dialog.dismiss();
+                                    Torrents.this.dialog.dismissAllowingStateLoss();
                                 }
                                 t.stop();
                                 getStorage().remove(t);

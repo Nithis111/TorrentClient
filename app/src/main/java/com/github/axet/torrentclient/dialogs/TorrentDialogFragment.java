@@ -65,8 +65,6 @@ public class TorrentDialogFragment extends DialogFragment implements MainActivit
                     return null;
             }
 
-            map.put(i, f);
-
             Bundle args = new Bundle();
             args.putLong("torrent", t);
             f.setArguments(args);
@@ -74,8 +72,15 @@ public class TorrentDialogFragment extends DialogFragment implements MainActivit
             return f;
         }
 
-        public MainActivity.TorrentFragmentInterface getFragment(int i) {
-            return (MainActivity.TorrentFragmentInterface) map.get(i);
+        @Override
+        public Object instantiateItem(ViewGroup container, int position) {
+            Object o = super.instantiateItem(container, position);
+            map.put(position, (Fragment) o);
+            return o;
+        }
+
+        public MainActivity.TorrentFragmentInterface getFragment(int pos) {
+            return (MainActivity.TorrentFragmentInterface) map.get(pos);
         }
 
         @Override
