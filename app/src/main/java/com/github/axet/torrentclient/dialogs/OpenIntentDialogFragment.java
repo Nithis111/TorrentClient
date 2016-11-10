@@ -53,7 +53,7 @@ public class OpenIntentDialogFragment extends DialogFragment {
                     public void run() {
                         if (activity.isFinishing())
                             return;
-                        dismiss();
+                        dismissAllowingStateLoss(); //  Can not perform this action after onSaveInstanceState
                     }
                 });
             }
