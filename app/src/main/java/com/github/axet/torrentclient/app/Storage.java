@@ -541,9 +541,9 @@ public class Storage {
     public void remove(Torrent t) {
         torrents.remove(t);
 
-        Libtorrent.removeTorrent(t.t);
-
+        long d = t.t; // prevent debugger to crash
         t.t = -1;
+        Libtorrent.removeTorrent(d);
 
         save();
     }
