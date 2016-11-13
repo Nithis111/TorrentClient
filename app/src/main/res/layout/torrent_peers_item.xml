@@ -19,7 +19,7 @@
             android:textStyle="bold" />
     </com.github.axet.androidlibrary.widgets.PathMax>
 
-    <com.github.axet.androidlibrary.widgets.EqualLinearLayout
+    <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal">
@@ -54,8 +54,7 @@
                 android:paddingLeft="10dp"
                 android:text="↑ 0.6 Mb/s" />
         </LinearLayout>
-
-    </com.github.axet.androidlibrary.widgets.EqualLinearLayout>
+    </FrameLayout>
 
     <TextView
         android:id="@+id/torrent_peer_name"
