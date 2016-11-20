@@ -3,6 +3,7 @@ package com.github.axet.torrentclient.activities;
 
 import android.Manifest;
 import android.annotation.TargetApi;
+import android.app.Dialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -22,12 +23,14 @@ import android.preference.PreferenceManager;
 import android.preference.RingtonePreference;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.ActionBar;
+import android.support.v7.app.AlertDialog;
 import android.view.MenuItem;
 import android.widget.Toast;
 
 import com.github.axet.torrentclient.R;
 import com.github.axet.torrentclient.app.MainApplication;
 
+import java.io.File;
 import java.util.List;
 
 /**
@@ -207,6 +210,21 @@ public class SettingsActivity extends AppCompatPreferenceActivity implements Sha
             finish();
             startActivity(new Intent(this, SettingsActivity.class));
             overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+        }
+        if (key.equals(MainApplication.PREFERENCE_STORAGE)) {
+            String path = sharedPreferences.getString(MainApplication.PREFERENCE_STORAGE, "");
+            File f = new File(path);
+            if (!f.canWrite()) {
+                AlertDialog.Builder b = new AlertDialog.Builder(this);
+                b.setTitle(R.string.storage_path);
+                b.setMessage("Read only directory, please select another");
+                Dialog d = b.create();
+                d.show();
+                SharedPreferences.Editor editor = sharedPreferences.edit();
+                path = MainApplication.getPreferenceLastPath(this);
+                editor.putString(MainApplication.PREFERENCE_STORAGE, path);
+                editor.commit();
+            }
         }
     }
 

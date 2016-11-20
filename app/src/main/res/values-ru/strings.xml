@@ -147,4 +147,5 @@
     <string name="enable_speed_limit">Включить ограничение скорости</string>
     <string name="rates">Лимиты</string>
     <string name="download_rate">Скорость скачивания:</string>
+    <string name="storage_path">Путь к папке</string>
 </resources>

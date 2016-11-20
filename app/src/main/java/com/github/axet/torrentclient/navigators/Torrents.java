@@ -268,14 +268,15 @@ public class Torrents extends BaseAdapter implements DialogInterface.OnDismissLi
                     // are we on wifi pause mode?
                     if (Libtorrent.paused()) // drop torrent from queue
                         getStorage().stop(t);
-                    else // nope, we are on library pause, start torrent
-                        getStorage().start(t);
+                    else { // nope, we are on library pause, start torrent
+                        start(t);
+                    }
                     notifyDataSetChanged();
                     return;
                 }
 
                 if (s == Libtorrent.StatusPaused)
-                    getStorage().start(t);
+                    start(t);
                 else
                     getStorage().stop(t);
                 notifyDataSetChanged();
@@ -499,5 +500,14 @@ public class Torrents extends BaseAdapter implements DialogInterface.OnDismissLi
     @Override
     public int getUnreadCount() {
         return getStorage().getUnreadCount();
+    }
+
+    void start(Storage.Torrent t) {
+        File f = new File(t.path);
+        if (!f.canWrite()) {
+            main.Error(main.getString(R.string.readonly_directory) + " " + t.path);
+            return;
+        }
+        getStorage().start(t);
     }
 }

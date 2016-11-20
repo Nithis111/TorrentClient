@@ -4,7 +4,7 @@
         android:defaultValue="Torrent Client"
         android:key="storage_path"
         android:summary="/sdcard/[path]/"
-        android:title="Путь к папке" />
+        android:title="@string/storage_path" />
 
     <com.github.axet.torrentclient.widgets.MultiEditListPreference
         android:defaultValue="udp://tracker.openbittorrent.com:80\nudp://tracker.kicks-ass.net:80/announce"
