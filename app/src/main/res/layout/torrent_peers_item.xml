@@ -38,21 +38,16 @@
 
             <TextView
                 android:id="@+id/torrent_peer_downloaded"
-                android:layout_width="0dp"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_gravity="left"
-                android:layout_weight="1"
-                android:paddingLeft="10dp"
-                android:text="↓ 1.6 Mb/s" />
+                android:text="↓ 12.6 Mb/s" />
 
             <TextView
                 android:id="@+id/torrent_peer_uploaded"
-                android:layout_width="0dp"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_gravity="left"
-                android:layout_weight="1"
                 android:paddingLeft="10dp"
-                android:text="↑ 0.6 Mb/s" />
+                android:text="↑ 10.6 Mb/s" />
         </LinearLayout>
     </FrameLayout>
 

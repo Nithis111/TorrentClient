@@ -5,10 +5,9 @@ android {
     buildToolsVersion "25.0.0"
 
     defaultConfig {
-//        multiDexEnabled true
         applicationId "com.github.axet.torrentclient"
         minSdkVersion 16
-        targetSdkVersion 25
+        targetSdkVersion 23 // 24+ unable to share resource/folder
         versionCode 242
         versionName "2.5.14"
     }
@@ -48,7 +47,7 @@ dependencies {
     compile 'com.getbase:floatingactionbutton:1.10.1'
     compile 'org.apmem.tools:layouts:1.10@aar'
     compile('com.mikepenz:materialdrawer:5.4.0@aar') { transitive = true }
-    compile 'com.github.axet:android-library:1.6.6' // compile project(':android-library')
+    compile 'com.github.axet:android-library:1.6.7' // compile project(':android-library')
     compile project(":libtorrent")
 //    compile 'com.subgraph.orchid:orchid:0.9.1'
 //    compile 'com.madgag.spongycastle:prov:1.54.0.0'
