@@ -504,6 +504,8 @@ public class Torrents extends BaseAdapter implements DialogInterface.OnDismissLi
 
     void start(Storage.Torrent t) {
         File f = new File(t.path);
+        if (!f.exists())
+            f.mkdirs();
         if (!f.canWrite()) {
             main.Error(main.getString(R.string.readonly_directory) + " " + t.path);
             return;
