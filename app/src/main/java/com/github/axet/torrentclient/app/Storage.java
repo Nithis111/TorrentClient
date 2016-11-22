@@ -305,7 +305,9 @@ public class Storage {
         Collections.sort(resume, new LoadTorrents());
 
         for (Torrent t : resume) {
-            start(t);
+            File f = new File(t.path);
+            if (f.canWrite())
+                start(t);
         }
     }
 
@@ -923,7 +925,6 @@ public class Storage {
 
     public void start(Torrent t) {
         t.start();
-
         saveUpdate();
     }
 
