@@ -22,6 +22,7 @@ import android.util.Log;
 
 import com.github.axet.torrentclient.R;
 import com.github.axet.torrentclient.services.TorrentService;
+import com.github.axet.wget.SpeedInfo;
 
 import org.apache.commons.io.FileUtils;
 import org.json.JSONException;
