@@ -1442,6 +1442,8 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         handler.post(new Runnable() {
             @Override
             public void run() {
+                if (main.isFinishing())
+                    return;
                 Error(e);
             }
         });
@@ -1451,6 +1453,8 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         handler.post(new Runnable() {
             @Override
             public void run() {
+                if (main.isFinishing())
+                    return;
                 Error(msg);
             }
         });
