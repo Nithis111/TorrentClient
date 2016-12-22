@@ -6,7 +6,7 @@ android {
 
     defaultConfig {
         applicationId "com.github.axet.torrentclient"
-        minSdkVersion 15
+        minSdkVersion 15 // gojni 15+
         targetSdkVersion 23 // 24+ unable to share 'resource/folder'
         versionCode 244
         versionName "2.5.16"
@@ -51,7 +51,7 @@ dependencies {
     compile ('com.github.axet:wget:1.4.2') {
         exclude group: 'com.thoughtworks.xstream', module: 'xstream'
     }
-    compile 'com.github.axet:android-library:1.6.8' // compile project(':android-library')
+    compile 'com.github.axet:android-library:1.6.9' // compile project(':android-library')
     compile project(":libtorrent")
 //    compile 'com.subgraph.orchid:orchid:0.9.1'
 //    compile 'com.madgag.spongycastle:prov:1.54.0.0'
