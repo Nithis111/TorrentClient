@@ -735,7 +735,7 @@ public class Storage {
 
         StatFs fsi = new StatFs(f.getPath());
         if (Build.VERSION.SDK_INT < 18)
-            return fsi.getBlockSize() * fsi.getAvailableBlocks();
+            return fsi.getBlockSize() * (long) fsi.getAvailableBlocks();
         else
             return fsi.getBlockSizeLong() * fsi.getAvailableBlocksLong();
     }
