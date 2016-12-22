@@ -12,7 +12,7 @@ import android.widget.TextView;
 import com.github.axet.torrentclient.R;
 import com.github.axet.torrentclient.activities.MainActivity;
 import com.github.axet.torrentclient.app.MainApplication;
-import com.github.axet.torrentclient.app.SpeedInfo;
+import com.github.axet.wget.SpeedInfo;
 
 import java.io.File;
 import java.util.ArrayList;
