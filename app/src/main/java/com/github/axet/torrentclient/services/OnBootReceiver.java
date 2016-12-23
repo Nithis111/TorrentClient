@@ -10,8 +10,8 @@ import android.util.Log;
 import com.github.axet.torrentclient.activities.BootActivity;
 import com.github.axet.torrentclient.app.MainApplication;
 
-public class StartServiceReceiver extends BroadcastReceiver {
-    String TAG = StartServiceReceiver.class.getSimpleName();
+public class OnBootReceiver extends BroadcastReceiver {
+    String TAG = OnBootReceiver.class.getSimpleName();
 
     @Override
     public void onReceive(Context context, Intent i) {

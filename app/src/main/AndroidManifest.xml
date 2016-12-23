@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
-    package="com.github.axet.torrentclient">
+    package="com.github.axet.torrentclient"
+    android:installLocation="auto">
 
     <uses-permission android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE" />
     <uses-permission android:name="android.permission.INTERNET" />
@@ -20,7 +20,7 @@
         <service android:name=".services.TorrentService" />
 
         <receiver
-            android:name=".services.StartServiceReceiver"
+            android:name=".services.OnBootReceiver"
             android:enabled="true"
             android:exported="false">
             <intent-filter>
@@ -32,6 +32,11 @@
                 <action android:name="android.intent.action.PACKAGE_REPLACED" />
 
                 <data android:scheme="package" />
+            </intent-filter>
+        </receiver>
+        <receiver android:name=".services.OnExternalReceiver">
+            <intent-filter>
+                <action android:name="android.intent.action.EXTERNAL_APPLICATIONS_AVAILABLE" />
             </intent-filter>
         </receiver>
 

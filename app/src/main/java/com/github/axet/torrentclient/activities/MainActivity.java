@@ -489,7 +489,8 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
                 handler.post(new Runnable() {
                     @Override
                     public void run() {
-                        // acctivity can be destoryed already do not init
+                        if (isFinishing())
+                            return;
                         if (delayedInit != null) {
                             delayedInit.run();
                             delayedInit = null;
