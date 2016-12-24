@@ -167,10 +167,9 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        setAppTheme(getAppTheme());
         super.onCreate(savedInstanceState);
         Log.d(TAG, "onCreate");
-
-        setAppTheme(getAppTheme());
 
         setContentView(R.layout.app_bar_main);
 
@@ -179,7 +178,7 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
         client = new GoogleApiClient.Builder(this).addApi(AppIndex.API).build();
 
         final Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
-        toolbar.setBackground(new ColorDrawable(MainApplication.getActionbarColor(this)));
+//        toolbar.setBackground(new ColorDrawable(MainApplication.getActionbarColor(this)));
         setSupportActionBar(toolbar);
 
         drawer = new Drawer(this, toolbar);
