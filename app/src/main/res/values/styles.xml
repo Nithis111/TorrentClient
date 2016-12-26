@@ -57,6 +57,12 @@
         <item name="side_nav_bar">@drawable/side_nav_bar_dark</item>
         <item name="unreadColor">@color/unreadDark</item>
         <item name="search_rating_bg">@drawable/search_rating_bg_dark</item>
+        <item name="material_drawer_background">?android:attr/colorBackground</item>
+        <item name="material_drawer_selected">?attr/colorAccent</item>
+        <item name="material_drawer_primary_icon">@color/material_drawer_dark_primary_text</item>
+        <item name="material_drawer_primary_text">@color/material_drawer_dark_primary_text</item>
+        <item name="material_drawer_secondary_text">@color/material_drawer_dark_secondary_text</item>
+        <item name="material_drawer_divider">@color/material_drawer_dark_divider</item>
     </style>
 
     <style name="AppThemeDialogDark" parent="@style/Theme.AppCompat.Dialog.Alert">
