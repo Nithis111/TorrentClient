@@ -1,10 +1,10 @@
 <resources>
 
     <style name="AppThemeLight" parent="Theme.AppCompat.Light.DarkActionBar">
-        <item name="titleColor">@color/colorPrimary</item>
         <item name="colorPrimary">@color/colorPrimary</item>
         <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
         <item name="colorAccent">@color/colorAccentLight</item>
+        <item name="titleColor">@color/colorPrimary</item>
         <item name="secondBackground">@color/secondBackgroundLight</item>
         <item name="roundprogress_style">@drawable/roundprogress_bar_light</item>
         <item name="menu_labels_style">@style/menu_labels_style_light</item>
@@ -38,15 +38,17 @@
         <item name="android:background">@drawable/search_rating_tip_round_light</item>
     </style>
 
-    <style name="AppThemeLight.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar" />
+    <style name="AppThemeLight.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar">
+        <item name="android:textColorPrimary">@android:color/white</item>
+    </style>
 
     <style name="AppThemeLight.PopupOverlay" parent="ThemeOverlay.AppCompat.Light" />
 
     <style name="AppThemeDark" parent="Theme.AppCompat">
-        <item name="titleColor">@android:color/primary_text_dark</item>
-        <item name="colorPrimaryDark">@color/primary_dark_material_dark</item>
         <item name="colorPrimary">@color/primary_material_dark</item>
+        <item name="colorPrimaryDark">@color/primary_dark_material_dark</item>
         <item name="colorAccent">@color/colorAccentDark</item>
+        <item name="titleColor">@android:color/primary_text_dark</item>
         <item name="secondBackground">@color/secondBackgroundDark</item>
         <item name="roundprogress_style">@drawable/roundprogress_bar_dark</item>
         <item name="menu_labels_style">@style/menu_labels_style_dark</item>
@@ -55,6 +57,12 @@
         <item name="side_nav_bar">@drawable/side_nav_bar_dark</item>
         <item name="unreadColor">@color/unreadDark</item>
         <item name="search_rating_bg">@drawable/search_rating_bg_dark</item>
+        <item name="material_drawer_background">?android:attr/colorBackground</item>
+        <item name="material_drawer_selected">?attr/colorAccent</item>
+        <item name="material_drawer_primary_icon">@color/material_drawer_dark_primary_text</item>
+        <item name="material_drawer_primary_text">@color/material_drawer_dark_primary_text</item>
+        <item name="material_drawer_secondary_text">@color/material_drawer_dark_secondary_text</item>
+        <item name="material_drawer_divider">@color/material_drawer_dark_divider</item>
     </style>
 
     <style name="AppThemeDialogDark" parent="@style/Theme.AppCompat.Dialog.Alert">
