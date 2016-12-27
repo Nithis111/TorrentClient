@@ -199,6 +199,7 @@ public class TorrentDialogFragment extends DialogFragment implements MainActivit
         long t = getArguments().getLong("torrent");
         int s = Libtorrent.torrentStatus(t);
         switch (s) {
+            case Libtorrent.StatusChecking:
             case Libtorrent.StatusDownloading:
             case Libtorrent.StatusQueued:
             case Libtorrent.StatusSeeding:
