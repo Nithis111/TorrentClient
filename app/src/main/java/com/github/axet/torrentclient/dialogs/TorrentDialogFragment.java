@@ -16,6 +16,7 @@ import android.support.v7.app.AlertDialog;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 
 import com.github.axet.torrentclient.R;
 import com.github.axet.torrentclient.activities.MainActivity;
@@ -26,6 +27,8 @@ import com.github.axet.torrentclient.fragments.TrackersFragment;
 
 import java.util.HashMap;
 import java.util.Map;
+
+import go.libtorrent.Libtorrent;
 
 public class TorrentDialogFragment extends DialogFragment implements MainActivity.TorrentFragmentInterface {
     ViewPager pager;
@@ -149,8 +152,13 @@ public class TorrentDialogFragment extends DialogFragment implements MainActivit
 
     @Override
     public Dialog onCreateDialog(Bundle savedInstanceState) {
-        return new AlertDialog.Builder(getActivity())
-                .setNeutralButton(getContext().getString(R.string.close),
+        final AlertDialog d = new AlertDialog.Builder(getActivity())
+                .setNeutralButton(buttonText(), new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                    }
+                })
+                .setPositiveButton(getContext().getString(R.string.close),
                         new DialogInterface.OnClickListener() {
                             public void onClick(DialogInterface dialog, int whichButton) {
                                 dialog.dismiss();
@@ -159,6 +167,45 @@ public class TorrentDialogFragment extends DialogFragment implements MainActivit
                 )
                 .setView(createView(LayoutInflater.from(getContext()), null, savedInstanceState))
                 .create();
+        d.setOnShowListener(new DialogInterface.OnShowListener() {
+            @Override
+            public void onShow(DialogInterface dialog) {
+                final Button b = d.getButton(DialogInterface.BUTTON_NEUTRAL);
+                b.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        long t = getArguments().getLong("torrent");
+                        int s = Libtorrent.torrentStatus(t);
+                        switch (s) {
+                            case Libtorrent.StatusChecking:
+                            case Libtorrent.StatusDownloading:
+                            case Libtorrent.StatusQueued:
+                            case Libtorrent.StatusSeeding:
+                                Libtorrent.stopTorrent(t);
+                                break;
+                            default:
+                                Libtorrent.startTorrent(t);
+                                break;
+                        }
+                        b.setText(buttonText());
+                    }
+                });
+            }
+        });
+        return d;
+    }
+
+    int buttonText() {
+        long t = getArguments().getLong("torrent");
+        int s = Libtorrent.torrentStatus(t);
+        switch (s) {
+            case Libtorrent.StatusDownloading:
+            case Libtorrent.StatusQueued:
+            case Libtorrent.StatusSeeding:
+                return R.string.stop;
+            default:
+                return R.string.start;
+        }
     }
 
     @Nullable

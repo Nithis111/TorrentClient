@@ -148,4 +148,6 @@
     <string name="rates">Лимиты</string>
     <string name="download_rate">Скорость скачивания:</string>
     <string name="storage_path">Путь к папке</string>
+    <string name="stop">Стоп</string>
+    <string name="start">Старт</string>
 </resources>

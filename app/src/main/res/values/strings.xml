@@ -145,4 +145,6 @@
     <string name="google_proxy" translatable="false">Google Data Saver</string>
     <string name="tor_proxy" translatable="false">Tor</string>
     <string name="storage_path">Storage Path</string>
+    <string name="stop">Stop</string>
+    <string name="start">Start</string>
 </resources>
