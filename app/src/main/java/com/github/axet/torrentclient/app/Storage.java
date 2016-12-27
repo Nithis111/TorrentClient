@@ -584,10 +584,7 @@ public class Storage {
     public File getStoragePath() {
         if (permitted(PERMISSIONS)) {
             File f = getPrefStorage();
-            if (f.canWrite())
-                return f;
-            else
-                return getLocalStorage();
+            return f;
         } else {
             return getLocalStorage();
         }
