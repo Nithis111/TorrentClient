@@ -928,7 +928,6 @@ public class Storage {
 
     public void stop(Torrent t) {
         t.stop();
-
         saveUpdate();
     }
 
