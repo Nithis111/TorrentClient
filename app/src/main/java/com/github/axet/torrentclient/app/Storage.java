@@ -78,10 +78,13 @@ public class Storage {
     private static MulticastSocket socket;
 
     public static class Torrent {
+        Context context;
+
         public long t;
         public String path;
         public boolean message;
-        Context context;
+        public boolean check; // force check required, files were altered
+        public boolean readonly; // readonly files or target path, show warning
 
         SpeedInfo downloaded = new SpeedInfo();
         SpeedInfo uploaded = new SpeedInfo();
@@ -103,6 +106,9 @@ public class Storage {
         }
 
         public void start() {
+            File f = new File(path);
+            if (!f.exists())
+                f.mkdirs();
             if (!Libtorrent.startTorrent(t))
                 throw new RuntimeException(Libtorrent.error());
             StatsTorrent b = Libtorrent.torrentStats(t);
@@ -186,6 +192,35 @@ public class Storage {
         public int getProgress() {
             return getProgress(t);
         }
+
+        public boolean altered() {
+            for (int k = 0; k < Libtorrent.torrentFilesCount(t); k++) {
+                go.libtorrent.File f = Libtorrent.torrentFiles(t, k);
+                if (f.getBytesCompleted() != 0) {
+                    File file = new File(path, f.getPath());
+                    if (!file.exists() || file.length() == 0) {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        public boolean readonly() {
+            File path = new File(this.path);
+            if (!path.canWrite())
+                return true;
+            for (int k = 0; k < Libtorrent.torrentFilesCount(t); k++) {
+                go.libtorrent.File f = Libtorrent.torrentFiles(t, k);
+                if (f.getBytesCompleted() != 0) {
+                    File file = new File(path, f.getPath());
+                    if (file.exists() && !file.canWrite()) { // we can only check parent folder and existing files, skip middle folders
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
     }
 
     // seeds should go to start. !seeds to the end (so start download it).
@@ -248,7 +283,11 @@ public class Storage {
         for (int i = 0; i < count(); i++) {
             Storage.Torrent t = torrent(i);
             if (Libtorrent.torrentActive(t.t)) {
-                header += "(" + t.getProgress() + "%) ";
+                if (Libtorrent.torrentStatus(t.t) == Libtorrent.StatusSeeding) {
+                    header += "(" + t.getProgress() + ") ";
+                } else {
+                    header += "(" + t.getProgress() + "%) ";
+                }
             }
         }
         TorrentService.updateNotify(context, header);
@@ -295,6 +334,13 @@ public class Storage {
                 Torrent tt = new Torrent(context, t, o.getString("path"), o.getBoolean("message"));
                 torrents.add(tt);
 
+                if (tt.altered()) {
+                    tt.check = true;
+                }
+                if (tt.readonly()) {
+                    tt.readonly = true;
+                }
+
                 if (o.getInt("status") != Libtorrent.StatusPaused) {
                     resume.add(tt);
                 }
@@ -306,9 +352,9 @@ public class Storage {
         Collections.sort(resume, new LoadTorrents());
 
         for (Torrent t : resume) {
-            File f = new File(t.path);
-            if (f.canWrite())
-                start(t);
+            if (t.check || t.readonly)
+                continue;
+            start(t);
         }
     }
 

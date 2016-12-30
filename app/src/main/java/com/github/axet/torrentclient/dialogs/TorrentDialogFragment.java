@@ -24,6 +24,7 @@ import com.github.axet.torrentclient.fragments.DetailsFragment;
 import com.github.axet.torrentclient.fragments.FilesFragment;
 import com.github.axet.torrentclient.fragments.PeersFragment;
 import com.github.axet.torrentclient.fragments.TrackersFragment;
+import com.github.axet.torrentclient.navigators.Torrents;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -33,6 +34,7 @@ import go.libtorrent.Libtorrent;
 public class TorrentDialogFragment extends DialogFragment implements MainActivity.TorrentFragmentInterface {
     ViewPager pager;
     View v;
+    Button play;
 
     public static class TorrentPagerAdapter extends FragmentPagerAdapter {
         long t;
@@ -137,6 +139,9 @@ public class TorrentDialogFragment extends DialogFragment implements MainActivit
         if (pager == null)
             return;
 
+        if (play != null)
+            play.setText(buttonText());
+
         int i = pager.getCurrentItem();
         TorrentPagerAdapter a = (TorrentPagerAdapter) pager.getAdapter();
         MainActivity.TorrentFragmentInterface f = a.getFragment(i);
@@ -147,7 +152,6 @@ public class TorrentDialogFragment extends DialogFragment implements MainActivit
 
     @Override
     public void close() {
-
     }
 
     @Override
@@ -170,24 +174,12 @@ public class TorrentDialogFragment extends DialogFragment implements MainActivit
         d.setOnShowListener(new DialogInterface.OnShowListener() {
             @Override
             public void onShow(DialogInterface dialog) {
-                final Button b = d.getButton(DialogInterface.BUTTON_NEUTRAL);
-                b.setOnClickListener(new View.OnClickListener() {
+                play = d.getButton(DialogInterface.BUTTON_NEUTRAL);
+                play.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
                         long t = getArguments().getLong("torrent");
-                        int s = Libtorrent.torrentStatus(t);
-                        switch (s) {
-                            case Libtorrent.StatusChecking:
-                            case Libtorrent.StatusDownloading:
-                            case Libtorrent.StatusQueued:
-                            case Libtorrent.StatusSeeding:
-                                Libtorrent.stopTorrent(t);
-                                break;
-                            default:
-                                Libtorrent.startTorrent(t);
-                                break;
-                        }
-                        b.setText(buttonText());
+                        Torrents.play(getContext(), t);
                     }
                 });
             }
