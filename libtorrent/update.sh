@@ -19,6 +19,6 @@ go_get() {
 
 go_get "github.com/axet/torrent" "github.com/anacrolix/torrent" || exit 1
 
-go get -u github.com/axet/libtorrent || exit 1
+go get -u gitlab.com/axet/libtorrent || exit 1
 
 go get -u golang.org/x/mobile/cmd/gomobile || exit 1
