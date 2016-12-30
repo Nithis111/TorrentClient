@@ -12,8 +12,8 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.graphics.Color;
-import android.graphics.drawable.ColorDrawable;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.preference.PreferenceManager;
@@ -591,7 +591,8 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
     public void shutdown() {
         close();
         getApp().close();
-        finishAffinity();
+        if (Build.VERSION.SDK_INT >= 16)
+            finishAffinity();
         ExitActivity.exitApplication(this);
     }
 
@@ -600,7 +601,7 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
         Throwable t = e;
         while (t.getCause() != null)
             t = t.getCause();
-        post(t.getMessage());
+        post(t.getClass().getCanonicalName() + ": " + t.getMessage());
     }
 
     public void post(final String msg) {
@@ -619,7 +620,7 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
         Throwable t = e;
         while (t.getCause() != null)
             t = t.getCause();
-        Error(t.getMessage());
+        Error(t.getClass().getCanonicalName() + ": " + t.getMessage());
     }
 
     public void Error(String err) {

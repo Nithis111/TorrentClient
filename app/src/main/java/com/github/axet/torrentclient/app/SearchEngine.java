@@ -11,9 +11,6 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.InputStream;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -86,20 +83,21 @@ public class SearchEngine {
 
     public void loadUrl(Context context, String url) {
         try {
-            InputStream is;
+            Uri uri = Uri.parse(url);
+            String json;
 
-            try {
-                URL u = new URL(url);
-                URLConnection conn = u.openConnection();
-                conn.setConnectTimeout(HttpClient.CONNECTION_TIMEOUT);
-                conn.setReadTimeout(HttpClient.CONNECTION_TIMEOUT);
-                is = conn.getInputStream();
-            } catch (MalformedURLException e) {
-                Uri uri = Uri.parse(url);
-                is = context.getContentResolver().openInputStream(uri);
+            if (uri.getScheme().equals("android.resource")) {
+                InputStream is = context.getContentResolver().openInputStream(uri);
+                json = IOUtils.toString(is, MainApplication.UTF8);
+            } else {
+                HttpClient client = new HttpClient();
+                HttpClient.DownloadResponse w = client.getResponse(null, url);
+                w.download();
+                if (w.getError() != null)
+                    throw new RuntimeException(w.getError() + ": " + url);
+                json = w.getHtml();
             }
 
-            String json = IOUtils.toString(is, MainApplication.UTF8);
             loadJson(json);
         } catch (RuntimeException e) {
             throw e;
