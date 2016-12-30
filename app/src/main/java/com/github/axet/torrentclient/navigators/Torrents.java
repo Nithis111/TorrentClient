@@ -1,9 +1,11 @@
 package com.github.axet.torrentclient.navigators;
 
 import android.app.KeyguardManager;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.graphics.Color;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffColorFilter;
@@ -21,6 +23,7 @@ import android.widget.BaseAdapter;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.github.axet.androidlibrary.animations.RemoveItemAnimation;
 import com.github.axet.androidlibrary.widgets.HeaderGridView;
@@ -47,6 +50,8 @@ public class Torrents extends BaseAdapter implements DialogInterface.OnDismissLi
         MainActivity.NavigatorInterface {
     public static final String TAG = Torrents.class.getSimpleName();
 
+    public static final String PLAY = Torrents.class.getCanonicalName() + "_PLAY";
+
     static final int TYPE_COLLAPSED = 0;
     static final int TYPE_EXPANDED = 1;
     static final int TYPE_DELETED = 2;
@@ -59,6 +64,7 @@ public class Torrents extends BaseAdapter implements DialogInterface.OnDismissLi
     TorrentDialogFragment dialog;
     HeaderGridView list;
     Map<Storage.Torrent, Boolean> unread = new HashMap<>();
+    BroadcastReceiver receiver;
 
     public static class Tag {
         public int tag;
@@ -88,12 +94,32 @@ public class Torrents extends BaseAdapter implements DialogInterface.OnDismissLi
         }
     }
 
+    public static void play(Context context, long t) {
+        Intent i = new Intent(PLAY);
+        i.putExtra("torrent", t);
+        context.sendBroadcast(i);
+    }
+
     public Torrents(MainActivity main, HeaderGridView list) {
         super();
 
         this.main = main;
         this.context = main;
         this.list = list;
+
+        receiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                String a = intent.getAction();
+                if (a.equals(PLAY)) {
+                    Storage.Torrent t = getStorage().find(intent.getLongExtra("torrent", -1));
+                    play(t);
+                }
+            }
+        };
+        IntentFilter fi = new IntentFilter();
+        fi.addAction(PLAY);
+        getContext().registerReceiver(receiver, fi);
     }
 
     public Context getContext() {
@@ -125,6 +151,10 @@ public class Torrents extends BaseAdapter implements DialogInterface.OnDismissLi
     }
 
     public void close() {
+        if (receiver != null) {
+            getContext().unregisterReceiver(receiver);
+            receiver = null;
+        }
     }
 
     @Override
@@ -256,30 +286,7 @@ public class Torrents extends BaseAdapter implements DialogInterface.OnDismissLi
         play.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                int s = Libtorrent.torrentStatus(t.t);
-
-                if (s == Libtorrent.StatusChecking) {
-                    Libtorrent.stopTorrent(t.t);
-                    notifyDataSetChanged();
-                    return;
-                }
-
-                if (s == Libtorrent.StatusQueued) {
-                    // are we on wifi pause mode?
-                    if (Libtorrent.paused()) // drop torrent from queue
-                        getStorage().stop(t);
-                    else { // nope, we are on library pause, start torrent
-                        start(t);
-                    }
-                    notifyDataSetChanged();
-                    return;
-                }
-
-                if (s == Libtorrent.StatusPaused)
-                    start(t);
-                else
-                    getStorage().stop(t);
-                notifyDataSetChanged();
+                play(t);
             }
         });
 
@@ -322,6 +329,10 @@ public class Torrents extends BaseAdapter implements DialogInterface.OnDismissLi
                     color = ThemeUtils.getThemeColor(getContext(), R.attr.colorAccent);
                     text = "Seed";
                     break;
+            }
+            if (t.check || t.readonly) {
+                d = ContextCompat.getDrawable(getContext(), R.drawable.ic_exclamation);
+                color = ThemeUtils.getThemeColor(getContext(), R.attr.colorAccent);
             }
             PorterDuffColorFilter filter = new PorterDuffColorFilter(0xa0000000 | (0xFFFFFF & color), PorterDuff.Mode.MULTIPLY);
             stateImage.setColorFilter(filter);
@@ -502,14 +513,49 @@ public class Torrents extends BaseAdapter implements DialogInterface.OnDismissLi
         return getStorage().getUnreadCount();
     }
 
-    void start(Storage.Torrent t) {
-        File f = new File(t.path);
-        if (!f.exists())
-            f.mkdirs();
-        if (!f.canWrite()) {
-            main.Error(main.getString(R.string.readonly_directory) + " " + t.path);
+    public void play(Storage.Torrent t) {
+        int s = Libtorrent.torrentStatus(t.t);
+
+        if (s == Libtorrent.StatusChecking) {
+            Libtorrent.stopTorrent(t.t);
+            notifyDataSetChanged();
             return;
         }
+
+        if (s == Libtorrent.StatusQueued) {
+            // are we on wifi pause mode?
+            if (Libtorrent.paused()) // drop torrent from queue
+                getStorage().stop(t);
+            else { // nope, we are on library pause, start torrent
+                start(t);
+            }
+            notifyDataSetChanged();
+            return;
+        }
+
+        if (s == Libtorrent.StatusPaused)
+            start(t);
+        else
+            getStorage().stop(t);
+
+        notifyDataSetChanged();
+    }
+
+    void start(Storage.Torrent t) {
+        if (t.readonly) {
+            if (t.readonly()) {
+                main.Error(main.getString(R.string.readonly_directory) + " " + t.path);
+                return;
+            }
+            t.readonly = false;
+        }
+
         getStorage().start(t);
+
+        if (t.check || t.altered()) {
+            Toast.makeText(main, "Files altered, force recheck", Toast.LENGTH_LONG).show();
+            t.check = false;
+            Libtorrent.checkTorrent(t.t);
+        }
     }
 }
