@@ -330,12 +330,16 @@ public class Torrents extends BaseAdapter implements DialogInterface.OnDismissLi
                     text = "Seed";
                     break;
             }
-            if (t.check || t.readonly) {
-                d = ContextCompat.getDrawable(getContext(), R.drawable.ic_exclamation);
-                color = ThemeUtils.getThemeColor(getContext(), R.attr.colorAccent);
-            }
             PorterDuffColorFilter filter = new PorterDuffColorFilter(0xa0000000 | (0xFFFFFF & color), PorterDuff.Mode.MULTIPLY);
             stateImage.setColorFilter(filter);
+
+            if (t.check || t.readonly) {
+                d = ContextCompat.getDrawable(getContext(), R.drawable.ic_exclamation);
+                int color2 = ThemeUtils.getThemeColor(getContext(), R.attr.colorAccent);
+                PorterDuffColorFilter filter2 = new PorterDuffColorFilter(0xa0000000 | (0xFFFFFF & color2), PorterDuff.Mode.MULTIPLY);
+                stateImage.setColorFilter(filter2);
+            }
+
             stateImage.setImageDrawable(d);
 
             bar.getBackground().setColorFilter(filter);

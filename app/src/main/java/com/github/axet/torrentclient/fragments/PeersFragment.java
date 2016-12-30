@@ -16,6 +16,8 @@ import com.github.axet.wget.SpeedInfo;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 
 import go.libtorrent.Libtorrent;
@@ -29,7 +31,14 @@ public class PeersFragment extends Fragment implements MainActivity.TorrentFragm
     HashMap<String, SpeedInfo> dinfo = new HashMap<>();
     HashMap<String, SpeedInfo> uinfo = new HashMap<>();
 
-    Files files;
+    Files peers;
+
+    static class SortPeers implements Comparator<Peer> {
+        @Override
+        public int compare(Peer p1, Peer p2) {
+            return p1.getAddr().compareTo(p2.getAddr());
+        }
+    }
 
     class Files extends BaseAdapter {
 
@@ -117,9 +126,9 @@ public class PeersFragment extends Fragment implements MainActivity.TorrentFragm
 
         list = (ListView) v.findViewById(R.id.list);
 
-        files = new Files();
+        peers = new Files();
 
-        list.setAdapter(files);
+        list.setAdapter(peers);
 
         list.setEmptyView(v.findViewById(R.id.empty_list));
 
@@ -143,6 +152,8 @@ public class PeersFragment extends Fragment implements MainActivity.TorrentFragm
             addrs.add(p.getAddr());
         }
 
+        Collections.sort(ff, new SortPeers());
+
         ArrayList<String> remove = new ArrayList<>();
 
         for (String k : uinfo.keySet()) {
@@ -155,7 +166,7 @@ public class PeersFragment extends Fragment implements MainActivity.TorrentFragm
             uinfo.remove(k);
         }
 
-        files.notifyDataSetChanged();
+        peers.notifyDataSetChanged();
     }
 
     @Override
