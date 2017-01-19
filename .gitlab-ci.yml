@@ -6,6 +6,5 @@ pages:
   artifacts:
     paths:
     - public
-    - docs
   only:
   - master
