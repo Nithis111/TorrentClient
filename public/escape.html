@@ -2,115 +2,119 @@
 <head>
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <link rel="stylesheet" href="https://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.css">
-<script src="https://code.jquery.com/jquery-1.11.3.min.js"></script>
-<script src="https://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.js"></script>
-</head>
 <style>
 textarea.ui-input-text {
     height:auto;
 }
 </style>
+<script src="https://code.jquery.com/jquery-1.11.3.min.js"></script>
+<script src="https://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.js"></script>
+<script type="text/javascript">
+  window.onbeforeunload = function() {
+    localStorage.setItem('escape', $('#escape').val());
+    localStorage.setItem('unescape', $('#unescape').val());
+  }
+  window.onload = function() {
+      $('#escape').val(localStorage.getItem('escape'));
+      $('#unescape').val(localStorage.getItem('unescape'));
+  }
+
+  // sorted, lognerst/important first
+  var escs = {
+    '\\': '\\\\',
+    '\"': '\\\"',
+    '\t': '\\t',
+    '\v': '\\v',
+    '\0': '\\0',
+    '\b': '\\b',
+    '\f': '\\f',
+    '\n': '\\n',
+    '\r': '\\r',
+  };
+  
+  var unescs = swap(escs);
+
+  function swap(escs) {
+    var out = {};
+    for(var key in escs) {
+      var val = escs[key];
+      out[val] = key;
+    }
+    return out;
+  }
+  
+  function process(escs, str) {
+    var max = 0
+    for(var key in escs) {
+      if (max < key.length) {
+        max = key.length;
+      }
+    }
+    var out = '';
+    for(var i = 0; i < str.length;) {
+      var match = str.substring(i, i+max);
+      var p = match[0]
+      var r = p
+      for(var key in escs) {
+        if (match.startsWith(key)) {
+          p = escs[key];
+          r = key;
+          break;
+        }
+      }
+      out += p;
+      i += r.length;
+    }
+    return out;
+  }
+  
+  function escape() {
+    var str = $('#escape').val();
+    var out = process(escs, str)
+    $('#unescape').val(out);
+  }
+
+  function unescape() {
+    var str = $('#unescape').val();
+    var out = process(unescs, str)
+    $('#escape').val(out);
+  }
+</script>
+</head>
 <body>
-  <script type="text/javascript">
-    window.onbeforeunload = function() {
-      localStorage.setItem('escape', $('#escape').val());
-      localStorage.setItem('unescape', $('#unescape').val());
-    }
-    window.onload = function() {
-        $('#escape').val(localStorage.getItem('escape'));
-        $('#unescape').val(localStorage.getItem('unescape'));
-    }
-
-    // sorted, lognerst/important first
-    var escs = {
-      '\\': '\\\\',
-      '\"': '\\\"',
-      '\t': '\\t',
-      '\v': '\\v',
-      '\0': '\\0',
-      '\b': '\\b',
-      '\f': '\\f',
-      '\n': '\\n',
-      '\r': '\\r',
-    };
-    
-    var unescs = swap(escs);
-
-    function swap(escs) {
-      var out = {};
-      for(var key in escs) {
-        var val = escs[key];
-        out[val] = key;
-      }
-      return out;
-    }
-    
-    function process(escs, str) {
-      var max = 0
-      for(var key in escs) {
-        if (max < key.length) {
-          max = key.length;
-        }
-      }
-      var out = '';
-      for(var i = 0; i < str.length;) {
-        var match = str.substring(i, i+max);
-        var p = match[0]
-        var r = p
-        for(var key in escs) {
-          if (match.startsWith(key)) {
-            p = escs[key];
-            r = key;
-            break;
-          }
-        }
-        out += p;
-        i += r.length;
-      }
-      return out;
-    }
-    
-    function escape() {
-      var str = $('#escape').val();
-      var out = process(escs, str)
-      $('#unescape').val(out);
-    }
-
-    function unescape() {
-      var str = $('#unescape').val();
-      var out = process(unescs, str)
-      $('#escape').val(out);
-    }
-  </script>
-<div class="ui-body">
-  <h1>JavaScript un/escape JSON</h1>
-    <p>Escapes or unescapes a JavaScript to be used as JSON value</p>
-    <div>
-    	<textarea id="escape" rows="10" data-autogrow="false"></textarea>
-      <div>
-    		<button id="escapeButton" onclick="escape();">ESCAPE</button>
-      </div>
+  <div data-role="page">
+    <div data-role="header">
+      <h1>JavaScript un/escape JSON</h1>
     </div>
-    <br/>
-    <div>
-    	<textarea id="unescape" rows="10" data-autogrow="false"></textarea>
+    <div class="ui-body" data-role="main">
+      <p>Escapes or unescapes a JavaScript to be used as JSON value</p>
       <div>
-    		<button id="unescapeButton" onclick="unescape();">UNESCAPE</button>
+      	<textarea id="escape" rows="10" data-autogrow="false"></textarea>
+        <div>
+      		<button id="escapeButton" onclick="escape();">ESCAPE</button>
+        </div>
       </div>
+      <br/>
+      <div>
+      	<textarea id="unescape" rows="10" data-autogrow="false"></textarea>
+        <div>
+      		<button id="unescapeButton" onclick="unescape();">UNESCAPE</button>
+        </div>
+      </div>
+      <p>The following characters are reserved in JavaScript will be escaped to be used as JSON value:
+      	<ul>
+      		<li><strong>Backslash</strong> is replaced with <strong>\\</strong></li>
+      		<li><strong>Double quote</strong> is replaced with <strong>\"</strong></li>
+      		<li><strong>Horizontal Tab</strong> is replaced with <strong>\t</strong></li>
+      		<li><strong>Vertical Tab</strong> is replaced with <strong>\v</strong></li>
+      		<li><strong>Null char</strong> is replaced with <strong>\0</strong></li>
+      		<li><strong>Backspace</strong> is replaced with <strong>\b</strong></li>
+      		<li><strong>Form feed</strong> is replaced with <strong>\f</strong></li>
+      		<li><strong>Newline</strong> is replaced with <strong>\n</strong></li>
+      		<li><strong>Carriage return</strong> is replaced with <strong>\r</strong></li>
+      	</ul>
+      </p>
     </div>
-    <p>The following characters are reserved in JavaScript will be escaped to be used as JSON value:
-    	<ul>
-    		<li><strong>Backslash</strong> is replaced with <strong>\\</strong></li>
-    		<li><strong>Double quote</strong> is replaced with <strong>\"</strong></li>
-    		<li><strong>Horizontal Tab</strong> is replaced with <strong>\t</strong></li>
-    		<li><strong>Vertical Tab</strong> is replaced with <strong>\v</strong></li>
-    		<li><strong>Null char</strong> is replaced with <strong>\0</strong></li>
-    		<li><strong>Backspace</strong> is replaced with <strong>\b</strong></li>
-    		<li><strong>Form feed</strong> is replaced with <strong>\f</strong></li>
-    		<li><strong>Newline</strong> is replaced with <strong>\n</strong></li>
-    		<li><strong>Carriage return</strong> is replaced with <strong>\r</strong></li>
-    	</ul>
-    </p>
-</div>
+  </div>
 </body>
 </html>
