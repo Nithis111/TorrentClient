@@ -593,6 +593,8 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
         getApp().close();
         if (Build.VERSION.SDK_INT >= 16)
             finishAffinity();
+        else
+            finish();
         ExitActivity.exitApplication(this);
     }
 
