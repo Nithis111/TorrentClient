@@ -9,37 +9,9 @@
     <string name="title_activity_main">Торрент Клиент</string>
     <string name="action_settings">Настройки</string>
 
-    <plurals name="days">
-        <item quantity="one">%d день</item>
-        <item quantity="few">%d дня</item>
-        <item quantity="many">%d дней</item>
-    </plurals>
-
-    <plurals name="hours">
-        <item quantity="one">%d час</item>
-        <item quantity="few">%d часа</item>
-        <item quantity="many">%d часов</item>
-    </plurals>
-
-    <plurals name="minutes">
-        <item quantity="one">%d минута</item>
-        <item quantity="few">%d минуты</item>
-        <item quantity="many">%d минут</item>
-    </plurals>
-
-    <plurals name="seconds">
-        <item quantity="one">%d секунда</item>
-        <item quantity="few">%d секунды</item>
-        <item quantity="many">%d секунд</item>
-    </plurals>
-
     <string name="navigation_drawer_open">Открыть навигационную панель</string>
     <string name="navigation_drawer_close">Закрыть навигационную панель</string>
     <string name="not_permitted">Доступ запрещен</string>
-    <string name="day_symbol">д</string>
-    <string name="size_kb">%1$.1f кб</string>
-    <string name="size_mb">%1$.1f МБ</string>
-    <string name="size_gb">%1$.1f ГБ</string>
     <string name="free">%1$s свободно · ↓ %2$s · ↑ %3$s</string>
     <string name="per_second">/с</string>
     <string name="size_tab">Размер:</string>

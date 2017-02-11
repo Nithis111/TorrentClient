@@ -14,33 +14,9 @@
     <string name="title_activity_main">Torrent Client</string>
     <string name="action_settings">Settings</string>
 
-    <plurals name="days">
-        <item quantity="one">%d day</item>
-        <item quantity="other">%d days</item>
-    </plurals>
-
-    <plurals name="hours">
-        <item quantity="one">%d hour</item>
-        <item quantity="other">%d hours</item>
-    </plurals>
-
-    <plurals name="minutes">
-        <item quantity="one">%d minute</item>
-        <item quantity="other">%d minutes</item>
-    </plurals>
-
-    <plurals name="seconds">
-        <item quantity="one">%d second</item>
-        <item quantity="other">%d seconds</item>
-    </plurals>
-
     <string name="navigation_drawer_open">Open navigation drawer</string>
     <string name="navigation_drawer_close">Close navigation drawer</string>
     <string name="not_permitted">Not permitted</string>
-    <string name="day_symbol">d</string>
-    <string name="size_kb">%1$.1f kb</string>
-    <string name="size_mb">%1$.1f MB</string>
-    <string name="size_gb">%1$.1f GB</string>
     <string name="free">%1$s free · ↓ %2$s · ↑ %3$s</string>
     <string name="per_second">/s</string>
     <string name="size_tab">"Size:"</string>
