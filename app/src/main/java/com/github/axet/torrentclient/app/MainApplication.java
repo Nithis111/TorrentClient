@@ -12,6 +12,7 @@ import android.util.Log;
 import android.view.View;
 import android.widget.TextView;
 
+import com.github.axet.androidlibrary.app.LibraryApplication;
 import com.github.axet.androidlibrary.widgets.ThemeUtils;
 import com.github.axet.torrentclient.R;
 
@@ -160,67 +161,10 @@ public class MainApplication extends Application {
         return getTheme(this, R.style.AppThemeLight, R.style.AppThemeDark);
     }
 
-    static public String formatTime(int tt) {
-        return String.format("%02d", tt);
-    }
-
-    public String formatLeft(int diff) {
-        String str = "";
-
-        int diffSeconds = (int) (diff / 1000 % 60);
-        int diffMinutes = (int) (diff / (60 * 1000) % 60);
-        int diffHours = (int) (diff / (60 * 60 * 1000) % 24);
-        int diffDays = (int) (diff / (24 * 60 * 60 * 1000));
-
-        if (diffDays > 0) {
-            str = getResources().getQuantityString(R.plurals.days, diffDays, diffDays);
-        } else if (diffHours > 0) {
-            str = getResources().getQuantityString(R.plurals.hours, diffHours, diffHours);
-        } else if (diffMinutes > 0) {
-            str = getResources().getQuantityString(R.plurals.minutes, diffMinutes, diffMinutes);
-        } else if (diffSeconds > 0) {
-            str = getResources().getQuantityString(R.plurals.seconds, diffSeconds, diffSeconds);
-        }
-
-        return str;
-    }
-
     public static String formatFree(Context context, long free, long d, long u) {
-        return context.getString(R.string.free, MainApplication.formatSize(context, free),
-                MainApplication.formatSize(context, d) + context.getString(R.string.per_second),
-                MainApplication.formatSize(context, u) + context.getString(R.string.per_second));
-    }
-
-    public static String formatSize(Context context, long s) {
-        if (s > 0.1 * 1024 * 1024 * 1024) {
-            float f = s / 1024f / 1024f / 1024f;
-            return context.getString(R.string.size_gb, f);
-        } else if (s > 0.1 * 1024 * 1024) {
-            float f = s / 1024f / 1024f;
-            return context.getString(R.string.size_mb, f);
-        } else {
-            float f = s / 1024f;
-            return context.getString(R.string.size_kb, f);
-        }
-    }
-
-    static public String formatDuration(Context context, long diff) {
-        int diffMilliseconds = (int) (diff % 1000);
-        int diffSeconds = (int) (diff / 1000 % 60);
-        int diffMinutes = (int) (diff / (60 * 1000) % 60);
-        int diffHours = (int) (diff / (60 * 60 * 1000) % 24);
-        int diffDays = (int) (diff / (24 * 60 * 60 * 1000));
-
-        String str = "";
-
-        if (diffDays > 0)
-            str = diffDays + context.getString(R.string.day_symbol) + " " + formatTime(diffHours) + ":" + formatTime(diffMinutes) + ":" + formatTime(diffSeconds);
-        else if (diffHours > 0)
-            str = formatTime(diffHours) + ":" + formatTime(diffMinutes) + ":" + formatTime(diffSeconds);
-        else
-            str = formatTime(diffMinutes) + ":" + formatTime(diffSeconds);
-
-        return str;
+        return context.getString(R.string.free, LibraryApplication.formatSize(context, free),
+                LibraryApplication.formatSize(context, d) + context.getString(R.string.per_second),
+                LibraryApplication.formatSize(context, u) + context.getString(R.string.per_second));
     }
 
     static public void setText(View v, String text) {

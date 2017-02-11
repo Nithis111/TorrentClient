@@ -18,6 +18,7 @@ import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
 
+import com.github.axet.androidlibrary.app.LibraryApplication;
 import com.github.axet.androidlibrary.widgets.OpenFileDialog;
 import com.github.axet.torrentclient.R;
 import com.github.axet.torrentclient.activities.MainActivity;
@@ -151,7 +152,7 @@ public class AddDialogFragment extends DialogFragment implements MainActivity.To
             MainApplication.setText(percent, (f.file.getBytesCompleted() * 100 / f.file.getLength()) + "%");
 
             TextView size = (TextView) view.findViewById(R.id.torrent_files_size);
-            size.setText(getContext().getString(R.string.size_tab) + " " + MainApplication.formatSize(getContext(), f.file.getLength()));
+            size.setText(getContext().getString(R.string.size_tab) + " " + LibraryApplication.formatSize(getContext(), f.file.getLength()));
 
             TextView folder = (TextView) view.findViewById(R.id.torrent_files_folder);
             TextView file = (TextView) view.findViewById(R.id.torrent_files_name);
@@ -427,9 +428,9 @@ public class AddDialogFragment extends DialogFragment implements MainActivity.To
 
         renameButton.setVisibility(Libtorrent.metaTorrent(t) ? View.VISIBLE : View.GONE);
 
-        MainApplication.setText(size, !Libtorrent.metaTorrent(t) ? "" : MainApplication.formatSize(getContext(), Libtorrent.torrentBytesLength(t)));
+        MainApplication.setText(size, !Libtorrent.metaTorrent(t) ? "" : LibraryApplication.formatSize(getContext(), Libtorrent.torrentBytesLength(t)));
 
-        MainApplication.setText(pieces, !Libtorrent.metaTorrent(t) ? "" : Libtorrent.torrentPiecesCount(t) + " / " + MainApplication.formatSize(getContext(), Libtorrent.torrentPieceLength(t)));
+        MainApplication.setText(pieces, !Libtorrent.metaTorrent(t) ? "" : Libtorrent.torrentPiecesCount(t) + " / " + LibraryApplication.formatSize(getContext(), Libtorrent.torrentPieceLength(t)));
 
         path.setText(getArguments().getString("path"));
 

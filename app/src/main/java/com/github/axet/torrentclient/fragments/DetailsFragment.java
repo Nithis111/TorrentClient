@@ -20,6 +20,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.github.axet.androidlibrary.app.LibraryApplication;
 import com.github.axet.androidlibrary.widgets.ThemeUtils;
 import com.github.axet.torrentclient.R;
 import com.github.axet.torrentclient.activities.MainActivity;
@@ -204,9 +205,9 @@ public class DetailsFragment extends Fragment implements MainActivity.TorrentFra
 
         name.setText(Libtorrent.torrentName(t));
 
-        MainApplication.setText(size, !Libtorrent.metaTorrent(t) ? "" : MainApplication.formatSize(getContext(), Libtorrent.torrentBytesLength(t)));
+        MainApplication.setText(size, !Libtorrent.metaTorrent(t) ? "" : LibraryApplication.formatSize(getContext(), Libtorrent.torrentBytesLength(t)));
 
-        MainApplication.setText(pieces, !Libtorrent.metaTorrent(t) ? "" : Libtorrent.torrentPiecesCount(t) + " / " + MainApplication.formatSize(getContext(), Libtorrent.torrentPieceLength(t)));
+        MainApplication.setText(pieces, !Libtorrent.metaTorrent(t) ? "" : Libtorrent.torrentPiecesCount(t) + " / " + LibraryApplication.formatSize(getContext(), Libtorrent.torrentPieceLength(t)));
 
         InfoTorrent i = Libtorrent.torrentInfo(t);
 
@@ -265,9 +266,9 @@ public class DetailsFragment extends Fragment implements MainActivity.TorrentFra
         progress.setText(String.format("%d%%", Storage.Torrent.getProgress(t)));
 
         StatsTorrent b = Libtorrent.torrentStats(t);
-        downloaded.setText(MainApplication.formatSize(getContext(), b.getDownloaded()));
+        downloaded.setText(LibraryApplication.formatSize(getContext(), b.getDownloaded()));
 
-        uploaded.setText(MainApplication.formatSize(getContext(), b.getUploaded()));
+        uploaded.setText(LibraryApplication.formatSize(getContext(), b.getUploaded()));
 
         float r = 0;
         if (Libtorrent.metaTorrent(t)) {
@@ -285,9 +286,9 @@ public class DetailsFragment extends Fragment implements MainActivity.TorrentFra
 
         MainApplication.setDate(completed, info.getDateCompleted());
 
-        downloading.setText(MainApplication.formatDuration(getContext(), b.getDownloading() / 1000000));
+        downloading.setText(LibraryApplication.formatDuration(getContext(), b.getDownloading() / 1000000));
 
-        seeding.setText(MainApplication.formatDuration(getContext(), b.getSeeding() / 1000000));
+        seeding.setText(LibraryApplication.formatDuration(getContext(), b.getSeeding() / 1000000));
     }
 
     @Override

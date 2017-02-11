@@ -20,6 +20,7 @@ import android.support.v4.content.ContextCompat;
 import android.util.Base64;
 import android.util.Log;
 
+import com.github.axet.androidlibrary.app.LibraryApplication;
 import com.github.axet.torrentclient.R;
 import com.github.axet.torrentclient.services.TorrentService;
 import com.github.axet.wget.SpeedInfo;
@@ -139,10 +140,10 @@ public class Storage {
                 case Libtorrent.StatusPaused:
                 case Libtorrent.StatusSeeding:
                     if (Libtorrent.metaTorrent(t))
-                        str += MainApplication.formatSize(context, Libtorrent.torrentBytesLength(t)) + " · ";
+                        str += LibraryApplication.formatSize(context, Libtorrent.torrentBytesLength(t)) + " · ";
 
-                    str += "↓ " + MainApplication.formatSize(context, downloaded.getCurrentSpeed()) + context.getString(R.string.per_second);
-                    str += " · ↑ " + MainApplication.formatSize(context, uploaded.getCurrentSpeed()) + context.getString(R.string.per_second);
+                    str += "↓ " + LibraryApplication.formatSize(context, downloaded.getCurrentSpeed()) + context.getString(R.string.per_second);
+                    str += " · ↑ " + LibraryApplication.formatSize(context, uploaded.getCurrentSpeed()) + context.getString(R.string.per_second);
                     break;
                 case Libtorrent.StatusDownloading:
                     long c = 0;
@@ -154,11 +155,11 @@ public class Storage {
                         long diff = c * 1000 / a;
                         int diffDays = (int) (diff / (24 * 60 * 60 * 1000));
                         if (diffDays < 30)
-                            left = "" + ((MainApplication) context.getApplicationContext()).formatDuration(context, diff) + "";
+                            left = "" + LibraryApplication.formatDuration(context, diff) + "";
                     }
                     str += left;
-                    str += " · ↓ " + MainApplication.formatSize(context, downloaded.getCurrentSpeed()) + context.getString(R.string.per_second);
-                    str += " · ↑ " + MainApplication.formatSize(context, uploaded.getCurrentSpeed()) + context.getString(R.string.per_second);
+                    str += " · ↓ " + LibraryApplication.formatSize(context, downloaded.getCurrentSpeed()) + context.getString(R.string.per_second);
+                    str += " · ↑ " + LibraryApplication.formatSize(context, uploaded.getCurrentSpeed()) + context.getString(R.string.per_second);
                     break;
             }
 
@@ -172,7 +173,7 @@ public class Storage {
             String str = name();
 
             if (Libtorrent.metaTorrent(t))
-                str += " · " + MainApplication.formatSize(context, Libtorrent.torrentBytesLength(t));
+                str += " · " + LibraryApplication.formatSize(context, Libtorrent.torrentBytesLength(t));
 
             str += " · (" + getProgress() + "%)";
 
