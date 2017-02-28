@@ -12,7 +12,7 @@ import android.util.Log;
 import android.view.View;
 import android.widget.TextView;
 
-import com.github.axet.androidlibrary.app.LibraryApplication;
+import com.github.axet.androidlibrary.app.MainLibrary;
 import com.github.axet.androidlibrary.widgets.ThemeUtils;
 import com.github.axet.torrentclient.R;
 
@@ -162,9 +162,9 @@ public class MainApplication extends Application {
     }
 
     public static String formatFree(Context context, long free, long d, long u) {
-        return context.getString(R.string.free, LibraryApplication.formatSize(context, free),
-                LibraryApplication.formatSize(context, d) + context.getString(R.string.per_second),
-                LibraryApplication.formatSize(context, u) + context.getString(R.string.per_second));
+        return context.getString(R.string.free, MainLibrary.formatSize(context, free),
+                MainLibrary.formatSize(context, d) + context.getString(R.string.per_second),
+                MainLibrary.formatSize(context, u) + context.getString(R.string.per_second));
     }
 
     static public void setText(View v, String text) {
