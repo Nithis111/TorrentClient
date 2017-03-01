@@ -13,4 +13,4 @@ if [ ! -e "$GOPATH/pkg/gomobile" ]; then
   gomobile init || exit 1
 fi
 
-gomobile bind -o "$DIR/libtorrent.aar" gitlib.com/axet/libtorrent || exit 1
+gomobile bind -o "$DIR/libtorrent.aar" gitlab.com/axet/libtorrent || exit 1
