@@ -53,8 +53,6 @@ public class Storage extends com.github.axet.androidlibrary.app.Storage {
 
     public static final int SAVE_INTERVAL = 1 * 60 * 1000;
 
-    Context context;
-
     SpeedInfo downloaded = new SpeedInfo();
     SpeedInfo uploaded = new SpeedInfo();
 
@@ -255,10 +253,8 @@ public class Storage extends com.github.axet.androidlibrary.app.Storage {
     }
 
     public Storage(Context context) {
+        super(context);
         Log.d(TAG, "Storage()");
-
-        this.context = context;
-
         handler = new Handler(context.getMainLooper());
     }
 
@@ -611,10 +607,6 @@ public class Storage extends com.github.axet.androidlibrary.app.Storage {
         return true;
     }
 
-    public File getLocalStorage() {
-        return new File(context.getApplicationInfo().dataDir, TORRENTS);
-    }
-
     public boolean isLocalStorageEmpty() {
         return getLocalStorage().listFiles().length == 0;
     }
@@ -624,18 +616,13 @@ public class Storage extends com.github.axet.androidlibrary.app.Storage {
     }
 
     public File getStoragePath() {
-        if (permitted(PERMISSIONS)) {
-            File f = getPrefStorage();
-            return f;
-        } else {
-            return getLocalStorage();
-        }
-    }
-
-    File getPrefStorage() {
         SharedPreferences shared = PreferenceManager.getDefaultSharedPreferences(context);
         String path = shared.getString(MainApplication.PREFERENCE_STORAGE, "");
-        return new File(path);
+        File f = new File(path);
+        if (!permitted(PERMISSIONS))
+            return getLocalStorage();
+        else
+            return super.getStoragePath(f);
     }
 
     public void migrateLocalStorage() {
@@ -660,7 +647,6 @@ public class Storage extends com.github.axet.androidlibrary.app.Storage {
         // migrate torrents, then migrate download data
         for (int i = 0; i < torrents.size(); i++) {
             Torrent torrent = torrents.get(i);
-
             if (torrent.path.startsWith(l.getPath())) {
                 Libtorrent.stopTorrent(torrent.t);
                 String name = Libtorrent.torrentName(torrent.t);

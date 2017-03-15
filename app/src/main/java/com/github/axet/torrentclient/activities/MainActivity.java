@@ -192,7 +192,7 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
         create.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                final OpenFileDialog f = new OpenFileDialog(MainActivity.this);
+                final OpenFileDialog f = new OpenFileDialog(MainActivity.this, OpenFileDialog.DIALOG_TYPE.FOLDER_DIALOG);
 
                 String path = "";
 
@@ -321,7 +321,7 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
         add.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                final OpenFileDialog f = new OpenFileDialog(MainActivity.this);
+                final OpenFileDialog f = new OpenFileDialog(MainActivity.this, OpenFileDialog.DIALOG_TYPE.FILE_DIALOG);
 
                 String path = "";
 

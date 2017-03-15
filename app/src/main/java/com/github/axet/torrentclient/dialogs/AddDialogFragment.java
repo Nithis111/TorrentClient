@@ -346,7 +346,7 @@ public class AddDialogFragment extends DialogFragment implements MainActivity.To
         browse.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                final OpenFileDialog f = new OpenFileDialog(getContext());
+                final OpenFileDialog f = new OpenFileDialog(getContext(), OpenFileDialog.DIALOG_TYPE.FOLDER_DIALOG);
 
                 f.setCurrentPath(new File(getArguments().getString("path")));
                 f.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {

@@ -604,7 +604,7 @@ public class Drawer implements com.mikepenz.materialdrawer.Drawer.OnDrawerItemCl
         }
 
         if (id == R.id.nav_add) {
-            final OpenFileDialog f = new OpenFileDialog(context);
+            final OpenFileDialog f = new OpenFileDialog(context, OpenFileDialog.DIALOG_TYPE.FILE_DIALOG);
 
             String path = "";
 
