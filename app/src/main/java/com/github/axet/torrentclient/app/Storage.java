@@ -715,8 +715,7 @@ public class Storage extends com.github.axet.androidlibrary.app.Storage {
         }
 
         File parent = to.getParentFile();
-        parent.mkdirs();
-        if (!parent.exists()) {
+        if (!parent.exists() && !parent.mkdirs()) {
             throw new RuntimeException("No permissions: " + parent);
         }
 

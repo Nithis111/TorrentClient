@@ -760,7 +760,7 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         switch (requestCode) {
             case 1:
-                if (Storage.permitted(this, permissions, 1)) {
+                if (Storage.permitted(this, permissions)) {
                     try {
                         getStorage().migrateLocalStorage();
                     } catch (RuntimeException e) {
