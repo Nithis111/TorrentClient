@@ -48,7 +48,6 @@ import libtorrent.StatsTorrent;
 public class Storage extends com.github.axet.androidlibrary.app.Storage {
     public static final String TAG = Storage.class.getSimpleName();
 
-    public static final String TORRENTS = "torrents";
     public static final String[] PERMISSIONS = new String[]{Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE};
 
     public static final int SAVE_INTERVAL = 1 * 60 * 1000;
@@ -598,28 +597,22 @@ public class Storage extends com.github.axet.androidlibrary.app.Storage {
         throw new RuntimeException("unable to find");
     }
 
-    public boolean permitted(String[] ss) {
-        for (String s : ss) {
-            if (ContextCompat.checkSelfPermission(context, s) != PackageManager.PERMISSION_GRANTED) {
-                return false;
-            }
-        }
-        return true;
-    }
-
     public boolean isLocalStorageEmpty() {
-        return getLocalStorage().listFiles().length == 0;
+        File[] ff = getLocalStorage().listFiles();
+        if (ff == null)
+            return true;
+        return ff.length == 0;
     }
 
     public boolean isExternalStoragePermitted() {
-        return permitted(PERMISSIONS);
+        return permitted(context, PERMISSIONS);
     }
 
     public File getStoragePath() {
         SharedPreferences shared = PreferenceManager.getDefaultSharedPreferences(context);
         String path = shared.getString(MainApplication.PREFERENCE_STORAGE, "");
         File f = new File(path);
-        if (!permitted(PERMISSIONS))
+        if (!permitted(context, PERMISSIONS))
             return getLocalStorage();
         else
             return super.getStoragePath(f);
