@@ -59,7 +59,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
-import go.libtorrent.Libtorrent;
+import libtorrent.Libtorrent;
 
 public class MainActivity extends AppCompatActivity implements AbsListView.OnScrollListener,
         DialogInterface.OnDismissListener, SharedPreferences.OnSharedPreferenceChangeListener {

@@ -45,7 +45,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import go.libtorrent.Libtorrent;
+import libtorrent.Libtorrent;
 
 // Reduce MainActivity size, move code related to Drawer here
 public class Drawer implements com.mikepenz.materialdrawer.Drawer.OnDrawerItemClickListener, UnreadCountDrawable.UnreadCount {

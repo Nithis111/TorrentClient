@@ -29,7 +29,7 @@ import com.github.axet.torrentclient.navigators.Torrents;
 import java.util.HashMap;
 import java.util.Map;
 
-import go.libtorrent.Libtorrent;
+import libtorrent.Libtorrent;
 
 public class TorrentDialogFragment extends DialogFragment implements MainActivity.TorrentFragmentInterface {
     ViewPager pager;

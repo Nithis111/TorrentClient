@@ -34,7 +34,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.regex.Pattern;
 
-import go.libtorrent.Libtorrent;
+import libtorrent.Libtorrent;
 
 public class AddDialogFragment extends DialogFragment implements MainActivity.TorrentFragmentInterface {
     View v;
@@ -73,9 +73,9 @@ public class AddDialogFragment extends DialogFragment implements MainActivity.To
 
     static class TorFile {
         public long index;
-        public go.libtorrent.File file;
+        public libtorrent.File file;
 
-        public TorFile(long i, go.libtorrent.File f) {
+        public TorFile(long i, libtorrent.File f) {
             this.file = f;
             this.index = i;
         }

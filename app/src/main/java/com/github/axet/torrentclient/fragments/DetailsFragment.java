@@ -30,9 +30,9 @@ import com.github.axet.torrentclient.widgets.Pieces;
 
 import java.io.File;
 
-import go.libtorrent.InfoTorrent;
-import go.libtorrent.Libtorrent;
-import go.libtorrent.StatsTorrent;
+import libtorrent.InfoTorrent;
+import libtorrent.Libtorrent;
+import libtorrent.StatsTorrent;
 
 public class DetailsFragment extends Fragment implements MainActivity.TorrentFragmentInterface {
     View v;

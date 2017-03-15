@@ -47,8 +47,7 @@ dependencies {
     compile ('com.github.axet:wget:1.4.2') {
         exclude group: 'com.thoughtworks.xstream', module: 'xstream'
     }
-    //compile 'com.github.axet:android-library:1.9.10'
-    compile project(':android-library')
+    compile 'com.github.axet:android-library:1.10.3' // compile project(':android-library')
     compile project(":libtorrent") // API 15+
 //    compile 'com.subgraph.orchid:orchid:0.9.1'
 //    compile 'com.madgag.spongycastle:prov:1.54.0.0'

@@ -11,7 +11,7 @@ import com.github.axet.androidlibrary.widgets.ThemeUtils;
 
 import java.util.ArrayList;
 
-import go.libtorrent.Libtorrent;
+import libtorrent.Libtorrent;
 
 public class Pieces extends View {
 

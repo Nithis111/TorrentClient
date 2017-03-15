@@ -21,8 +21,8 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 
-import go.libtorrent.Libtorrent;
-import go.libtorrent.Peer;
+import libtorrent.Libtorrent;
+import libtorrent.Peer;
 
 public class PeersFragment extends Fragment implements MainActivity.TorrentFragmentInterface {
     View v;

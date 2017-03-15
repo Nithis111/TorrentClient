@@ -41,9 +41,9 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
-import go.libtorrent.BytesInfo;
-import go.libtorrent.Libtorrent;
-import go.libtorrent.StatsTorrent;
+import libtorrent.BytesInfo;
+import libtorrent.Libtorrent;
+import libtorrent.StatsTorrent;
 
 public class Storage extends com.github.axet.androidlibrary.app.Storage {
     public static final String TAG = Storage.class.getSimpleName();
@@ -189,7 +189,7 @@ public class Storage extends com.github.axet.androidlibrary.app.Storage {
 
         public boolean altered() {
             for (int k = 0; k < Libtorrent.torrentFilesCount(t); k++) {
-                go.libtorrent.File f = Libtorrent.torrentFiles(t, k);
+                libtorrent.File f = Libtorrent.torrentFiles(t, k);
                 if (f.getBytesCompleted() != 0) {
                     File file = new File(path, f.getPath());
                     if (!file.exists() || file.length() == 0) {
@@ -205,7 +205,7 @@ public class Storage extends com.github.axet.androidlibrary.app.Storage {
             if (!path.canWrite())
                 return true;
             for (int k = 0; k < Libtorrent.torrentFilesCount(t); k++) {
-                go.libtorrent.File f = Libtorrent.torrentFiles(t, k);
+                libtorrent.File f = Libtorrent.torrentFiles(t, k);
                 if (f.getBytesCompleted() != 0) {
                     File file = new File(path, f.getPath());
                     if (file.exists() && !file.canWrite()) { // we can only check parent folder and existing files, skip middle folders

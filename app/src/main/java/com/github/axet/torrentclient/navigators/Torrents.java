@@ -43,7 +43,7 @@ import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 
-import go.libtorrent.Libtorrent;
+import libtorrent.Libtorrent;
 
 public class Torrents extends BaseAdapter implements DialogInterface.OnDismissListener,
         MainActivity.TorrentFragmentInterface, UnreadCountDrawable.UnreadCount,
