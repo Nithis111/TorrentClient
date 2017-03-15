@@ -20,7 +20,7 @@ import android.support.v4.content.ContextCompat;
 import android.util.Base64;
 import android.util.Log;
 
-import com.github.axet.androidlibrary.app.LibraryApplication;
+import com.github.axet.androidlibrary.app.MainLibrary;
 import com.github.axet.torrentclient.R;
 import com.github.axet.torrentclient.services.TorrentService;
 import com.github.axet.wget.SpeedInfo;
@@ -29,14 +29,9 @@ import org.apache.commons.io.FileUtils;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
 import java.net.MulticastSocket;
@@ -46,19 +41,17 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
-import go.libtorrent.BytesInfo;
-import go.libtorrent.Libtorrent;
-import go.libtorrent.StatsTorrent;
+import libtorrent.BytesInfo;
+import libtorrent.Libtorrent;
+import libtorrent.StatsTorrent;
 
-public class Storage {
+public class Storage extends com.github.axet.androidlibrary.app.Storage {
     public static final String TAG = Storage.class.getSimpleName();
 
     public static final String TORRENTS = "torrents";
     public static final String[] PERMISSIONS = new String[]{Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE};
 
     public static final int SAVE_INTERVAL = 1 * 60 * 1000;
-
-    Context context;
 
     SpeedInfo downloaded = new SpeedInfo();
     SpeedInfo uploaded = new SpeedInfo();
@@ -140,10 +133,10 @@ public class Storage {
                 case Libtorrent.StatusPaused:
                 case Libtorrent.StatusSeeding:
                     if (Libtorrent.metaTorrent(t))
-                        str += LibraryApplication.formatSize(context, Libtorrent.torrentBytesLength(t)) + " · ";
+                        str += MainLibrary.formatSize(context, Libtorrent.torrentBytesLength(t)) + " · ";
 
-                    str += "↓ " + LibraryApplication.formatSize(context, downloaded.getCurrentSpeed()) + context.getString(R.string.per_second);
-                    str += " · ↑ " + LibraryApplication.formatSize(context, uploaded.getCurrentSpeed()) + context.getString(R.string.per_second);
+                    str += "↓ " + MainLibrary.formatSize(context, downloaded.getCurrentSpeed()) + context.getString(R.string.per_second);
+                    str += " · ↑ " + MainLibrary.formatSize(context, uploaded.getCurrentSpeed()) + context.getString(R.string.per_second);
                     break;
                 case Libtorrent.StatusDownloading:
                     long c = 0;
@@ -155,11 +148,11 @@ public class Storage {
                         long diff = c * 1000 / a;
                         int diffDays = (int) (diff / (24 * 60 * 60 * 1000));
                         if (diffDays < 30)
-                            left = "" + LibraryApplication.formatDuration(context, diff) + "";
+                            left = "" + MainLibrary.formatDuration(context, diff) + "";
                     }
                     str += left;
-                    str += " · ↓ " + LibraryApplication.formatSize(context, downloaded.getCurrentSpeed()) + context.getString(R.string.per_second);
-                    str += " · ↑ " + LibraryApplication.formatSize(context, uploaded.getCurrentSpeed()) + context.getString(R.string.per_second);
+                    str += " · ↓ " + MainLibrary.formatSize(context, downloaded.getCurrentSpeed()) + context.getString(R.string.per_second);
+                    str += " · ↑ " + MainLibrary.formatSize(context, uploaded.getCurrentSpeed()) + context.getString(R.string.per_second);
                     break;
             }
 
@@ -173,7 +166,7 @@ public class Storage {
             String str = name();
 
             if (Libtorrent.metaTorrent(t))
-                str += " · " + LibraryApplication.formatSize(context, Libtorrent.torrentBytesLength(t));
+                str += " · " + MainLibrary.formatSize(context, Libtorrent.torrentBytesLength(t));
 
             str += " · (" + getProgress() + "%)";
 
@@ -196,7 +189,7 @@ public class Storage {
 
         public boolean altered() {
             for (int k = 0; k < Libtorrent.torrentFilesCount(t); k++) {
-                go.libtorrent.File f = Libtorrent.torrentFiles(t, k);
+                libtorrent.File f = Libtorrent.torrentFiles(t, k);
                 if (f.getBytesCompleted() != 0) {
                     File file = new File(path, f.getPath());
                     if (!file.exists() || file.length() == 0) {
@@ -212,7 +205,7 @@ public class Storage {
             if (!path.canWrite())
                 return true;
             for (int k = 0; k < Libtorrent.torrentFilesCount(t); k++) {
-                go.libtorrent.File f = Libtorrent.torrentFiles(t, k);
+                libtorrent.File f = Libtorrent.torrentFiles(t, k);
                 if (f.getBytesCompleted() != 0) {
                     File file = new File(path, f.getPath());
                     if (file.exists() && !file.canWrite()) { // we can only check parent folder and existing files, skip middle folders
@@ -260,10 +253,8 @@ public class Storage {
     }
 
     public Storage(Context context) {
+        super(context);
         Log.d(TAG, "Storage()");
-
-        this.context = context;
-
         handler = new Handler(context.getMainLooper());
     }
 
@@ -616,10 +607,6 @@ public class Storage {
         return true;
     }
 
-    public File getLocalStorage() {
-        return new File(context.getApplicationInfo().dataDir, TORRENTS);
-    }
-
     public boolean isLocalStorageEmpty() {
         return getLocalStorage().listFiles().length == 0;
     }
@@ -629,18 +616,13 @@ public class Storage {
     }
 
     public File getStoragePath() {
-        if (permitted(PERMISSIONS)) {
-            File f = getPrefStorage();
-            return f;
-        } else {
-            return getLocalStorage();
-        }
-    }
-
-    File getPrefStorage() {
         SharedPreferences shared = PreferenceManager.getDefaultSharedPreferences(context);
         String path = shared.getString(MainApplication.PREFERENCE_STORAGE, "");
-        return new File(path);
+        File f = new File(path);
+        if (!permitted(PERMISSIONS))
+            return getLocalStorage();
+        else
+            return super.getStoragePath(f);
     }
 
     public void migrateLocalStorage() {
@@ -665,7 +647,6 @@ public class Storage {
         // migrate torrents, then migrate download data
         for (int i = 0; i < torrents.size(); i++) {
             Torrent torrent = torrents.get(i);
-
             if (torrent.path.startsWith(l.getPath())) {
                 Libtorrent.stopTorrent(torrent.t);
                 String name = Libtorrent.torrentName(torrent.t);
@@ -711,79 +692,6 @@ public class Storage {
         }
     }
 
-    public static String getNameNoExt(File f) {
-        String fileName = f.getName();
-
-        int i = fileName.lastIndexOf('.');
-        if (i > 0) {
-            fileName = fileName.substring(0, i);
-        }
-        return fileName;
-    }
-
-    public static String getExt(File f) {
-        String fileName = f.getName();
-
-        int i = fileName.lastIndexOf('.');
-        if (i > 0) {
-            return fileName.substring(i + 1);
-        }
-        return "";
-    }
-
-    File getNextFile(File parent, File f) {
-        String fileName = f.getName();
-
-        String extension = "";
-
-        int i = fileName.lastIndexOf('.');
-        if (i > 0) {
-            extension = fileName.substring(i + 1);
-            fileName = fileName.substring(0, i);
-        }
-
-        return getNextFile(parent, fileName, extension);
-    }
-
-    File getNextFile(File parent, String name, String ext) {
-        String fileName;
-        if (ext.isEmpty())
-            fileName = name;
-        else
-            fileName = String.format("%s.%s", name, ext);
-
-        File file = new File(parent, fileName);
-
-        int i = 1;
-        while (file.exists()) {
-            if (ext.isEmpty())
-                fileName = String.format("%s (%d)", name, i);
-            else
-                fileName = String.format("%s (%d).%s", name, i, ext);
-            file = new File(parent, fileName);
-            i++;
-        }
-
-//        try {
-//            file.createNewFile();
-//        } catch (IOException e) {
-//            throw new RuntimeException("Unable to create: " + file, e);
-//        }
-
-        return file;
-    }
-
-    public long getFree(File f) {
-        while (!f.exists())
-            f = f.getParentFile();
-
-        StatFs fsi = new StatFs(f.getPath());
-        if (Build.VERSION.SDK_INT < 18)
-            return fsi.getBlockSize() * (long) fsi.getAvailableBlocks();
-        else
-            return fsi.getBlockSizeLong() * fsi.getAvailableBlocksLong();
-    }
-
     public FileOutputStream open(File f) {
         File tmp = f;
         File parent = tmp.getParentFile();
@@ -799,11 +707,7 @@ public class Storage {
         }
     }
 
-    public void delete(File f) {
-        f.delete();
-    }
-
-    public void move(File f, File to) {
+    public static void move(File f, File to) {
         Log.d(TAG, "migrate: " + f + " --> " + to);
         if (f.isDirectory()) {
             String[] files = f.list();
@@ -823,21 +727,7 @@ public class Storage {
             throw new RuntimeException("No permissions: " + parent);
         }
 
-        try {
-            InputStream in = new BufferedInputStream(new FileInputStream(f));
-            OutputStream out = new BufferedOutputStream(new FileOutputStream(to));
-
-            byte[] buf = new byte[1024 * 1024];
-            int len;
-            while ((len = in.read(buf)) > 0) {
-                out.write(buf, 0, len);
-            }
-            in.close();
-            out.close();
-            FileUtils.deleteQuietly(f);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        com.github.axet.androidlibrary.app.Storage.move(f, to);
     }
 
     public void pause() {
@@ -872,7 +762,7 @@ public class Storage {
     public String formatHeader() {
         File f = getStoragePath();
         long free = getFree(f);
-        return getApp().formatFree(context, free, downloaded.getCurrentSpeed(), uploaded.getCurrentSpeed());
+        return MainApplication.formatFree(context, free, downloaded.getCurrentSpeed(), uploaded.getCurrentSpeed());
     }
 
     public List<String> splitMagnets(String ff) {

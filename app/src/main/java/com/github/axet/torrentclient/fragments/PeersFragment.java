@@ -9,7 +9,7 @@ import android.widget.BaseAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
 
-import com.github.axet.androidlibrary.app.LibraryApplication;
+import com.github.axet.androidlibrary.app.MainLibrary;
 import com.github.axet.torrentclient.R;
 import com.github.axet.torrentclient.activities.MainActivity;
 import com.github.axet.torrentclient.app.MainApplication;
@@ -21,8 +21,8 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 
-import go.libtorrent.Libtorrent;
-import go.libtorrent.Peer;
+import libtorrent.Libtorrent;
+import libtorrent.Peer;
 
 public class PeersFragment extends Fragment implements MainActivity.TorrentFragmentInterface {
     View v;
@@ -113,8 +113,8 @@ public class PeersFragment extends Fragment implements MainActivity.TorrentFragm
             addr.setText(f.getAddr());
             stats.setText(str);
             name.setText(f.getName());
-            d.setText("↓ " + LibraryApplication.formatSize(getContext(), di.getCurrentSpeed()) + getContext().getString(R.string.per_second));
-            u.setText("↑ " + LibraryApplication.formatSize(getContext(), ui.getCurrentSpeed()) + getContext().getString(R.string.per_second));
+            d.setText("↓ " + MainLibrary.formatSize(getContext(), di.getCurrentSpeed()) + getContext().getString(R.string.per_second));
+            u.setText("↑ " + MainLibrary.formatSize(getContext(), ui.getCurrentSpeed()) + getContext().getString(R.string.per_second));
 
             return view;
         }

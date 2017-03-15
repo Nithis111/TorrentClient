@@ -45,7 +45,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import go.libtorrent.Libtorrent;
+import libtorrent.Libtorrent;
 
 // Reduce MainActivity size, move code related to Drawer here
 public class Drawer implements com.mikepenz.materialdrawer.Drawer.OnDrawerItemClickListener, UnreadCountDrawable.UnreadCount {
@@ -604,7 +604,7 @@ public class Drawer implements com.mikepenz.materialdrawer.Drawer.OnDrawerItemCl
         }
 
         if (id == R.id.nav_add) {
-            final OpenFileDialog f = new OpenFileDialog(context);
+            final OpenFileDialog f = new OpenFileDialog(context, OpenFileDialog.DIALOG_TYPE.FILE_DIALOG);
 
             String path = "";
 

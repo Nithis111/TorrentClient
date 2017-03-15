@@ -17,9 +17,7 @@ public class OnBootReceiver extends BroadcastReceiver {
     public void onReceive(Context context, Intent i) {
         Log.d(TAG, "onReceive");
         final SharedPreferences shared = PreferenceManager.getDefaultSharedPreferences(context);
-        boolean start = shared.getBoolean(MainApplication.PREFERENCE_START, false);
-
-        if (start)
+        if (shared.getBoolean(MainApplication.PREFERENCE_START, false))
             BootActivity.createApplication(context);
     }
 }

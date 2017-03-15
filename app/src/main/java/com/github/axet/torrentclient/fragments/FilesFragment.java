@@ -11,7 +11,7 @@ import android.widget.CheckBox;
 import android.widget.ListView;
 import android.widget.TextView;
 
-import com.github.axet.androidlibrary.app.LibraryApplication;
+import com.github.axet.androidlibrary.app.MainLibrary;
 import com.github.axet.torrentclient.R;
 import com.github.axet.torrentclient.activities.MainActivity;
 import com.github.axet.torrentclient.app.MainApplication;
@@ -24,7 +24,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.regex.Pattern;
 
-import go.libtorrent.Libtorrent;
+import libtorrent.Libtorrent;
 
 public class FilesFragment extends Fragment implements MainActivity.TorrentFragmentInterface {
     View v;
@@ -38,9 +38,9 @@ public class FilesFragment extends Fragment implements MainActivity.TorrentFragm
 
     static class TorFile {
         public long index;
-        public go.libtorrent.File file;
+        public libtorrent.File file;
 
-        public TorFile(long i, go.libtorrent.File f) {
+        public TorFile(long i, libtorrent.File f) {
             this.file = f;
             this.index = i;
         }
@@ -120,7 +120,7 @@ public class FilesFragment extends Fragment implements MainActivity.TorrentFragm
                 MainApplication.setText(percent, "100%");
 
             TextView size = (TextView) view.findViewById(R.id.torrent_files_size);
-            size.setText(getContext().getString(R.string.size_tab) + " " + LibraryApplication.formatSize(getContext(), f.file.getLength()));
+            size.setText(getContext().getString(R.string.size_tab) + " " + MainLibrary.formatSize(getContext(), f.file.getLength()));
 
             TextView folder = (TextView) view.findViewById(R.id.torrent_files_folder);
             TextView file = (TextView) view.findViewById(R.id.torrent_files_name);

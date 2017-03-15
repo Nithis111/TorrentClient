@@ -18,8 +18,8 @@ import com.github.axet.torrentclient.app.MainApplication;
 
 import java.util.ArrayList;
 
-import go.libtorrent.Libtorrent;
-import go.libtorrent.Tracker;
+import libtorrent.Libtorrent;
+import libtorrent.Tracker;
 
 public class TrackersFragment extends Fragment implements MainActivity.TorrentFragmentInterface {
     View v;

@@ -59,7 +59,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
-import go.libtorrent.Libtorrent;
+import libtorrent.Libtorrent;
 
 public class MainActivity extends AppCompatActivity implements AbsListView.OnScrollListener,
         DialogInterface.OnDismissListener, SharedPreferences.OnSharedPreferenceChangeListener {
@@ -192,7 +192,7 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
         create.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                final OpenFileDialog f = new OpenFileDialog(MainActivity.this);
+                final OpenFileDialog f = new OpenFileDialog(MainActivity.this, OpenFileDialog.DIALOG_TYPE.FOLDER_DIALOG);
 
                 String path = "";
 
@@ -321,7 +321,7 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
         add.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                final OpenFileDialog f = new OpenFileDialog(MainActivity.this);
+                final OpenFileDialog f = new OpenFileDialog(MainActivity.this, OpenFileDialog.DIALOG_TYPE.FILE_DIALOG);
 
                 String path = "";
 
@@ -453,7 +453,7 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
 
                 drawer.setCheckedItem(R.id.nav_torrents);
 
-                if (permitted()) {
+                if (Storage.permitted(MainActivity.this, PERMISSIONS, 1)) {
                     try {
                         getStorage().migrateLocalStorage();
                     } catch (RuntimeException e) {
@@ -690,7 +690,7 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
             add.setVisibility(View.GONE);
             create.setVisibility(View.GONE);
         } else {
-            if (permitted(PERMISSIONS)) {
+            if (Storage.permitted(this, PERMISSIONS)) {
                 add.setVisibility(View.VISIBLE);
                 create.setVisibility(View.VISIBLE);
             }
@@ -760,7 +760,7 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         switch (requestCode) {
             case 1:
-                if (permitted(permissions)) {
+                if (Storage.permitted(this, permissions, 1)) {
                     try {
                         getStorage().migrateLocalStorage();
                     } catch (RuntimeException e) {
@@ -775,25 +775,6 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
     }
 
     public static final String[] PERMISSIONS = new String[]{Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE};
-
-    boolean permitted(String[] ss) {
-        for (String s : ss) {
-            if (ContextCompat.checkSelfPermission(this, s) != PackageManager.PERMISSION_GRANTED) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    boolean permitted() {
-        for (String s : PERMISSIONS) {
-            if (ContextCompat.checkSelfPermission(this, s) != PackageManager.PERMISSION_GRANTED) {
-                ActivityCompat.requestPermissions(this, PERMISSIONS, 1);
-                return false;
-            }
-        }
-        return true;
-    }
 
     @Override
     public void onScrollStateChanged(AbsListView view, int scrollState) {

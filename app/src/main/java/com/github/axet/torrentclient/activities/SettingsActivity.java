@@ -29,6 +29,7 @@ import android.widget.Toast;
 
 import com.github.axet.torrentclient.R;
 import com.github.axet.torrentclient.app.MainApplication;
+import com.github.axet.torrentclient.app.Storage;
 
 import java.io.File;
 import java.util.List;
@@ -54,6 +55,7 @@ public class SettingsActivity extends AppCompatPreferenceActivity implements Sha
         @Override
         public boolean onPreferenceChange(Preference preference, Object value) {
             String stringValue = value.toString();
+            String key = preference.getKey();
 
             if (preference instanceof ListPreference) {
                 // For list preferences, look up the correct display value in
@@ -186,7 +188,7 @@ public class SettingsActivity extends AppCompatPreferenceActivity implements Sha
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         switch (requestCode) {
             case 1:
-                if (permitted(this, permissions))
+                if (Storage.permitted(this, permissions))
                     ;
                 else
                     Toast.makeText(this, R.string.not_permitted, Toast.LENGTH_SHORT).show();
@@ -194,15 +196,6 @@ public class SettingsActivity extends AppCompatPreferenceActivity implements Sha
     }
 
     public static final String[] PERMISSIONS = new String[]{Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE};
-
-    public static boolean permitted(Context context, String[] ss) {
-        for (String s : ss) {
-            if (ContextCompat.checkSelfPermission(context, s) != PackageManager.PERMISSION_GRANTED) {
-                return false;
-            }
-        }
-        return true;
-    }
 
     @Override
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
@@ -217,7 +210,7 @@ public class SettingsActivity extends AppCompatPreferenceActivity implements Sha
             if (!f.canWrite()) {
                 AlertDialog.Builder b = new AlertDialog.Builder(this);
                 b.setTitle(R.string.storage_path);
-                b.setMessage("Read only directory, please select another");
+                b.setMessage("Readonly directory, please select another");
                 Dialog d = b.create();
                 d.show();
                 SharedPreferences.Editor editor = sharedPreferences.edit();
@@ -256,11 +249,9 @@ public class SettingsActivity extends AppCompatPreferenceActivity implements Sha
             addPreferencesFromResource(R.xml.pref_general);
             setHasOptionsMenu(true);
 
-            if (!permitted(getActivity(), PERMISSIONS)) {
+            if (!Storage.permitted(getActivity(), PERMISSIONS)) {
                 Preference p = findPreference(MainApplication.PREFERENCE_STORAGE);
                 getPreferenceScreen().removePreference(p);
-            } else {
-                bindPreferenceSummaryToValue(findPreference(MainApplication.PREFERENCE_STORAGE));
             }
 
             bindPreferenceSummaryToValue(findPreference(MainApplication.PREFERENCE_THEME));

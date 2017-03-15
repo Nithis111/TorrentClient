@@ -18,7 +18,7 @@ import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
 
-import com.github.axet.androidlibrary.app.LibraryApplication;
+import com.github.axet.androidlibrary.app.MainLibrary;
 import com.github.axet.androidlibrary.widgets.OpenFileDialog;
 import com.github.axet.torrentclient.R;
 import com.github.axet.torrentclient.activities.MainActivity;
@@ -34,7 +34,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.regex.Pattern;
 
-import go.libtorrent.Libtorrent;
+import libtorrent.Libtorrent;
 
 public class AddDialogFragment extends DialogFragment implements MainActivity.TorrentFragmentInterface {
     View v;
@@ -73,9 +73,9 @@ public class AddDialogFragment extends DialogFragment implements MainActivity.To
 
     static class TorFile {
         public long index;
-        public go.libtorrent.File file;
+        public libtorrent.File file;
 
-        public TorFile(long i, go.libtorrent.File f) {
+        public TorFile(long i, libtorrent.File f) {
             this.file = f;
             this.index = i;
         }
@@ -152,7 +152,7 @@ public class AddDialogFragment extends DialogFragment implements MainActivity.To
             MainApplication.setText(percent, (f.file.getBytesCompleted() * 100 / f.file.getLength()) + "%");
 
             TextView size = (TextView) view.findViewById(R.id.torrent_files_size);
-            size.setText(getContext().getString(R.string.size_tab) + " " + LibraryApplication.formatSize(getContext(), f.file.getLength()));
+            size.setText(getContext().getString(R.string.size_tab) + " " + MainLibrary.formatSize(getContext(), f.file.getLength()));
 
             TextView folder = (TextView) view.findViewById(R.id.torrent_files_folder);
             TextView file = (TextView) view.findViewById(R.id.torrent_files_name);
@@ -346,7 +346,7 @@ public class AddDialogFragment extends DialogFragment implements MainActivity.To
         browse.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                final OpenFileDialog f = new OpenFileDialog(getContext());
+                final OpenFileDialog f = new OpenFileDialog(getContext(), OpenFileDialog.DIALOG_TYPE.FOLDER_DIALOG);
 
                 f.setCurrentPath(new File(getArguments().getString("path")));
                 f.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
@@ -428,9 +428,9 @@ public class AddDialogFragment extends DialogFragment implements MainActivity.To
 
         renameButton.setVisibility(Libtorrent.metaTorrent(t) ? View.VISIBLE : View.GONE);
 
-        MainApplication.setText(size, !Libtorrent.metaTorrent(t) ? "" : LibraryApplication.formatSize(getContext(), Libtorrent.torrentBytesLength(t)));
+        MainApplication.setText(size, !Libtorrent.metaTorrent(t) ? "" : MainLibrary.formatSize(getContext(), Libtorrent.torrentBytesLength(t)));
 
-        MainApplication.setText(pieces, !Libtorrent.metaTorrent(t) ? "" : Libtorrent.torrentPiecesCount(t) + " / " + LibraryApplication.formatSize(getContext(), Libtorrent.torrentPieceLength(t)));
+        MainApplication.setText(pieces, !Libtorrent.metaTorrent(t) ? "" : Libtorrent.torrentPiecesCount(t) + " / " + MainLibrary.formatSize(getContext(), Libtorrent.torrentPieceLength(t)));
 
         path.setText(getArguments().getString("path"));
 

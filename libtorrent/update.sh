@@ -17,7 +17,7 @@ go_get() {
   return 0
 }
 
-go_get "github.com/axet/torrent" "github.com/anacrolix/torrent" || exit 1
+go_get "gitlab.com/axet/torrent" "github.com/anacrolix/torrent" || exit 1
 
 go get -u gitlab.com/axet/libtorrent || exit 1
 
