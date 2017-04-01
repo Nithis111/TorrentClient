@@ -29,6 +29,13 @@
         android:summary="Work on wifi connection only"
         android:title="Wifi Only" />
 
+    <SwitchPreference
+        android:defaultValue="false"
+        android:key="optimization"
+        android:persistent="false"
+        android:summary="Disable Battery Optimization"
+        android:title="Battery Optimization" />
+
     <ListPreference
         android:defaultValue="Theme_White"
         android:entries="@array/themes"

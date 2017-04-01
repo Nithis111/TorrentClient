@@ -37,6 +37,7 @@ public class MainApplication extends Application {
     public static final String PREFERENCE_UPLOAD = "upload_rate";
     public static final String PREFERENCE_DOWNLOAD = "download_rate";
     public static final String PREFERENCE_SPEEDLIMIT = "speedlimit";
+    public static final String PREFERENCE_OPTIMIZATION = "optimization";
 
     public static final String SAVE_STATE = MainApplication.class.getName() + ".SAVE_STATE";
 
