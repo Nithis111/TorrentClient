@@ -15,15 +15,19 @@ import android.media.RingtoneManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.PowerManager;
 import android.preference.ListPreference;
 import android.preference.Preference;
 import android.preference.PreferenceActivity;
 import android.preference.PreferenceFragment;
 import android.preference.PreferenceManager;
 import android.preference.RingtonePreference;
+import android.preference.SwitchPreference;
+import android.provider.Settings;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AlertDialog;
+import android.support.v7.preference.SwitchPreferenceCompat;
 import android.view.MenuItem;
 import android.widget.Toast;
 
@@ -249,6 +253,30 @@ public class SettingsActivity extends AppCompatPreferenceActivity implements Sha
             addPreferencesFromResource(R.xml.pref_general);
             setHasOptionsMenu(true);
 
+            final PowerManager pm = (PowerManager) getActivity().getSystemService(POWER_SERVICE);
+            final String n = getActivity().getPackageName();
+            SwitchPreference optimization = (SwitchPreference) findPreference(MainApplication.PREFERENCE_OPTIMIZATION);
+            if (Build.VERSION.SDK_INT < 23) {
+                getPreferenceScreen().removePreference(optimization);
+            } else {
+                optimization.setChecked(pm.isIgnoringBatteryOptimizations(n));
+                optimization.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
+                    @Override
+                    @TargetApi(23)
+                    public boolean onPreferenceChange(Preference preference, Object o) {
+                        if (pm.isIgnoringBatteryOptimizations(n)) {
+                            Intent intent = new Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS);
+                            startActivity(intent);
+                        } else {
+                            Intent intent = new Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS);
+                            intent.setData(Uri.parse("package:" + n));
+                            startActivity(intent);
+                        }
+                        return false;
+                    }
+                });
+            }
+
             bindPreferenceSummaryToValue(findPreference(MainApplication.PREFERENCE_THEME));
             bindPreferenceSummaryToValue(findPreference(MainApplication.PREFERENCE_ANNOUNCE));
         }
@@ -261,6 +289,19 @@ public class SettingsActivity extends AppCompatPreferenceActivity implements Sha
                 return true;
             }
             return super.onOptionsItemSelected(item);
+        }
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        final PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
+        final String n = getPackageName();
+        if (Build.VERSION.SDK_INT >= 23) {
+            SwitchPreference optimization = (SwitchPreference) findPreference(MainApplication.PREFERENCE_OPTIMIZATION);
+            if (optimization != null) {
+                optimization.setChecked(pm.isIgnoringBatteryOptimizations(n));
+            }
         }
     }
 

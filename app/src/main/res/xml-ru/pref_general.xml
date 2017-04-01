@@ -30,6 +30,12 @@
         android:summary="Скачивать только при включенном Wifi"
         android:title="Wifi режим" />
 
+    <SwitchPreference
+        android:defaultValue="true"
+        android:key="optimization"
+        android:summary="Отключить оптимизацию расхода батареи"
+        android:title="Оптимизация батареи" />
+
     <ListPreference
         android:defaultValue="Theme_White"
         android:entries="@array/themes"
