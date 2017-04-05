@@ -4,7 +4,7 @@ Torrent Client simple UI. Additional 'Search Engines' can be found here:
 
 * [Search Engines](https://axet.gitlab.io/android-torrent-client/)
 
-Real pirates steals author rights, don't be like them - share!
+Real pirates steal author's rights, don't be like them - share!
 
 # Google Play
 
