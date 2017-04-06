@@ -1,5 +1,7 @@
 apply plugin: 'com.android.application'
 
+import com.android.build.OutputFile
+
 android {
     compileSdkVersion 25
     buildToolsVersion "25.0.2"
@@ -29,8 +31,19 @@ android {
     applicationVariants.all { variant ->
         variant.outputs.each { output ->
             def file = output.packageApplication.outputFile
-            def fileName = org.apache.commons.io.FilenameUtils.getExtension(android.defaultConfig.applicationId) + "-" + android.defaultConfig.versionName + "-" + variant.buildType.name + ".apk"
+            def abi = output.getFilter(OutputFile.ABI)
+            if (abi == null)
+                abi = "universal";
+            def fileName = org.apache.commons.io.FilenameUtils.getExtension(android.defaultConfig.applicationId) + "-" + abi + "-" + android.defaultConfig.versionName + "-" + variant.buildType.name + ".apk"
             output.packageApplication.outputFile = new File(file.parent, fileName)
+        }
+    }
+    splits {
+        abi {
+            enable true
+            reset()
+            include "x86", "armeabi-v7a", "mips"
+            universalApk true
         }
     }
 }
@@ -44,7 +57,7 @@ dependencies {
     compile 'com.getbase:floatingactionbutton:1.10.1' // API 14+
     compile 'org.apmem.tools:layouts:1.10@aar' // API 14+
     compile('com.mikepenz:materialdrawer:5.4.0@aar') { transitive = true } // API 10+
-    compile ('com.github.axet:wget:1.4.2') {
+    compile('com.github.axet:wget:1.4.2') {
         exclude group: 'com.thoughtworks.xstream', module: 'xstream'
     }
     compile 'com.github.axet:android-library:1.10.12' // compile project(':android-library')
