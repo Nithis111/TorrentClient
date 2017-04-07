@@ -72,6 +72,10 @@ public class SettingsActivity extends AppCompatActivity implements SharedPrefere
         }
     };
 
+    int getAppTheme() {
+        return MainApplication.getTheme(this, R.style.AppThemeLight, R.style.AppThemeDark);
+    }
+
     /**
      * Helper method to determine if the device has an extra-large screen. For
      * example, 10" tablets are extra-large.
@@ -104,6 +108,7 @@ public class SettingsActivity extends AppCompatActivity implements SharedPrefere
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        setTheme(getAppTheme());
         super.onCreate(savedInstanceState);
 
         setupActionBar();
@@ -199,7 +204,6 @@ public class SettingsActivity extends AppCompatActivity implements SharedPrefere
      * This fragment shows general preferences only. It is used when the
      * activity is showing a two-pane settings UI.
      */
-    @TargetApi(11)
     public static class GeneralPreferenceFragment extends PreferenceFragmentCompat {
         public GeneralPreferenceFragment() {
         }
