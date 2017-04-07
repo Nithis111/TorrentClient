@@ -6,8 +6,8 @@ import android.content.res.TypedArray;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Parcelable;
-import android.preference.DialogPreference;
 import android.support.v7.app.AlertDialog;
+import android.support.v7.preference.DialogPreference;
 import android.text.TextUtils;
 import android.util.AttributeSet;
 import android.view.LayoutInflater;
@@ -100,16 +100,7 @@ public class MultiEditListPreference extends DialogPreference {
     }
 
     @Override
-    protected void onBindDialogView(View view) {
-        super.onBindDialogView(view);
-    }
-
-    public String getDefault() {
-        return Environment.getExternalStorageDirectory().getPath();
-    }
-
-    @Override
-    protected void showDialog(Bundle state) {
+    public void onClick() {
         LayoutInflater inflater = LayoutInflater.from(getContext());
 
         View view = inflater.inflate(R.layout.multiedit_content, null);

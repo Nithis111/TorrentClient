@@ -30,10 +30,10 @@
         android:summary="Скачивать только при включенном Wifi"
         android:title="Wifi режим" />
 
-    <SwitchPreference
+    <com.github.axet.androidlibrary.widgets.OptimizationPreferenceCompat
         android:defaultValue="true"
         android:key="optimization"
-        android:summary="Отключить оптимизацию расхода батареи"
+        android:summary="Предотвращать удаление программы из памяти телефона"
         android:title="Оптимизация батареи" />
 
     <ListPreference
