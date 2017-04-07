@@ -4,11 +4,9 @@ Torrent Client simple UI. Additional 'Search Engines' can be found here:
 
 * [Search Engines](https://axet.gitlab.io/android-torrent-client/)
 
-# Google Play
+Real pirates steal author's rights, don't be like them - share!
 
-[![ Google Play](docs/google-play-badge.png)](https://play.google.com/store/apps/details?id=com.github.axet.torrentclient) 
-
-Manual install
+# Manual install
 
     ./libtorrent/debug.sh && gradle installDebug
 
