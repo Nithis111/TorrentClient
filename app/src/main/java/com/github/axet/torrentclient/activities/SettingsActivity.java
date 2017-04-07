@@ -7,36 +7,26 @@ import android.app.Dialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.content.pm.PackageManager;
 import android.content.res.Configuration;
-import android.graphics.drawable.ColorDrawable;
-import android.media.Ringtone;
-import android.media.RingtoneManager;
-import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
-import android.os.PowerManager;
-import android.preference.ListPreference;
-import android.preference.Preference;
 import android.preference.PreferenceActivity;
 import android.preference.PreferenceFragment;
 import android.preference.PreferenceManager;
-import android.preference.RingtonePreference;
-import android.preference.SwitchPreference;
-import android.provider.Settings;
-import android.support.v4.content.ContextCompat;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AlertDialog;
-import android.support.v7.preference.SwitchPreferenceCompat;
+import android.support.v7.app.AppCompatActivity;
+import android.support.v7.preference.ListPreference;
+import android.support.v7.preference.Preference;
+import android.support.v7.preference.PreferenceFragmentCompat;
 import android.view.MenuItem;
 import android.widget.Toast;
 
+import com.github.axet.androidlibrary.widgets.OptimizationPreferenceCompat;
 import com.github.axet.torrentclient.R;
 import com.github.axet.torrentclient.app.MainApplication;
 import com.github.axet.torrentclient.app.Storage;
 
 import java.io.File;
-import java.util.List;
 
 /**
  * A {@link PreferenceActivity} that presents a set of application settings. On
@@ -49,7 +39,7 @@ import java.util.List;
  * href="http://developer.android.com/guide/topics/ui/settings.html">Settings
  * API Guide</a> for more information on developing a Settings UI.
  */
-public class SettingsActivity extends AppCompatPreferenceActivity implements SharedPreferences.OnSharedPreferenceChangeListener {
+public class SettingsActivity extends AppCompatActivity implements SharedPreferences.OnSharedPreferenceChangeListener {
 
     /**
      * A preference value change listener that updates the preference's summary
@@ -73,21 +63,6 @@ public class SettingsActivity extends AppCompatPreferenceActivity implements Sha
                                 ? listPreference.getEntries()[index]
                                 : null);
 
-            } else if (preference instanceof RingtonePreference) {
-                // For ringtone preferences, look up the correct display value
-                // using RingtoneManager.
-                Ringtone ringtone = RingtoneManager.getRingtone(
-                        preference.getContext(), Uri.parse(stringValue));
-
-                if (ringtone == null) {
-                    // Clear the summary if there was a lookup error.
-                    preference.setSummary(null);
-                } else {
-                    // Set the summary to reflect the new ringtone display
-                    // name.
-                    String name = ringtone.getTitle(preference.getContext());
-                    preference.setSummary(name);
-                }
             } else {
                 // For all other preferences, set the summary to the value's
                 // simple string representation.
@@ -136,7 +111,7 @@ public class SettingsActivity extends AppCompatPreferenceActivity implements Sha
         final SharedPreferences shared = PreferenceManager.getDefaultSharedPreferences(this);
         shared.registerOnSharedPreferenceChangeListener(this);
 
-        getFragmentManager().beginTransaction().replace(android.R.id.content, new GeneralPreferenceFragment()).commit();
+        getSupportFragmentManager().beginTransaction().replace(android.R.id.content, new GeneralPreferenceFragment()).commit();
     }
 
     /**
@@ -149,23 +124,6 @@ public class SettingsActivity extends AppCompatPreferenceActivity implements Sha
             actionBar.setDisplayHomeAsUpEnabled(true);
 //            actionBar.setBackgroundDrawable(new ColorDrawable(MainApplication.getActionbarColor(this)));
         }
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public boolean onIsMultiPane() {
-        return isXLargeTablet(this);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    @TargetApi(Build.VERSION_CODES.HONEYCOMB)
-    public void onBuildHeaders(List<Header> target) {
-//        loadHeadersFromResource(R.xml.pref_headers, target);
     }
 
     @Override
@@ -228,7 +186,6 @@ public class SettingsActivity extends AppCompatPreferenceActivity implements Sha
     @Override
     protected void onDestroy() {
         super.onDestroy();
-
         final SharedPreferences shared = PreferenceManager.getDefaultSharedPreferences(this);
         shared.unregisterOnSharedPreferenceChangeListener(this);
     }
@@ -242,40 +199,18 @@ public class SettingsActivity extends AppCompatPreferenceActivity implements Sha
      * This fragment shows general preferences only. It is used when the
      * activity is showing a two-pane settings UI.
      */
-    @TargetApi(Build.VERSION_CODES.HONEYCOMB)
-    public static class GeneralPreferenceFragment extends PreferenceFragment {
+    @TargetApi(11)
+    public static class GeneralPreferenceFragment extends PreferenceFragmentCompat {
         public GeneralPreferenceFragment() {
         }
 
         @Override
-        public void onCreate(Bundle savedInstanceState) {
-            super.onCreate(savedInstanceState);
+        public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {
             addPreferencesFromResource(R.xml.pref_general);
             setHasOptionsMenu(true);
 
-            final PowerManager pm = (PowerManager) getActivity().getSystemService(POWER_SERVICE);
-            final String n = getActivity().getPackageName();
-            SwitchPreference optimization = (SwitchPreference) findPreference(MainApplication.PREFERENCE_OPTIMIZATION);
-            if (Build.VERSION.SDK_INT < 23) {
-                getPreferenceScreen().removePreference(optimization);
-            } else {
-                optimization.setChecked(pm.isIgnoringBatteryOptimizations(n));
-                optimization.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
-                    @Override
-                    @TargetApi(23)
-                    public boolean onPreferenceChange(Preference preference, Object o) {
-                        if (pm.isIgnoringBatteryOptimizations(n)) {
-                            Intent intent = new Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS);
-                            startActivity(intent);
-                        } else {
-                            Intent intent = new Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS);
-                            intent.setData(Uri.parse("package:" + n));
-                            startActivity(intent);
-                        }
-                        return false;
-                    }
-                });
-            }
+            OptimizationPreferenceCompat optimization = (OptimizationPreferenceCompat) findPreference(MainApplication.PREFERENCE_OPTIMIZATION);
+            optimization.onResume();
 
             bindPreferenceSummaryToValue(findPreference(MainApplication.PREFERENCE_THEME));
             bindPreferenceSummaryToValue(findPreference(MainApplication.PREFERENCE_ANNOUNCE));
@@ -290,19 +225,18 @@ public class SettingsActivity extends AppCompatPreferenceActivity implements Sha
             }
             return super.onOptionsItemSelected(item);
         }
+
+        @Override
+        public void onResume() {
+            super.onResume();
+            OptimizationPreferenceCompat optimization = (OptimizationPreferenceCompat) findPreference(MainApplication.PREFERENCE_OPTIMIZATION);
+            optimization.onResume();
+        }
     }
 
     @Override
     public void onResume() {
         super.onResume();
-        final PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
-        final String n = getPackageName();
-        if (Build.VERSION.SDK_INT >= 23) {
-            SwitchPreference optimization = (SwitchPreference) findPreference(MainApplication.PREFERENCE_OPTIMIZATION);
-            if (optimization != null) {
-                optimization.setChecked(pm.isIgnoringBatteryOptimizations(n));
-            }
-        }
     }
 
 }

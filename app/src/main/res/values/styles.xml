@@ -13,6 +13,7 @@
         <item name="side_nav_bar">@drawable/side_nav_bar_light</item>
         <item name="unreadColor">@color/unreadLight</item>
         <item name="search_rating_bg">@drawable/search_rating_bg_light</item>
+        <item name="preferenceTheme">@style/PreferenceThemeOverlay</item>
     </style>
 
     <style name="AppThemeDialogLight" parent="@style/Theme.AppCompat.Light.Dialog.Alert">
@@ -60,6 +61,7 @@
         <item name="material_drawer_primary_text">@color/material_drawer_dark_primary_text</item>
         <item name="material_drawer_secondary_text">@color/material_drawer_dark_secondary_text</item>
         <item name="material_drawer_divider">@color/material_drawer_dark_divider</item>
+        <item name="preferenceTheme">@style/PreferenceThemeOverlay</item>
     </style>
 
     <style name="AppThemeDialogDark" parent="@style/Theme.AppCompat.Dialog.Alert">
