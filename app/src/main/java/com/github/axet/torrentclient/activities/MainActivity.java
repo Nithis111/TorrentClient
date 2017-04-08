@@ -50,9 +50,6 @@ import com.github.axet.torrentclient.dialogs.CreateDialogFragment;
 import com.github.axet.torrentclient.dialogs.OpenIntentDialogFragment;
 import com.github.axet.torrentclient.dialogs.RatesDialogFragment;
 import com.github.axet.torrentclient.navigators.Torrents;
-import com.google.android.gms.appindexing.Action;
-import com.google.android.gms.appindexing.AppIndex;
-import com.google.android.gms.common.api.GoogleApiClient;
 
 import java.io.File;
 import java.io.IOException;
@@ -64,12 +61,6 @@ import libtorrent.Libtorrent;
 public class MainActivity extends AppCompatActivity implements AbsListView.OnScrollListener,
         DialogInterface.OnDismissListener, SharedPreferences.OnSharedPreferenceChangeListener {
     public final static String TAG = MainActivity.class.getSimpleName();
-
-    /**
-     * ATTENTION: This was auto-generated to implement the App Indexing API.
-     * See https://g.co/AppIndexing/AndroidStudio for more information.
-     */
-    private GoogleApiClient client;
 
     public int scrollState;
 
@@ -172,10 +163,6 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
         Log.d(TAG, "onCreate");
 
         setContentView(R.layout.app_bar_main);
-
-        // ATTENTION: This was auto-generated to implement the App Indexing API.
-        // See https://g.co/AppIndexing/AndroidStudio for more information.
-        client = new GoogleApiClient.Builder(this).addApi(AppIndex.API).build();
 
         final Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
@@ -816,21 +803,7 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
     @Override
     public void onStart() {
         super.onStart();
-
-        // ATTENTION: This was auto-generated to implement the App Indexing API.
-        // See https://g.co/AppIndexing/AndroidStudio for more information.
-        client.connect();
-        Action viewAction = Action.newAction(
-                Action.TYPE_VIEW, // TODO: choose an action type.
-                "Main Page", // TODO: Define a title for the content shown.
-                // TODO: If you have web page content that matches this app activity's content,
-                // make sure this auto-generated web page URL is correct.
-                // Otherwise, set the URL to null.
-                Uri.parse("http://host/path"),
-                // TODO: Make sure this auto-generated app deep link URI is correct.
-                Uri.parse("android-app://com.github.axet.torrentclient/http/host/path")
-        );
-        AppIndex.AppIndexApi.start(client, viewAction);
+        Log.d(TAG, "onStart");
     }
 
 
@@ -838,21 +811,6 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
     public void onStop() {
         super.onStop();
         Log.d(TAG, "onStop");
-
-        // ATTENTION: This was auto-generated to implement the App Indexing API.
-        // See https://g.co/AppIndexing/AndroidStudio for more information.
-        Action viewAction = Action.newAction(
-                Action.TYPE_VIEW, // TODO: choose an action type.
-                "Main Page", // TODO: Define a title for the content shown.
-                // TODO: If you have web page content that matches this app activity's content,
-                // make sure this auto-generated web page URL is correct.
-                // Otherwise, set the URL to null.
-                Uri.parse("http://host/path"),
-                // TODO: Make sure this auto-generated app deep link URI is correct.
-                Uri.parse("android-app://com.github.axet.torrentclient/http/host/path")
-        );
-        AppIndex.AppIndexApi.end(client, viewAction);
-        client.disconnect();
     }
 
     @Override
