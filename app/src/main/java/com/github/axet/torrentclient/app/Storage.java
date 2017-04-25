@@ -20,7 +20,6 @@ import android.support.v4.content.ContextCompat;
 import android.util.Base64;
 import android.util.Log;
 
-import com.github.axet.androidlibrary.app.MainLibrary;
 import com.github.axet.torrentclient.R;
 import com.github.axet.torrentclient.services.TorrentService;
 import com.github.axet.wget.SpeedInfo;
@@ -132,10 +131,10 @@ public class Storage extends com.github.axet.androidlibrary.app.Storage {
                 case Libtorrent.StatusPaused:
                 case Libtorrent.StatusSeeding:
                     if (Libtorrent.metaTorrent(t))
-                        str += MainLibrary.formatSize(context, Libtorrent.torrentBytesLength(t)) + " · ";
+                        str += MainApplication.formatSize(context, Libtorrent.torrentBytesLength(t)) + " · ";
 
-                    str += "↓ " + MainLibrary.formatSize(context, downloaded.getCurrentSpeed()) + context.getString(R.string.per_second);
-                    str += " · ↑ " + MainLibrary.formatSize(context, uploaded.getCurrentSpeed()) + context.getString(R.string.per_second);
+                    str += "↓ " + MainApplication.formatSize(context, downloaded.getCurrentSpeed()) + context.getString(R.string.per_second);
+                    str += " · ↑ " + MainApplication.formatSize(context, uploaded.getCurrentSpeed()) + context.getString(R.string.per_second);
                     break;
                 case Libtorrent.StatusDownloading:
                     long c = 0;
@@ -147,11 +146,11 @@ public class Storage extends com.github.axet.androidlibrary.app.Storage {
                         long diff = c * 1000 / a;
                         int diffDays = (int) (diff / (24 * 60 * 60 * 1000));
                         if (diffDays < 30)
-                            left = "" + MainLibrary.formatDuration(context, diff) + "";
+                            left = "" + MainApplication.formatDuration(context, diff) + "";
                     }
                     str += left;
-                    str += " · ↓ " + MainLibrary.formatSize(context, downloaded.getCurrentSpeed()) + context.getString(R.string.per_second);
-                    str += " · ↑ " + MainLibrary.formatSize(context, uploaded.getCurrentSpeed()) + context.getString(R.string.per_second);
+                    str += " · ↓ " + MainApplication.formatSize(context, downloaded.getCurrentSpeed()) + context.getString(R.string.per_second);
+                    str += " · ↑ " + MainApplication.formatSize(context, uploaded.getCurrentSpeed()) + context.getString(R.string.per_second);
                     break;
             }
 
@@ -165,7 +164,7 @@ public class Storage extends com.github.axet.androidlibrary.app.Storage {
             String str = name();
 
             if (Libtorrent.metaTorrent(t))
-                str += " · " + MainLibrary.formatSize(context, Libtorrent.torrentBytesLength(t));
+                str += " · " + MainApplication.formatSize(context, Libtorrent.torrentBytesLength(t));
 
             str += " · (" + getProgress() + "%)";
 

@@ -11,7 +11,6 @@ import android.widget.CheckBox;
 import android.widget.ListView;
 import android.widget.TextView;
 
-import com.github.axet.androidlibrary.app.MainLibrary;
 import com.github.axet.torrentclient.R;
 import com.github.axet.torrentclient.activities.MainActivity;
 import com.github.axet.torrentclient.app.MainApplication;
@@ -115,12 +114,12 @@ public class FilesFragment extends Fragment implements MainActivity.TorrentFragm
             TextView percent = (TextView) view.findViewById(R.id.torrent_files_percent);
             percent.setEnabled(false);
             if (f.file.getLength() > 0)
-                MainApplication.setText(percent, (f.file.getBytesCompleted() * 100 / f.file.getLength()) + "%");
+                MainApplication.setTextNA(percent, (f.file.getBytesCompleted() * 100 / f.file.getLength()) + "%");
             else
-                MainApplication.setText(percent, "100%");
+                MainApplication.setTextNA(percent, "100%");
 
             TextView size = (TextView) view.findViewById(R.id.torrent_files_size);
-            size.setText(getContext().getString(R.string.size_tab) + " " + MainLibrary.formatSize(getContext(), f.file.getLength()));
+            size.setText(getContext().getString(R.string.size_tab) + " " + MainApplication.formatSize(getContext(), f.file.getLength()));
 
             TextView folder = (TextView) view.findViewById(R.id.torrent_files_folder);
             TextView file = (TextView) view.findViewById(R.id.torrent_files_name);
