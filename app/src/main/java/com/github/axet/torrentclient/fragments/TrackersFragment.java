@@ -107,9 +107,9 @@ public class TrackersFragment extends Fragment implements MainActivity.TorrentFr
                 if (f.getLastAnnounce() != 0)
                     ann += " (P:" + f.getPeers() + ")";
             }
-            MainApplication.setText(lastAnnounce, ann);
+            MainApplication.setTextNA(lastAnnounce, ann);
             MainApplication.setDate(nextAnnounce, f.getNextAnnounce());
-            MainApplication.setText(lastScrape, scrape);
+            MainApplication.setTextNA(lastScrape, scrape);
 
             return view;
         }
@@ -170,11 +170,11 @@ public class TrackersFragment extends Fragment implements MainActivity.TorrentFr
             Tracker tt = Libtorrent.torrentTrackers(t, i);
             String url = tt.getAddr();
             if (url.equals("PEX")) {
-                MainApplication.setText(pex, Libtorrent.torrentActive(t) ? tt.getPeers() + "" : "");
+                MainApplication.setTextNA(pex, Libtorrent.torrentActive(t) ? tt.getPeers() + "" : "");
                 continue;
             }
             if (url.equals("LPD")) {
-                MainApplication.setText(lpd, Libtorrent.torrentActive(t) ? tt.getPeers() + "" : "");
+                MainApplication.setTextNA(lpd, Libtorrent.torrentActive(t) ? tt.getPeers() + "" : "");
                 continue;
             }
             if (url.equals("DHT")) {
@@ -185,7 +185,7 @@ public class TrackersFragment extends Fragment implements MainActivity.TorrentFr
                     if (tt.getLastAnnounce() != 0)
                         str += " (P: " + tt.getPeers() + ")";
                 }
-                MainApplication.setText(dhtLast, str);
+                MainApplication.setTextNA(dhtLast, str);
                 continue;
             }
             ff.add(tt);

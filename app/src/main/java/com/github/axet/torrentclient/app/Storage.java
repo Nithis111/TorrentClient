@@ -20,7 +20,6 @@ import android.support.v4.content.ContextCompat;
 import android.util.Base64;
 import android.util.Log;
 
-import com.github.axet.androidlibrary.app.MainLibrary;
 import com.github.axet.torrentclient.R;
 import com.github.axet.torrentclient.services.TorrentService;
 import com.github.axet.wget.SpeedInfo;
@@ -132,10 +131,10 @@ public class Storage extends com.github.axet.androidlibrary.app.Storage {
                 case Libtorrent.StatusPaused:
                 case Libtorrent.StatusSeeding:
                     if (Libtorrent.metaTorrent(t))
-                        str += MainLibrary.formatSize(context, Libtorrent.torrentBytesLength(t)) + " · ";
+                        str += MainApplication.formatSize(context, Libtorrent.torrentBytesLength(t)) + " · ";
 
-                    str += "↓ " + MainLibrary.formatSize(context, downloaded.getCurrentSpeed()) + context.getString(R.string.per_second);
-                    str += " · ↑ " + MainLibrary.formatSize(context, uploaded.getCurrentSpeed()) + context.getString(R.string.per_second);
+                    str += "↓ " + MainApplication.formatSize(context, downloaded.getCurrentSpeed()) + context.getString(R.string.per_second);
+                    str += " · ↑ " + MainApplication.formatSize(context, uploaded.getCurrentSpeed()) + context.getString(R.string.per_second);
                     break;
                 case Libtorrent.StatusDownloading:
                     long c = 0;
@@ -147,11 +146,11 @@ public class Storage extends com.github.axet.androidlibrary.app.Storage {
                         long diff = c * 1000 / a;
                         int diffDays = (int) (diff / (24 * 60 * 60 * 1000));
                         if (diffDays < 30)
-                            left = "" + MainLibrary.formatDuration(context, diff) + "";
+                            left = "" + MainApplication.formatDuration(context, diff) + "";
                     }
                     str += left;
-                    str += " · ↓ " + MainLibrary.formatSize(context, downloaded.getCurrentSpeed()) + context.getString(R.string.per_second);
-                    str += " · ↑ " + MainLibrary.formatSize(context, uploaded.getCurrentSpeed()) + context.getString(R.string.per_second);
+                    str += " · ↓ " + MainApplication.formatSize(context, downloaded.getCurrentSpeed()) + context.getString(R.string.per_second);
+                    str += " · ↑ " + MainApplication.formatSize(context, uploaded.getCurrentSpeed()) + context.getString(R.string.per_second);
                     break;
             }
 
@@ -165,7 +164,7 @@ public class Storage extends com.github.axet.androidlibrary.app.Storage {
             String str = name();
 
             if (Libtorrent.metaTorrent(t))
-                str += " · " + MainLibrary.formatSize(context, Libtorrent.torrentBytesLength(t));
+                str += " · " + MainApplication.formatSize(context, Libtorrent.torrentBytesLength(t));
 
             str += " · (" + getProgress() + "%)";
 
@@ -634,7 +633,7 @@ public class Storage extends com.github.axet.androidlibrary.app.Storage {
 
     void migrateTorrents() {
         File l = getLocalStorage();
-        File t = getStoragePath();
+        File dir = getStoragePath();
 
         boolean touch = false;
         // migrate torrents, then migrate download data
@@ -644,17 +643,17 @@ public class Storage extends com.github.axet.androidlibrary.app.Storage {
                 Libtorrent.stopTorrent(torrent.t);
                 String name = Libtorrent.torrentName(torrent.t);
                 File f = new File(torrent.path, name);
-                File tt = getNextFile(t, f);
                 touch = true;
                 if (f.exists()) {
-                    move(f, tt);
+                    File t = getNextFile(new File(dir, f.getName()));
+                    move(f, t);
                     // target name changed update torrent meta or pause it
-                    if (!tt.getName().equals(name)) {
+                    if (!t.getName().equals(name)) {
                         // TODO replace with rename when it will be impelemented
                         //Libtorrent.TorrentFileRename(torrent.t, 0, tt.getName());
                     }
                 }
-                torrent.path = t.getPath();
+                torrent.path = dir.getPath();
             }
         }
 
@@ -671,16 +670,17 @@ public class Storage extends com.github.axet.androidlibrary.app.Storage {
         }
     }
 
+    // migrate files and sub dirs
     void migrateFiles() {
         File l = getLocalStorage();
-        File t = getStoragePath();
+        File dir = getStoragePath();
 
         File[] ff = l.listFiles();
 
         if (ff != null) {
             for (File f : ff) {
-                File tt = getNextFile(t, f);
-                move(f, tt);
+                File t = getNextFile(new File(dir, f.getName()));
+                move(f, t); // move file and sub dirs
             }
         }
     }

@@ -9,7 +9,6 @@ import android.widget.BaseAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
 
-import com.github.axet.androidlibrary.app.MainLibrary;
 import com.github.axet.torrentclient.R;
 import com.github.axet.torrentclient.activities.MainActivity;
 import com.github.axet.torrentclient.app.MainApplication;
@@ -113,8 +112,8 @@ public class PeersFragment extends Fragment implements MainActivity.TorrentFragm
             addr.setText(f.getAddr());
             stats.setText(str);
             name.setText(f.getName());
-            d.setText("↓ " + MainLibrary.formatSize(getContext(), di.getCurrentSpeed()) + getContext().getString(R.string.per_second));
-            u.setText("↑ " + MainLibrary.formatSize(getContext(), ui.getCurrentSpeed()) + getContext().getString(R.string.per_second));
+            d.setText("↓ " + MainApplication.formatSize(getContext(), di.getCurrentSpeed()) + getContext().getString(R.string.per_second));
+            u.setText("↑ " + MainApplication.formatSize(getContext(), ui.getCurrentSpeed()) + getContext().getString(R.string.per_second));
 
             return view;
         }

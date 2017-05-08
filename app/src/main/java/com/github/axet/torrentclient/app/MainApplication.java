@@ -1,6 +1,5 @@
 package com.github.axet.torrentclient.app;
 
-import android.app.Application;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -12,7 +11,6 @@ import android.util.Log;
 import android.view.View;
 import android.widget.TextView;
 
-import com.github.axet.androidlibrary.app.MainLibrary;
 import com.github.axet.androidlibrary.widgets.ThemeUtils;
 import com.github.axet.torrentclient.R;
 
@@ -20,7 +18,7 @@ import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-public class MainApplication extends Application {
+public class MainApplication extends com.github.axet.androidlibrary.app.MainApplication {
     final String TAG = MainApplication.class.getSimpleName();
 
     public static final String UTF8 = "UTF8";
@@ -163,12 +161,12 @@ public class MainApplication extends Application {
     }
 
     public static String formatFree(Context context, long free, long d, long u) {
-        return context.getString(R.string.free, MainLibrary.formatSize(context, free),
-                MainLibrary.formatSize(context, d) + context.getString(R.string.per_second),
-                MainLibrary.formatSize(context, u) + context.getString(R.string.per_second));
+        return context.getString(R.string.free, formatSize(context, free),
+                formatSize(context, d) + context.getString(R.string.per_second),
+                formatSize(context, u) + context.getString(R.string.per_second));
     }
 
-    static public void setText(View v, String text) {
+    static public void setTextNA(View v, String text) {
         TextView t = (TextView) v;
         if (text.isEmpty()) {
             t.setEnabled(false);
@@ -181,7 +179,7 @@ public class MainApplication extends Application {
 
     static public void setDate(View v, long d) {
         String s = formatDate(d);
-        setText(v, s);
+        setTextNA(v, s);
     }
 
     public static String formatDate(long d) {
