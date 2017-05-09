@@ -16,6 +16,7 @@ import android.util.Log;
 import android.widget.RemoteViews;
 
 import com.github.axet.torrentclient.R;
+import com.github.axet.torrentclient.activities.BootActivity;
 import com.github.axet.torrentclient.activities.MainActivity;
 import com.github.axet.torrentclient.app.MainApplication;
 
@@ -100,6 +101,9 @@ public class TorrentService extends Service {
                     MainActivity.startActivity(this);
                 }
             }
+        } else {
+            Log.d(TAG, "onStartCommand crash");
+            BootActivity.createApplication(this);
         }
 
         return super.onStartCommand(intent, flags, startId);
