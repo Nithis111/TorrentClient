@@ -8,7 +8,7 @@ Real pirates steal author's rights, don't be like them - share!
 
 # Manual install
 
-    ./libtorrent/debug.sh && gradle installDebug
+    gradle installDebug
 
 # Translate
 
