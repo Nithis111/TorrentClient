@@ -1,2 +1,1 @@
-configurations.maybeCreate("default")
-artifacts.add("default", file('libtorrent.aar'))
+/Users/axet/source/libtorrent/scripts/../scripts/build.gradle
