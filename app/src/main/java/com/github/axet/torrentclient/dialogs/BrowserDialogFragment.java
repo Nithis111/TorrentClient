@@ -49,9 +49,12 @@ public class BrowserDialogFragment extends DialogFragment implements MainActivit
     int load;
 
     public static boolean logIgnore(String msg) {
+        msg = msg.toLowerCase();
         if (msg.contains("insecure content")) // some pages old phones gives: The page at https://www... ran insecure content from inject://0...
             return true;
         if (msg.contains("insecure script")) // Mixed Content: The page at 'https://...' was loaded over HTTPS, but requested an insecure script 'inject://0...'. This content should also be served over HTTPS.
+            return true;
+        if (msg.contains("unsafe javascript attempt to access frame")) // old phones
             return true;
         return false;
     }
