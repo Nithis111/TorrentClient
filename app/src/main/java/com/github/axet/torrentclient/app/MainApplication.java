@@ -70,6 +70,7 @@ public class MainApplication extends com.github.axet.androidlibrary.app.MainAppl
     }
 
     public void create() {
+        Log.d(TAG, "create");
         final SharedPreferences shared = PreferenceManager.getDefaultSharedPreferences(this);
         SharedPreferences.Editor edit = shared.edit();
         edit.putBoolean(PREFERENCE_RUN, true);
@@ -94,6 +95,7 @@ public class MainApplication extends com.github.axet.androidlibrary.app.MainAppl
     }
 
     public void close() {
+        Log.d(TAG, "close");
         if (optimization != null) {
             optimization.close();
             optimization = null;
