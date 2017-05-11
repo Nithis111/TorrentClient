@@ -25,6 +25,7 @@ import com.github.axet.androidlibrary.widgets.OptimizationPreferenceCompat;
 import com.github.axet.torrentclient.R;
 import com.github.axet.torrentclient.app.MainApplication;
 import com.github.axet.torrentclient.app.Storage;
+import com.github.axet.torrentclient.services.TorrentService;
 
 import java.io.File;
 
@@ -214,7 +215,7 @@ public class SettingsActivity extends AppCompatActivity implements SharedPrefere
             setHasOptionsMenu(true);
 
             OptimizationPreferenceCompat optimization = (OptimizationPreferenceCompat) findPreference(MainApplication.PREFERENCE_OPTIMIZATION);
-            optimization.onResume();
+            optimization.enable(TorrentService.class);
 
             bindPreferenceSummaryToValue(findPreference(MainApplication.PREFERENCE_THEME));
             bindPreferenceSummaryToValue(findPreference(MainApplication.PREFERENCE_ANNOUNCE));
