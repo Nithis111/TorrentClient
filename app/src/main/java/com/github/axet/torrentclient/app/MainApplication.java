@@ -11,6 +11,7 @@ import android.util.Log;
 import android.view.View;
 import android.widget.TextView;
 
+import com.github.axet.androidlibrary.widgets.OptimizationPreferenceCompat;
 import com.github.axet.androidlibrary.widgets.ThemeUtils;
 import com.github.axet.torrentclient.R;
 
@@ -38,6 +39,8 @@ public class MainApplication extends com.github.axet.androidlibrary.app.MainAppl
     public static final String PREFERENCE_OPTIMIZATION = "optimization";
 
     public static final String SAVE_STATE = MainApplication.class.getName() + ".SAVE_STATE";
+
+    OptimizationPreferenceCompat.ApplicationReceiver optimization;
 
     Storage storage;
 
@@ -72,6 +75,9 @@ public class MainApplication extends com.github.axet.androidlibrary.app.MainAppl
         edit.putBoolean(PREFERENCE_RUN, true);
         edit.commit();
 
+        if (optimization == null) {
+            optimization = new OptimizationPreferenceCompat.ApplicationReceiver(this);
+        }
         if (storage == null) {
             storage = new Storage(this);
             storage.create();
@@ -88,6 +94,10 @@ public class MainApplication extends com.github.axet.androidlibrary.app.MainAppl
     }
 
     public void close() {
+        if (optimization != null) {
+            optimization.close();
+            optimization = null;
+        }
         if (storage != null) {
             storage.close();
             storage = null;

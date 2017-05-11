@@ -15,6 +15,7 @@ import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 import android.widget.RemoteViews;
 
+import com.github.axet.androidlibrary.widgets.OptimizationPreferenceCompat;
 import com.github.axet.torrentclient.R;
 import com.github.axet.torrentclient.activities.BootActivity;
 import com.github.axet.torrentclient.activities.MainActivity;
@@ -32,6 +33,7 @@ public class TorrentService extends Service {
     public static String PAUSE_BUTTON = TorrentService.class.getCanonicalName() + ".PAUSE_BUTTON";
 
     TorrentReceiver receiver;
+    OptimizationPreferenceCompat.ServiceReceiver optimization;
 
     public class TorrentReceiver extends BroadcastReceiver {
         @Override
@@ -71,6 +73,8 @@ public class TorrentService extends Service {
         super.onCreate();
         Log.d(TAG, "onCreate");
 
+        optimization = new OptimizationPreferenceCompat.ServiceReceiver(this, getClass());
+
         receiver = new TorrentReceiver();
         IntentFilter filter = new IntentFilter();
         filter.addAction(UPDATE_NOTIFY);
@@ -89,6 +93,8 @@ public class TorrentService extends Service {
     public int onStartCommand(Intent intent, int flags, int startId) {
         Log.d(TAG, "onStartCommand");
 
+        optimization.check(intent);
+
         if (intent != null) {
             String a = intent.getAction();
             if (a != null) {
@@ -99,6 +105,10 @@ public class TorrentService extends Service {
                 }
                 if (a.equals(SHOW_ACTIVITY)) {
                     MainActivity.startActivity(this);
+                }
+                if (a.equals(OptimizationPreferenceCompat.SERVICE_RESTART)) {
+                    Log.d(TAG, "onStartCommand restart");
+                    BootActivity.createApplication(this);
                 }
             }
         } else {
@@ -125,6 +135,11 @@ public class TorrentService extends Service {
     public void onDestroy() {
         super.onDestroy();
         Log.d(TAG, "onDestory");
+
+        if (optimization != null) {
+            optimization.close();
+            optimization = null;
+        }
 
         sendBroadcast(new Intent(MainApplication.SAVE_STATE));
 
