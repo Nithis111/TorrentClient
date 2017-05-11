@@ -93,7 +93,10 @@ public class TorrentService extends Service {
     public int onStartCommand(Intent intent, int flags, int startId) {
         Log.d(TAG, "onStartCommand");
 
-        optimization.check(intent);
+        if(optimization.onStartCommand(intent, flags, startId)) {
+            Log.d(TAG, "onStartCommand restart");
+            BootActivity.createApplication(this);
+        }
 
         if (intent != null) {
             String a = intent.getAction();
@@ -106,14 +109,7 @@ public class TorrentService extends Service {
                 if (a.equals(SHOW_ACTIVITY)) {
                     MainActivity.startActivity(this);
                 }
-                if (a.equals(OptimizationPreferenceCompat.SERVICE_RESTART)) {
-                    Log.d(TAG, "onStartCommand restart");
-                    BootActivity.createApplication(this);
-                }
             }
-        } else {
-            Log.d(TAG, "onStartCommand crash");
-            BootActivity.createApplication(this);
         }
 
         return super.onStartCommand(intent, flags, startId);
