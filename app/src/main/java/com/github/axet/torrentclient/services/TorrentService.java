@@ -73,6 +73,7 @@ public class TorrentService extends Service {
         super.onCreate();
         Log.d(TAG, "onCreate");
 
+        OptimizationPreferenceCompat.REFRESH = 5 * 60 * 1000;
         optimization = new OptimizationPreferenceCompat.ServiceReceiver(this, getClass());
 
         receiver = new TorrentReceiver();
@@ -93,7 +94,7 @@ public class TorrentService extends Service {
     public int onStartCommand(Intent intent, int flags, int startId) {
         Log.d(TAG, "onStartCommand");
 
-        if(optimization.onStartCommand(intent, flags, startId)) {
+        if (optimization.onStartCommand(intent, flags, startId)) {
             Log.d(TAG, "onStartCommand restart");
             BootActivity.createApplication(this);
         }
