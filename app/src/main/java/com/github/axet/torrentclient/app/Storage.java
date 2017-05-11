@@ -416,18 +416,6 @@ public class Storage extends com.github.axet.androidlibrary.app.Storage {
 
         refresh();
 
-        if (active()) {
-            saveUpdate();
-
-            if (wifi) {
-                if (isConnectedWifi()) {
-                    resume();
-                }
-            } else {
-                resume();
-            }
-        }
-
         // start at least. prevent java.util.ConcurrentModificationException on .torrents
         IntentFilter wifiFilter = new IntentFilter();
         wifiFilter.addAction(WifiManager.SUPPLICANT_STATE_CHANGED_ACTION);
@@ -489,6 +477,17 @@ public class Storage extends com.github.axet.androidlibrary.app.Storage {
             }
         };
         context.registerReceiver(wifiReciver, wifiFilter);
+
+        if (active()) {
+            saveUpdate();
+            if (wifi) {
+                if (isConnectedWifi()) {
+                    resume();
+                }
+            } else {
+                resume();
+            }
+        }
     }
 
     void refresh() {
