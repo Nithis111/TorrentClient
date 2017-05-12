@@ -71,11 +71,6 @@ public class MainApplication extends com.github.axet.androidlibrary.app.MainAppl
 
     public void create() {
         Log.d(TAG, "create");
-        final SharedPreferences shared = PreferenceManager.getDefaultSharedPreferences(this);
-        SharedPreferences.Editor edit = shared.edit();
-        edit.putBoolean(PREFERENCE_RUN, true);
-        edit.commit();
-
         if (optimization == null) {
             optimization = new OptimizationPreferenceCompat.ApplicationReceiver(this);
         }
@@ -108,10 +103,6 @@ public class MainApplication extends com.github.axet.androidlibrary.app.MainAppl
             unregisterReceiver(savestate);
             savestate = null;
         }
-        final SharedPreferences shared = PreferenceManager.getDefaultSharedPreferences(this);
-        SharedPreferences.Editor edit = shared.edit();
-        edit.putBoolean(PREFERENCE_RUN, false);
-        edit.commit();
     }
 
     @Override

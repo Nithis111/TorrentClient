@@ -8,10 +8,12 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.SharedPreferences;
 import android.os.Build;
 import android.os.IBinder;
 import android.support.annotation.Nullable;
 import android.support.v4.app.NotificationCompat;
+import android.support.v7.preference.PreferenceManager;
 import android.util.Log;
 import android.widget.RemoteViews;
 
@@ -51,6 +53,10 @@ public class TorrentService extends Service {
     }
 
     public static void startService(Context context, String title) {
+        final SharedPreferences shared = PreferenceManager.getDefaultSharedPreferences(context);
+        SharedPreferences.Editor edit = shared.edit();
+        edit.putBoolean(MainApplication.PREFERENCE_RUN, true);
+        edit.commit();
         Intent i = new Intent(context, TorrentService.class).setAction(UPDATE_NOTIFY)
                 .putExtra(TITLE, title);
         context.startService(i);
@@ -62,10 +68,19 @@ public class TorrentService extends Service {
     }
 
     public static void stopService(Context context) {
+        final SharedPreferences shared = PreferenceManager.getDefaultSharedPreferences(context);
+        SharedPreferences.Editor edit = shared.edit();
+        edit.putBoolean(MainApplication.PREFERENCE_RUN, false);
+        edit.commit();
         context.stopService(new Intent(context, TorrentService.class));
     }
 
     public TorrentService() {
+    }
+
+    boolean isRunning() {
+        final SharedPreferences shared = PreferenceManager.getDefaultSharedPreferences(this);
+        return shared.getBoolean(MainApplication.PREFERENCE_RUN, false);
     }
 
     @Override
@@ -83,6 +98,11 @@ public class TorrentService extends Service {
         filter.addAction(Intent.ACTION_SCREEN_OFF);
         registerReceiver(receiver, filter);
 
+        if (!isRunning()) {
+            stopSelf();
+            return;
+        }
+
         startForeground(NOTIFICATION_TORRENT_ICON, buildNotification(getString(R.string.tap_restart)));
     }
 
@@ -93,6 +113,11 @@ public class TorrentService extends Service {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         Log.d(TAG, "onStartCommand");
+
+        if (!isRunning()) {
+            stopSelf();
+            return START_NOT_STICKY;
+        }
 
         if (optimization.onStartCommand(intent, flags, startId)) {
             Log.d(TAG, "onStartCommand restart");
