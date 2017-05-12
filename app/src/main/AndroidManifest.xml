@@ -18,7 +18,9 @@
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:theme="@style/AppThemeLight">
-        <service android:name=".services.TorrentService" />
+        <service
+            android:name=".services.TorrentService"
+            android:stopWithTask="false" />
 
         <receiver
             android:name=".services.OnBootReceiver"
