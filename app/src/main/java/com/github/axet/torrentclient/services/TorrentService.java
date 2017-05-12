@@ -189,5 +189,11 @@ public class TorrentService extends Service {
             notificationManager.notify(NOTIFICATION_TORRENT_ICON, buildNotification(title));
         }
     }
+
+    @Override
+    public void onTaskRemoved(Intent rootIntent) {
+        super.onTaskRemoved(rootIntent);
+        optimization.onTaskRemoved(rootIntent);
+    }
 }
 
