@@ -193,6 +193,7 @@ public class TorrentService extends Service {
     @Override
     public void onTaskRemoved(Intent rootIntent) {
         super.onTaskRemoved(rootIntent);
+        Log.d(TAG, "onTaskRemoved");
         optimization.onTaskRemoved(rootIntent);
     }
 }
