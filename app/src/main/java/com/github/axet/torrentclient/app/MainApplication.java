@@ -14,6 +14,7 @@ import android.widget.TextView;
 import com.github.axet.androidlibrary.widgets.OptimizationPreferenceCompat;
 import com.github.axet.androidlibrary.widgets.ThemeUtils;
 import com.github.axet.torrentclient.R;
+import com.github.axet.torrentclient.services.TorrentService;
 
 import java.io.File;
 import java.text.SimpleDateFormat;
@@ -72,7 +73,7 @@ public class MainApplication extends com.github.axet.androidlibrary.app.MainAppl
     public void create() {
         Log.d(TAG, "create");
         if (optimization == null) {
-            optimization = new OptimizationPreferenceCompat.ApplicationReceiver(this);
+            optimization = new OptimizationPreferenceCompat.ApplicationReceiver(this, TorrentService.class);
         }
         if (storage == null) {
             storage = new Storage(this);
