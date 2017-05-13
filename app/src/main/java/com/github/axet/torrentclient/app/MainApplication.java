@@ -50,7 +50,7 @@ public class MainApplication extends com.github.axet.androidlibrary.app.MainAppl
 
     SaveState savestate;
 
-    ArrayList<Runnable> initArray = new ArrayList<>();
+    final ArrayList<Runnable> initArray = new ArrayList<>();
     Thread initThread;
     Handler handler = new Handler();
 
@@ -92,6 +92,7 @@ public class MainApplication extends com.github.axet.androidlibrary.app.MainAppl
                     for (Runnable r : initArray) {
                         handler.post(r);
                     }
+                    initArray.clear();
                     initThread = null;
                 }
             }
