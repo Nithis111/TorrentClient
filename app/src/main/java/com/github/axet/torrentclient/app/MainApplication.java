@@ -47,6 +47,8 @@ public class MainApplication extends com.github.axet.androidlibrary.app.MainAppl
 
     SaveState savestate;
 
+    Thread initThread;
+
     class SaveState extends BroadcastReceiver {
         @Override
         public void onReceive(Context context, Intent intent) {
@@ -68,6 +70,18 @@ public class MainApplication extends com.github.axet.androidlibrary.app.MainAppl
 
         Context context = this;
         context.setTheme(getUserTheme());
+    }
+
+    public void createThread() {
+        if (initThread != null)
+            return;
+        initThread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                create();
+            }
+        });
+        initThread.start();
     }
 
     public void create() {
