@@ -23,7 +23,7 @@ public class BootActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        getApp().createThread();
+        getApp().createThread(null);
         finish();
     }
 }

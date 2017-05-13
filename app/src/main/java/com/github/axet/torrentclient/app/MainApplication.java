@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.os.Environment;
+import android.os.Handler;
 import android.support.v7.preference.PreferenceManager;
 import android.util.Log;
 import android.view.View;
@@ -17,7 +18,9 @@ import com.github.axet.torrentclient.R;
 import com.github.axet.torrentclient.services.TorrentService;
 
 import java.io.File;
+import java.lang.reflect.Array;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 
 public class MainApplication extends com.github.axet.androidlibrary.app.MainApplication {
@@ -47,7 +50,9 @@ public class MainApplication extends com.github.axet.androidlibrary.app.MainAppl
 
     SaveState savestate;
 
+    ArrayList<Runnable> initArray = new ArrayList<>();
     Thread initThread;
+    Handler handler = new Handler();
 
     class SaveState extends BroadcastReceiver {
         @Override
@@ -72,13 +77,22 @@ public class MainApplication extends com.github.axet.androidlibrary.app.MainAppl
         context.setTheme(getUserTheme());
     }
 
-    public void createThread() {
+    public void createThread(Runnable run) {
+        synchronized (initArray) {
+            initArray.add(run);
+        }
         if (initThread != null)
             return;
         initThread = new Thread(new Runnable() {
             @Override
             public void run() {
                 create();
+                synchronized (initArray) {
+                    for (Runnable r : initArray) {
+                        handler.post(r);
+                    }
+                    initThread = null;
+                }
             }
         });
         initThread.start();
@@ -106,6 +120,14 @@ public class MainApplication extends com.github.axet.androidlibrary.app.MainAppl
 
     public void close() {
         Log.d(TAG, "close");
+        if (initThread != null) {
+            try {
+                initThread.join();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+            initThread = null;
+        }
         if (optimization != null) {
             optimization.close();
             optimization = null;
