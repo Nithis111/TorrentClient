@@ -12,9 +12,7 @@ public class BootActivity extends Activity {
 
     public static void createApplication(Context context) {
         Intent intent = new Intent(context, BootActivity.class);
-
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NO_ANIMATION | Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS);
-
         context.startActivity(intent);
     }
 
@@ -43,5 +41,11 @@ public class BootActivity extends Activity {
             }
         });
         initThread.start();
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        setVisible(true); // or it will crash
     }
 }
