@@ -16,9 +16,6 @@ public class BootActivity extends Activity {
         context.startActivity(intent);
     }
 
-    Thread initThread;
-    Handler handler = new Handler();
-
     public MainApplication getApp() {
         return (MainApplication) getApplication();
     }
@@ -26,26 +23,7 @@ public class BootActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        initThread = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                getApp().create();
-                handler.post(new Runnable() {
-                    @Override
-                    public void run() {
-                        if (isFinishing())
-                            return;
-                        moveTaskToBack(true);
-                    }
-                });
-            }
-        });
-        initThread.start();
-    }
-
-    @Override
-    protected void onStart() {
-        super.onStart();
-        setVisible(true); // or it will crash
+        getApp().createThread();
+        finish();
     }
 }
