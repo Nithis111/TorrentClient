@@ -79,7 +79,8 @@ public class MainApplication extends com.github.axet.androidlibrary.app.MainAppl
 
     public void createThread(Runnable run) {
         synchronized (initArray) {
-            initArray.add(run);
+            if (run != null)
+                initArray.add(run);
         }
         if (initThread != null)
             return;
