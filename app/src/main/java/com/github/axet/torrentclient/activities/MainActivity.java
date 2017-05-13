@@ -88,7 +88,6 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
 
     // delayedIntent delayedIntent
     Intent delayedIntent;
-    Thread initThread;
     Runnable delayedInit;
 
     BroadcastReceiver screenreceiver;
@@ -467,24 +466,17 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
 
         updateHeader(new Storage(this));
 
-        initThread = new Thread(new Runnable() {
+        getApp().createThread(new Runnable() {
             @Override
             public void run() {
-                getApp().create();
-                handler.post(new Runnable() {
-                    @Override
-                    public void run() {
-                        if (isFinishing())
-                            return;
-                        if (delayedInit != null) {
-                            delayedInit.run();
-                            delayedInit = null;
-                        }
-                    }
-                });
+                if (isFinishing())
+                    return;
+                if (delayedInit != null) {
+                    delayedInit.run();
+                    delayedInit = null;
+                }
             }
         });
-        initThread.start();
     }
 
     @Override
@@ -495,7 +487,7 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
         if (key.equals(MainApplication.PREFERENCE_WIFI)) {
             if (!sharedPreferences.getBoolean(MainApplication.PREFERENCE_WIFI, true)) {
                 getStorage().resume(); // wifi only disabled
-            }else { // wifi only enabed
+            } else { // wifi only enabed
                 if (!getStorage().isConnectedWifi()) // are we on wifi?
                     getStorage().pause(); // no, pause all
             }
@@ -525,15 +517,8 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
     }
 
     public void close() {
-        if (initThread != null) {
-            try {
-                initThread.join();
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-            }
-            // prevent delayed delayedInit
-            delayedInit = null;
-        }
+        // prevent delayed delayedInit
+        delayedInit = null;
 
         if (dialog != null) {
             dialog.close();
