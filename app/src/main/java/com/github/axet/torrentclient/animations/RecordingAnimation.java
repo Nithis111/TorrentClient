@@ -111,7 +111,6 @@ public class RecordingAnimation extends MarginAnimation {
     @Override
     public void restore() {
         super.restore();
-
         expandView.setRotation(0);
     }
 

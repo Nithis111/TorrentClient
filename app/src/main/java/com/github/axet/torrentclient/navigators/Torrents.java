@@ -191,10 +191,10 @@ public class Torrents extends BaseAdapter implements DialogInterface.OnDismissLi
         }
 
         final View view = convertView;
-        final View base = convertView.findViewById(R.id.recording_base);
+        final View base = convertView.findViewById(R.id.recording_base); // GridView unable to handle GONE views, hide its base.
 
         if (Tag.animate(convertView, TYPE_DELETED)) {
-            RemoveItemAnimation.restore(view);
+            RemoveItemAnimation.restore(base);
             convertView.setTag(null);
         }
 
@@ -235,7 +235,7 @@ public class Torrents extends BaseAdapter implements DialogInterface.OnDismissLi
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
                             dialog.cancel();
-                            RemoveItemAnimation.apply(list, view, new Runnable() {
+                            RemoveItemAnimation.apply(list, base, new Runnable() {
                                 @Override
                                 public void run() {
                                     if (Torrents.this.dialog != null) { // prevent showing deleted torrent
@@ -257,7 +257,7 @@ public class Torrents extends BaseAdapter implements DialogInterface.OnDismissLi
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
                         dialog.cancel();
-                        RemoveItemAnimation.apply(list, view, new Runnable() {
+                        RemoveItemAnimation.apply(list, base, new Runnable() {
                             @Override
                             public void run() {
                                 if (Torrents.this.dialog != null) { // prevent showing deleted torrent
