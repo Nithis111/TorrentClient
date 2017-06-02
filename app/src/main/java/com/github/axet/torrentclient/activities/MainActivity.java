@@ -509,8 +509,14 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
 
         KeyguardManager myKM = (KeyguardManager) getSystemService(Context.KEYGUARD_SERVICE);
         if (myKM.inKeyguardRestrictedInputMode() || delayedInit != null) {
-            menu.removeItem(R.id.action_settings);
-            menu.removeItem(R.id.action_show_folder);
+            menu.findItem(R.id.action_settings).setVisible(false);
+            menu.findItem(R.id.action_show_folder).setVisible(false);
+        }
+
+        File path = getStorage().getStoragePath();
+        Intent intent = openFolderIntent(path);
+        if (intent.resolveActivityInfo(getPackageManager(), 0) == null) {
+            menu.findItem(R.id.action_show_folder).setVisible(false);
         }
 
         return true;
@@ -635,10 +641,15 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
         return super.onOptionsItemSelected(item);
     }
 
-    public void openFolder(File path) {
-        Uri selectedUri = Uri.fromFile(path);
+    public static Intent openFolderIntent(File file) {
+        Uri selectedUri = Uri.fromFile(file);
         Intent intent = new Intent(Intent.ACTION_VIEW);
         intent.setDataAndType(selectedUri, "resource/folder");
+        return intent;
+    }
+
+    public void openFolder(File file) {
+        Intent intent = openFolderIntent(file);
         if (intent.resolveActivityInfo(getPackageManager(), 0) != null) {
             startActivity(intent);
         } else {

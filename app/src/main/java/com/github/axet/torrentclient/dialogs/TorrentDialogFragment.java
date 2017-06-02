@@ -21,8 +21,10 @@ import android.widget.Button;
 import com.github.axet.torrentclient.R;
 import com.github.axet.torrentclient.activities.MainActivity;
 import com.github.axet.torrentclient.fragments.DetailsFragment;
+import com.github.axet.torrentclient.fragments.InfoFragment;
 import com.github.axet.torrentclient.fragments.FilesFragment;
 import com.github.axet.torrentclient.fragments.PeersFragment;
+import com.github.axet.torrentclient.fragments.PlayerFragment;
 import com.github.axet.torrentclient.fragments.TrackersFragment;
 import com.github.axet.torrentclient.navigators.Torrents;
 
@@ -44,10 +46,10 @@ public class TorrentDialogFragment extends DialogFragment implements MainActivit
 
         public TorrentPagerAdapter(Context context, FragmentManager fm, long t) {
             super(fm);
-
             this.context = context;
             this.t = t;
         }
+
 
         @Override
         public Fragment getItem(int i) {
@@ -55,16 +57,10 @@ public class TorrentDialogFragment extends DialogFragment implements MainActivit
 
             switch (i) {
                 case 0:
-                    f = new DetailsFragment();
+                    f = new PlayerFragment();
                     break;
                 case 1:
-                    f = new FilesFragment();
-                    break;
-                case 2:
-                    f = new PeersFragment();
-                    break;
-                case 3:
-                    f = new TrackersFragment();
+                    f = new DetailsFragment();
                     break;
                 default:
                     return null;
@@ -78,6 +74,23 @@ public class TorrentDialogFragment extends DialogFragment implements MainActivit
         }
 
         @Override
+        public CharSequence getPageTitle(int position) {
+            switch (position) {
+                case 0:
+                    return "Player";
+                case 1:
+                    return "Details";
+                default:
+                    return "EMPTY";
+            }
+        }
+
+        @Override
+        public int getCount() {
+            return 2;
+        }
+
+        @Override
         public Object instantiateItem(ViewGroup container, int position) {
             Object o = super.instantiateItem(container, position);
             map.put(position, (Fragment) o);
@@ -86,27 +99,6 @@ public class TorrentDialogFragment extends DialogFragment implements MainActivit
 
         public MainActivity.TorrentFragmentInterface getFragment(int pos) {
             return (MainActivity.TorrentFragmentInterface) map.get(pos);
-        }
-
-        @Override
-        public int getCount() {
-            return 4;
-        }
-
-        @Override
-        public CharSequence getPageTitle(int position) {
-            switch (position) {
-                case 0:
-                    return context.getString(R.string.tab_details);
-                case 1:
-                    return context.getString(R.string.tab_files);
-                case 2:
-                    return context.getString(R.string.tab_peers);
-                case 3:
-                    return context.getString(R.string.tab_trackers);
-                default:
-                    return "EMPTY";
-            }
         }
     }
 

@@ -1,7 +1,12 @@
 package com.github.axet.torrentclient.fragments;
 
+import android.content.Context;
 import android.os.Bundle;
+import android.support.design.widget.TabLayout;
 import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentManager;
+import android.support.v4.app.FragmentPagerAdapter;
+import android.support.v4.view.ViewPager;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -14,22 +19,25 @@ import android.widget.TextView;
 import com.github.axet.torrentclient.R;
 import com.github.axet.torrentclient.activities.MainActivity;
 import com.github.axet.torrentclient.app.MainApplication;
+import com.github.axet.torrentclient.dialogs.TorrentDialogFragment;
 
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Pattern;
 
 import libtorrent.Libtorrent;
 
-public class FilesFragment extends Fragment implements MainActivity.TorrentFragmentInterface {
+public class PlayerFragment extends Fragment implements MainActivity.TorrentFragmentInterface {
     View v;
     ListView list;
-    View toolbar;
     View download;
+    View empty;
 
     Files files;
 
@@ -95,21 +103,12 @@ public class FilesFragment extends Fragment implements MainActivity.TorrentFragm
             LayoutInflater inflater = LayoutInflater.from(getContext());
 
             if (view == null) {
-                view = inflater.inflate(R.layout.torrent_files_item, viewGroup, false);
+                view = inflater.inflate(R.layout.torrent_player_item, viewGroup, false);
             }
 
             final long t = getArguments().getLong("torrent");
 
             final TorFile f = getItem(i);
-
-            final CheckBox check = (CheckBox) view.findViewById(R.id.torrent_files_check);
-            check.setChecked(f.file.getCheck());
-            check.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    Libtorrent.torrentFilesCheck(t, f.index, check.isChecked());
-                }
-            });
 
             TextView percent = (TextView) view.findViewById(R.id.torrent_files_percent);
             percent.setEnabled(false);
@@ -123,14 +122,6 @@ public class FilesFragment extends Fragment implements MainActivity.TorrentFragm
 
             TextView folder = (TextView) view.findViewById(R.id.torrent_files_folder);
             TextView file = (TextView) view.findViewById(R.id.torrent_files_name);
-
-            View fc = view.findViewById(R.id.torrent_files_file);
-            fc.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    Libtorrent.torrentFilesCheck(t, f.index, check.isChecked());
-                }
-            });
 
             String s = f.file.getPath();
 
@@ -179,9 +170,11 @@ public class FilesFragment extends Fragment implements MainActivity.TorrentFragm
     @Override
     public View onCreateView(LayoutInflater inflater,
                              ViewGroup container, Bundle savedInstanceState) {
-        v = inflater.inflate(R.layout.torrent_files, container, false);
+        v = inflater.inflate(R.layout.torrent_player, container, false);
 
         final long t = getArguments().getLong("torrent");
+
+        empty = v.findViewById(R.id.torrent_files_empty);
 
         download = v.findViewById(R.id.torrent_files_metadata);
         download.setOnClickListener(new View.OnClickListener() {
@@ -196,33 +189,10 @@ public class FilesFragment extends Fragment implements MainActivity.TorrentFragm
 
         list = (ListView) v.findViewById(R.id.list);
 
-        toolbar = v.findViewById(R.id.torrent_files_toolbar);
-
         files = new Files();
 
         list.setAdapter(files);
 
-        View none = v.findViewById(R.id.torrent_files_none);
-        none.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                for (TorFile f : ff) {
-                    Libtorrent.torrentFilesCheck(t, f.index, false);
-                }
-                files.notifyDataSetChanged();
-            }
-        });
-
-        View all = v.findViewById(R.id.torrent_files_all);
-        all.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                for (TorFile f : ff) {
-                    Libtorrent.torrentFilesCheck(t, f.index, true);
-                }
-                files.notifyDataSetChanged();
-            }
-        });
         update();
 
         return v;
@@ -232,8 +202,7 @@ public class FilesFragment extends Fragment implements MainActivity.TorrentFragm
     public void update() {
         long t = getArguments().getLong("torrent");
 
-        download.setVisibility(Libtorrent.metaTorrent(t) ? View.GONE : View.VISIBLE);
-        toolbar.setVisibility(Libtorrent.metaTorrent(t) ? View.VISIBLE : View.GONE);
+        empty.setVisibility(Libtorrent.metaTorrent(t) ? View.GONE : View.VISIBLE);
 
         torrentName = Libtorrent.torrentName(t);
 
