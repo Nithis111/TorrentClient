@@ -868,6 +868,14 @@ public class Storage extends com.github.axet.androidlibrary.app.Storage {
         return null;
     }
 
+    public Torrent find(String hash) {
+        for (int i = 0; i < torrents.size(); i++) {
+            Torrent tt = torrents.get(i);
+            if (Libtorrent.torrentHash(tt.t).equals(hash))
+                return tt;
+        }
+        return null;
+    }
 
     public int getUnreadCount() {
         int count = 0;

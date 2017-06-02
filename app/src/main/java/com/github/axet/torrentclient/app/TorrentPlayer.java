@@ -1,9 +1,17 @@
 package com.github.axet.torrentclient.app;
 
 import android.content.Context;
+import android.media.MediaPlayer;
+import android.net.Uri;
+import android.os.ParcelFileDescriptor;
+
+import com.github.axet.torrentclient.services.TorrentContentProvider;
+
+import org.apache.commons.io.IOUtils;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -21,10 +29,12 @@ public class TorrentPlayer {
 
     Context context;
     ArrayList<PlayerFile> ff = new ArrayList<>();
-    String torrentName;
+    public String torrentHash;
+    public String torrentName;
     Storage.Torrent torrent;
     Storage storage;
     ArrayList<Decoder> decoders = new ArrayList<>();
+    MediaPlayer player;
 
     public Decoder RAR = new Decoder() {
         @Override
@@ -54,13 +64,13 @@ public class TorrentPlayer {
                         }
 
                         @Override
-                        public InputStream open() {
+                        public void open(final ParcelFileDescriptor w) {
                             try {
-                                final PipedOutputStream os = new PipedOutputStream();
                                 Thread thread = new Thread(new Runnable() {
                                     @Override
                                     public void run() {
                                         try {
+                                            ParcelFileDescriptor.AutoCloseOutputStream os = new ParcelFileDescriptor.AutoCloseOutputStream(w);
                                             archive.extractFile(header, os);
                                         } catch (Exception e) {
                                             throw new RuntimeException(e);
@@ -68,8 +78,6 @@ public class TorrentPlayer {
                                     }
                                 });
                                 thread.start();
-                                PipedInputStream in = new PipedInputStream(os);
-                                return in;
                             } catch (Exception e) {
                                 throw new RuntimeException(e);
                             }
@@ -102,7 +110,7 @@ public class TorrentPlayer {
     public interface ArchiveFile {
         public String getPath();
 
-        public InputStream open();
+        public void open(ParcelFileDescriptor w);
 
         public long getLength();
     }
@@ -118,16 +126,20 @@ public class TorrentPlayer {
     }
 
     public class PlayerFile {
+        public Uri uri;
         public TorFile tor;
         public ArchiveFile file;
 
         public PlayerFile(TorFile t) {
             this.tor = t;
+            uri = TorrentContentProvider.getUriForFile(torrentHash, t.file.getPath());
         }
 
         public PlayerFile(TorFile t, ArchiveFile f) {
             this.tor = t;
             this.file = f;
+            File ff = new File(tor.file.getPath(), file.getPath() );
+            uri = TorrentContentProvider.getUriForFile(torrentHash, ff.getPath());
         }
 
         public File getFile() {
@@ -144,6 +156,13 @@ public class TorrentPlayer {
             return tor.file.getPath();
         }
 
+        public String getName() {
+            if (file != null) {
+                return new File(file.getPath()).getName();
+            }
+            return new File(tor.file.getPath()).getName();
+        }
+
         public long getLength() {
             if (file != null)
                 return file.getLength();
@@ -151,11 +170,32 @@ public class TorrentPlayer {
         }
 
         public boolean isLoaded() {
-            return getPercent() == 100;
+            return tor.file.getBytesCompleted() == tor.file.getLength();
         }
 
         public int getPercent() {
             return (int) (tor.file.getBytesCompleted() * 100 / tor.file.getLength());
+        }
+
+        public void open(final ParcelFileDescriptor w) {
+            if (file != null) {
+                file.open(w);
+                return;
+            }
+            final File local = new File(torrent.path, tor.file.getPath());
+            Thread thread = new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        FileInputStream is = new FileInputStream(local);
+                        ParcelFileDescriptor.AutoCloseOutputStream os = new ParcelFileDescriptor.AutoCloseOutputStream(w);
+                        IOUtils.copy(is, os);
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+            });
+            thread.start();
         }
     }
 
@@ -176,6 +216,7 @@ public class TorrentPlayer {
 
     public void update() {
         torrentName = Libtorrent.torrentName(torrent.t);
+        torrentHash = Libtorrent.torrentHash(torrent.t);
 
         long l = Libtorrent.torrentFilesCount(torrent.t);
 
@@ -183,7 +224,6 @@ public class TorrentPlayer {
         for (long i = 0; i < l; i++) {
             TorFile f = new TorFile(i, Libtorrent.torrentFiles(torrent.t, i));
             ff.add(new PlayerFile(f));
-            File local = new File(torrent.path, f.file.getPath());
             Decoder d = getDecoder(f);
             if (d != null) {
                 ArrayList<ArchiveFile> list = d.list(f);
@@ -200,5 +240,29 @@ public class TorrentPlayer {
 
     public PlayerFile get(int i) {
         return ff.get(i);
+    }
+
+    public PlayerFile find(Uri uri) {
+        for (PlayerFile f : ff) {
+            if (f.uri.equals(uri)) {
+                return f;
+            }
+        }
+        return null;
+    }
+
+    public void play(int i) {
+        PlayerFile f = get(i);
+        if (player != null)
+            player.release();
+        player = MediaPlayer.create(context, f.uri);
+        player.start();
+    }
+
+    public void close() {
+        if (player != null) {
+            player.release();
+            player = null;
+        }
     }
 }

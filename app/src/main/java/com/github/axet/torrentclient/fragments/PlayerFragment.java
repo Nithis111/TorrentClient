@@ -162,6 +162,14 @@ public class PlayerFragment extends Fragment implements MainActivity.TorrentFrag
 
         empty = v.findViewById(R.id.torrent_files_empty);
 
+        View play = v.findViewById(R.id.player_play);
+        play.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                player.play(1);
+            }
+        });
+
         download = v.findViewById(R.id.torrent_files_metadata);
         download.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -192,9 +200,8 @@ public class PlayerFragment extends Fragment implements MainActivity.TorrentFrag
 
         torrentName = Libtorrent.torrentName(t);
 
-        long l = Libtorrent.torrentFilesCount(t);
-
-        player = new TorrentPlayer(getContext(), t);
+        MainApplication app = ((MainApplication) getContext().getApplicationContext());
+        player = app.openPlayer(t);
 
         files.notifyDataSetChanged();
     }

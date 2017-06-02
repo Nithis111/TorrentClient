@@ -64,6 +64,7 @@
             android:tint="@android:color/white" />
 
         <ImageView
+            android:id="@+id/player_play"
             android:layout_width="40dp"
             android:layout_height="40dp"
             android:layout_margin="5dp"

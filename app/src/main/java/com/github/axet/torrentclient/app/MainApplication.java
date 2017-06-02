@@ -50,6 +50,8 @@ public class MainApplication extends com.github.axet.androidlibrary.app.MainAppl
 
     Storage storage;
 
+    public TorrentPlayer player;
+
     SaveState savestate;
 
     final ArrayList<Runnable> initArray = new ArrayList<>();
@@ -77,6 +79,11 @@ public class MainApplication extends com.github.axet.androidlibrary.app.MainAppl
 
         Context context = this;
         context.setTheme(getUserTheme());
+    }
+
+    public TorrentPlayer openPlayer(long t) {
+        player = new TorrentPlayer(this, t);
+        return player;
     }
 
     public void createThread(Runnable run) {
