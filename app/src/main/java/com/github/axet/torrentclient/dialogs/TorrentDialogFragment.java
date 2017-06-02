@@ -206,7 +206,7 @@ public class TorrentDialogFragment extends DialogFragment implements MainActivit
     }
 
     public View createView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        v = inflater.inflate(R.layout.torrent_details, container);
+        v = inflater.inflate(R.layout.torrent_dialog, container);
 
         long t = getArguments().getLong("torrent");
 

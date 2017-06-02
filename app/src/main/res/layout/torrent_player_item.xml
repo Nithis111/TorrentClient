@@ -1,55 +1,64 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:orientation="vertical"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
     android:padding="5dp">
 
-    <TextView
-        android:id="@+id/torrent_files_folder"
+    <ImageView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:padding="5dp"
-        android:text="./metadata" />
+        android:layout_gravity="center"
+        android:src="@drawable/ic_music_note_black_24dp" />
 
-    <TableLayout
-        android:id="@+id/torrent_files_file"
-        android:layout_width="wrap_content"
+    <LinearLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:shrinkColumns="1"
-        android:stretchColumns="1">
+        android:orientation="vertical">
 
-        <TableRow>
+        <TextView
+            android:id="@+id/torrent_files_folder"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:padding="5dp"
+            android:text="./metadata" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:paddingLeft="5dp">
 
             <TextView
                 android:id="@+id/torrent_files_name"
-                android:layout_width="wrap_content"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center_vertical"
-                android:paddingLeft="5dp"
+                android:layout_weight="1"
                 android:text="demo fragmentdemo fragmentdemo fragment.avi"
                 android:textColor="?attr/titleColor" />
 
-            <TextView
-                android:id="@+id/torrent_files_percent"
+            <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_gravity="center_vertical"
-                android:text="80%" />
+                android:orientation="vertical"
+                android:paddingLeft="5dp">
 
-        </TableRow>
+                <TextView
+                    android:id="@+id/torrent_files_size"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:text="Size: 3Gb" />
 
-        <TableRow>
-
-            <TextView
-                android:id="@+id/torrent_files_size"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:paddingLeft="5dp"
-                android:text="Size: 3Gb" />
-        </TableRow>
-
-    </TableLayout>
+                <TextView
+                    android:id="@+id/torrent_files_percent"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:text="80%" />
+            </LinearLayout>
+        </LinearLayout>
+    </LinearLayout>
 
 </LinearLayout>

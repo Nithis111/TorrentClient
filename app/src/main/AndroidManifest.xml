@@ -21,6 +21,11 @@
         <service
             android:name=".services.TorrentService"
             android:stopWithTask="false" />
+        <provider
+            android:name=".services.TorrentContentProvider"
+            android:authorities="com.github.axet.torrentclient"
+            android:exported="false"
+            android:grantUriPermissions="true" />
 
         <receiver
             android:name=".services.OnBootReceiver"

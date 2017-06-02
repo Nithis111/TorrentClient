@@ -7,19 +7,23 @@
 
     <LinearLayout
         android:id="@+id/torrent_files_empty"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content">
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Player files is empty, please download torrent first"/>
+            android:layout_gravity="center"
+            android:padding="5dp"
+            android:text="Player files is empty, please download torrent first" />
 
         <Button
             android:id="@+id/torrent_files_metadata"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_centerHorizontal="true"
+            android:layout_gravity="center"
             android:text="@string/download_metadata" />
 
     </LinearLayout>
@@ -29,6 +33,60 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_below="@id/torrent_files_toolbar"
+        android:clipToPadding="false"
+        android:paddingBottom="50dp"
         tools:listitem="@layout/torrent_files_item"></ListView>
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_centerHorizontal="true">
+
+        <ToggleButton
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_margin="5dp"
+            android:background="@drawable/roundlabel_light"
+            android:drawableTop="@drawable/ic_loop_black_24dp"
+            android:gravity="center"
+            android:textOff=""
+            android:textOn=""
+            android:textSize="0dp"
+            android:tint="@android:color/white" />
+
+        <ImageView
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_margin="5dp"
+            android:background="@drawable/roundlabel_light"
+            android:src="@drawable/ic_skip_previous_black_24dp"
+            android:tint="@android:color/white" />
+
+        <ImageView
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_margin="5dp"
+            android:background="@drawable/roundlabel_light"
+            android:src="@drawable/play"
+            android:tint="@android:color/white" />
+
+        <ImageView
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_margin="5dp"
+            android:background="@drawable/roundlabel_light"
+            android:src="@drawable/ic_skip_next_black_24dp"
+            android:tint="@android:color/white" />
+
+        <ImageView
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_margin="5dp"
+            android:background="@drawable/roundlabel_light"
+            android:src="@drawable/ic_open_with_black_24dp"
+            android:tint="@android:color/white" />
+
+    </LinearLayout>
 
 </RelativeLayout>

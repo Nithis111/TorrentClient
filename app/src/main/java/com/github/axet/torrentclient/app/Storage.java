@@ -72,8 +72,8 @@ public class Storage extends com.github.axet.androidlibrary.app.Storage {
     public static class Torrent {
         Context context;
 
-        public long t;
-        public String path;
+        public long t; // libtorrent handler
+        public String path; // path to where torrent data located
         public boolean message;
         public boolean check; // force check required, files were altered
         public boolean readonly; // readonly files or target path, show warning

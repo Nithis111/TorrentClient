@@ -21,7 +21,9 @@ import java.io.File;
 import java.lang.reflect.Array;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
+import java.util.List;
 
 public class MainApplication extends com.github.axet.androidlibrary.app.MainApplication {
     final String TAG = MainApplication.class.getSimpleName();
@@ -245,5 +247,9 @@ public class MainApplication extends com.github.axet.androidlibrary.app.MainAppl
             return def;
         }
         return path;
+    }
+
+    public static List<String> splitPath(String s) {
+        return new ArrayList<>(Arrays.asList(s.split("[//\\\\]")));
     }
 }

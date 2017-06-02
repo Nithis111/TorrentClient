@@ -19,6 +19,7 @@ import android.widget.TextView;
 import com.github.axet.torrentclient.R;
 import com.github.axet.torrentclient.activities.MainActivity;
 import com.github.axet.torrentclient.app.MainApplication;
+import com.github.axet.torrentclient.app.TorrentPlayer;
 import com.github.axet.torrentclient.dialogs.TorrentDialogFragment;
 
 import java.io.File;
@@ -38,26 +39,15 @@ public class PlayerFragment extends Fragment implements MainActivity.TorrentFrag
     ListView list;
     View download;
     View empty;
-
     Files files;
-
     String torrentName;
+    TorrentPlayer player;
 
-    static class TorFile {
-        public long index;
-        public libtorrent.File file;
-
-        public TorFile(long i, libtorrent.File f) {
-            this.file = f;
-            this.index = i;
-        }
-    }
-
-    static class SortFiles implements Comparator<TorFile> {
+    static class SortFiles implements Comparator<TorrentPlayer.PlayerFile> {
         @Override
-        public int compare(TorFile file, TorFile file2) {
-            List<String> s1 = splitPath(file.file.getPath());
-            List<String> s2 = splitPath(file2.file.getPath());
+        public int compare(TorrentPlayer.PlayerFile file, TorrentPlayer.PlayerFile file2) {
+            List<String> s1 = MainApplication.splitPath(file.getPath());
+            List<String> s2 = MainApplication.splitPath(file2.getPath());
 
             int c = new Integer(s1.size()).compareTo(s2.size());
             if (c != 0)
@@ -75,18 +65,18 @@ public class PlayerFragment extends Fragment implements MainActivity.TorrentFrag
         }
     }
 
-    ArrayList<TorFile> ff = new ArrayList<>();
-
     class Files extends BaseAdapter {
 
         @Override
         public int getCount() {
-            return ff.size();
+            if (player == null)
+                return 0;
+            return player.getSize();
         }
 
         @Override
-        public TorFile getItem(int i) {
-            return ff.get(i);
+        public TorrentPlayer.PlayerFile getItem(int i) {
+            return player.get(i);
         }
 
         @Override
@@ -108,22 +98,22 @@ public class PlayerFragment extends Fragment implements MainActivity.TorrentFrag
 
             final long t = getArguments().getLong("torrent");
 
-            final TorFile f = getItem(i);
+            final TorrentPlayer.PlayerFile f = getItem(i);
 
             TextView percent = (TextView) view.findViewById(R.id.torrent_files_percent);
             percent.setEnabled(false);
-            if (f.file.getLength() > 0)
-                MainApplication.setTextNA(percent, (f.file.getBytesCompleted() * 100 / f.file.getLength()) + "%");
+            if (!f.isLoaded())
+                MainApplication.setTextNA(percent, f.getPercent() + "%");
             else
                 MainApplication.setTextNA(percent, "100%");
 
             TextView size = (TextView) view.findViewById(R.id.torrent_files_size);
-            size.setText(getContext().getString(R.string.size_tab) + " " + MainApplication.formatSize(getContext(), f.file.getLength()));
+            size.setText(MainApplication.formatSize(getContext(), f.getLength()));
 
             TextView folder = (TextView) view.findViewById(R.id.torrent_files_folder);
             TextView file = (TextView) view.findViewById(R.id.torrent_files_name);
 
-            String s = f.file.getPath();
+            String s = f.getPath();
 
             List<String> ss = splitPathFilter(s);
 
@@ -135,7 +125,7 @@ public class PlayerFragment extends Fragment implements MainActivity.TorrentFrag
                     folder.setVisibility(View.GONE);
                 } else {
                     File p1 = new File(makePath(ss)).getParentFile();
-                    File p2 = new File(makePath(splitPathFilter(getItem(i - 1).file.getPath()))).getParentFile();
+                    File p2 = new File(makePath(splitPathFilter(getItem(i - 1).getPath()))).getParentFile();
                     if (p1 == null || p1.equals(p2)) {
                         folder.setVisibility(View.GONE);
                     } else {
@@ -157,14 +147,10 @@ public class PlayerFragment extends Fragment implements MainActivity.TorrentFrag
     }
 
     public List<String> splitPathFilter(String s) {
-        List<String> ss = splitPath(s);
+        List<String> ss = MainApplication.splitPath(s);
         if (ss.get(0).equals(torrentName))
             ss.remove(0);
         return ss;
-    }
-
-    public static List<String> splitPath(String s) {
-        return new ArrayList<String>(Arrays.asList(s.split(Pattern.quote(File.separator))));
     }
 
     @Override
@@ -208,11 +194,8 @@ public class PlayerFragment extends Fragment implements MainActivity.TorrentFrag
 
         long l = Libtorrent.torrentFilesCount(t);
 
-        ff.clear();
-        for (long i = 0; i < l; i++) {
-            ff.add(new TorFile(i, Libtorrent.torrentFiles(t, i)));
-        }
-        Collections.sort(ff, new SortFiles());
+        player = new TorrentPlayer(getContext(), t);
+
         files.notifyDataSetChanged();
     }
 
