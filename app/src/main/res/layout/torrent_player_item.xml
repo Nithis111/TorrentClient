@@ -17,6 +17,15 @@
         android:orientation="vertical">
 
         <TextView
+            android:id="@+id/torrent_files_archive"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="#38a738"
+            android:gravity="center"
+            android:textSize="12sp"
+            android:text=".rar" />
+
+        <TextView
             android:id="@+id/torrent_files_folder"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"

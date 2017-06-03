@@ -22,6 +22,8 @@ import com.github.axet.torrentclient.app.MainApplication;
 import com.github.axet.torrentclient.app.TorrentPlayer;
 import com.github.axet.torrentclient.dialogs.TorrentDialogFragment;
 
+import org.apache.commons.io.FilenameUtils;
+
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -112,6 +114,14 @@ public class PlayerFragment extends Fragment implements MainActivity.TorrentFrag
 
             TextView folder = (TextView) view.findViewById(R.id.torrent_files_folder);
             TextView file = (TextView) view.findViewById(R.id.torrent_files_name);
+            TextView archive = (TextView) view.findViewById(R.id.torrent_files_archive);
+
+            if (f.file != null && f.index == 0) {
+                archive.setVisibility(View.VISIBLE);
+                archive.setText(FilenameUtils.getExtension(f.tor.file.getPath()));
+            } else {
+                archive.setVisibility(View.GONE);
+            }
 
             String s = f.getPath();
 

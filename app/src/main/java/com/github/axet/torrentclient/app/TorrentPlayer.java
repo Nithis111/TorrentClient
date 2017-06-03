@@ -12,13 +12,18 @@ import org.apache.commons.io.IOUtils;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
 import java.util.ArrayList;
+import java.util.Enumeration;
 import java.util.List;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
+import java.util.zip.ZipInputStream;
 
 import de.innosystec.unrar.Archive;
 import de.innosystec.unrar.exception.RarException;
@@ -64,20 +69,24 @@ public class TorrentPlayer {
                         }
 
                         @Override
-                        public void open(final ParcelFileDescriptor w) {
+                        public InputStream open() {
                             try {
+                                final PipedInputStream is = new PipedInputStream();
+                                final PipedOutputStream os = new PipedOutputStream(is);
                                 Thread thread = new Thread(new Runnable() {
                                     @Override
                                     public void run() {
                                         try {
-                                            ParcelFileDescriptor.AutoCloseOutputStream os = new ParcelFileDescriptor.AutoCloseOutputStream(w);
                                             archive.extractFile(header, os);
+                                            os.flush();
+                                            os.close();
                                         } catch (Exception e) {
                                             throw new RuntimeException(e);
                                         }
                                     }
-                                });
+                                }, "Write Archive File");
                                 thread.start();
+                                return is;
                             } catch (Exception e) {
                                 throw new RuntimeException(e);
                             }
@@ -97,8 +106,61 @@ public class TorrentPlayer {
         }
     };
 
+    public Decoder ZIP = new Decoder() {
+        @Override
+        public boolean supported(TorFile f) {
+            File local = new File(torrent.path, f.file.getPath());
+            if (!local.exists())
+                return false;
+            if (!local.isFile())
+                return false;
+            return local.getName().toLowerCase().endsWith(".zip");
+        }
+
+        @Override
+        public ArrayList<ArchiveFile> list(TorFile f) {
+            try {
+                ArrayList<ArchiveFile> ff = new ArrayList<>();
+                File local = new File(torrent.path, f.file.getPath());
+                final ZipFile zip = new ZipFile(local);
+                Enumeration<?> enu = zip.entries();
+                while (enu.hasMoreElements()) {
+                    final ZipEntry zipEntry = (ZipEntry) enu.nextElement();
+                    if (zipEntry.isDirectory())
+                        continue;
+                    ArchiveFile a = new ArchiveFile() {
+
+                        @Override
+                        public String getPath() {
+                            return zipEntry.getName();
+                        }
+
+                        @Override
+                        public InputStream open() {
+                            try {
+                                return zip.getInputStream(zipEntry);
+                            } catch (Exception e) {
+                                throw new RuntimeException(e);
+                            }
+                        }
+
+                        @Override
+                        public long getLength() {
+                            return zipEntry.getSize();
+                        }
+                    };
+                    ff.add(a);
+                }
+                return ff;
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
+    };
+
     {
         decoders.add(RAR);
+        decoders.add(ZIP);
     }
 
     public interface Decoder {
@@ -108,9 +170,11 @@ public class TorrentPlayer {
     }
 
     public interface ArchiveFile {
+        public int index = 0;
+
         public String getPath();
 
-        public void open(ParcelFileDescriptor w);
+        public InputStream open();
 
         public long getLength();
     }
@@ -126,6 +190,7 @@ public class TorrentPlayer {
     }
 
     public class PlayerFile {
+        public int index; // file index in dirrectory / archive
         public Uri uri;
         public TorFile tor;
         public ArchiveFile file;
@@ -138,8 +203,13 @@ public class TorrentPlayer {
         public PlayerFile(TorFile t, ArchiveFile f) {
             this.tor = t;
             this.file = f;
-            File ff = new File(tor.file.getPath(), file.getPath() );
+            File ff = new File(tor.file.getPath(), file.getPath());
             uri = TorrentContentProvider.getUriForFile(torrentHash, ff.getPath());
+        }
+
+        public PlayerFile index(int i) {
+            this.index = i;
+            return this;
         }
 
         public File getFile() {
@@ -177,25 +247,17 @@ public class TorrentPlayer {
             return (int) (tor.file.getBytesCompleted() * 100 / tor.file.getLength());
         }
 
-        public void open(final ParcelFileDescriptor w) {
+        public InputStream open() {
             if (file != null) {
-                file.open(w);
-                return;
+                return file.open();
             }
-            final File local = new File(torrent.path, tor.file.getPath());
-            Thread thread = new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        FileInputStream is = new FileInputStream(local);
-                        ParcelFileDescriptor.AutoCloseOutputStream os = new ParcelFileDescriptor.AutoCloseOutputStream(w);
-                        IOUtils.copy(is, os);
-                    } catch (Exception e) {
-                        throw new RuntimeException(e);
-                    }
-                }
-            });
-            thread.start();
+            try {
+                final File local = new File(torrent.path, tor.file.getPath());
+                FileInputStream is = new FileInputStream(local);
+                return is;
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
         }
     }
 
@@ -223,12 +285,13 @@ public class TorrentPlayer {
         ff.clear();
         for (long i = 0; i < l; i++) {
             TorFile f = new TorFile(i, Libtorrent.torrentFiles(torrent.t, i));
-            ff.add(new PlayerFile(f));
+            ff.add(new PlayerFile(f).index((int) i));
             Decoder d = getDecoder(f);
             if (d != null) {
                 ArrayList<ArchiveFile> list = d.list(f);
+                int q = 0;
                 for (ArchiveFile a : list) {
-                    ff.add(new PlayerFile(f, a));
+                    ff.add(new PlayerFile(f, a).index(q++));
                 }
             }
         }

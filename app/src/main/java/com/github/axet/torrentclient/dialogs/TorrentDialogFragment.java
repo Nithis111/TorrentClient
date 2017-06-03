@@ -50,7 +50,6 @@ public class TorrentDialogFragment extends DialogFragment implements MainActivit
             this.t = t;
         }
 
-
         @Override
         public Fragment getItem(int i) {
             Fragment f;
@@ -213,6 +212,14 @@ public class TorrentDialogFragment extends DialogFragment implements MainActivit
         pager = (ViewPager) v.findViewById(R.id.pager);
         TorrentPagerAdapter adapter = new TorrentPagerAdapter(getContext(), getChildFragmentManager(), t);
         pager.setAdapter(adapter);
+
+        int sel = 1;
+        if (Libtorrent.metaTorrent(t)) {
+            long c = Libtorrent.torrentPendingBytesLength(t) - Libtorrent.torrentPendingBytesCompleted(t);
+            if (c == 0)
+                sel = 0;
+        }
+        pager.setCurrentItem(sel);
 
         TabLayout tabLayout = (TabLayout) v.findViewById(R.id.tab_layout);
         tabLayout.setupWithViewPager(pager);

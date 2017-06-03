@@ -8,12 +8,14 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.pm.ProviderInfo;
 import android.content.pm.ResolveInfo;
+import android.content.res.AssetFileDescriptor;
 import android.database.Cursor;
 import android.database.MatrixCursor;
 import android.net.Uri;
 import android.os.CancellationSignal;
 import android.os.ParcelFileDescriptor;
 import android.provider.OpenableColumns;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.webkit.MimeTypeMap;
 
@@ -21,9 +23,15 @@ import com.github.axet.androidlibrary.services.FileProvider;
 import com.github.axet.torrentclient.app.MainApplication;
 import com.github.axet.torrentclient.app.TorrentPlayer;
 
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.filefilter.FileFileFilter;
+
 import java.io.File;
+import java.io.FileFilter;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -44,6 +52,10 @@ import java.util.Map;
 public class TorrentContentProvider extends ContentProvider {
     protected static ProviderInfo info;
 
+    public static String FILE_PREFIX = "player";
+    public static String FILE_SUFFIX = ".tmp";
+
+
     public static String getType(String file) {
         String type = MimeTypeMap.getFileExtensionFromUrl(file);
         type = MimeTypeMap.getSingleton().getMimeTypeFromExtension(type);
@@ -55,6 +67,29 @@ public class TorrentContentProvider extends ContentProvider {
         String name = f.toString();
         Uri u = new Uri.Builder().scheme(ContentResolver.SCHEME_CONTENT).authority(info.authority).path(name).build();
         return u;
+    }
+
+    void deleteTmp() {
+        File tmp = getContext().getExternalCacheDir();
+        deleteTmp(tmp);
+        tmp = getContext().getCacheDir();
+        deleteTmp(tmp);
+    }
+
+    void deleteTmp(File tmp) {
+        if (tmp == null)
+            return;
+        File[] ff = tmp.listFiles(new FileFilter() {
+            @Override
+            public boolean accept(File file) {
+                return file.getName().startsWith(FILE_PREFIX);
+            }
+        });
+        if (ff == null)
+            return;
+        for (File f : ff) {
+            f.delete();
+        }
     }
 
     @Override
@@ -72,6 +107,7 @@ public class TorrentContentProvider extends ContentProvider {
 
     @Override
     public boolean onCreate() {
+        deleteTmp();
         return true;
     }
 
@@ -162,12 +198,21 @@ public class TorrentContentProvider extends ContentProvider {
 
         final int fileMode = FileProvider.modeToMode(mode);
 
+        deleteTmp();
+
         try {
-            ParcelFileDescriptor[] pp = ParcelFileDescriptor.createPipe();
-            ParcelFileDescriptor r = pp[0];
-            ParcelFileDescriptor w = pp[1];
-            f.open(w);
-            return r;
+            if (f.file != null) {
+                InputStream is = f.file.open();
+                File tmp = getContext().getExternalCacheDir();
+                if (tmp == null)
+                    tmp = getContext().getCacheDir();
+                tmp = File.createTempFile(FILE_PREFIX, FILE_SUFFIX, tmp);
+                IOUtils.copy(is, new FileOutputStream(tmp));
+                ParcelFileDescriptor fd = ParcelFileDescriptor.open(tmp, fileMode);
+                return fd;
+            } else {
+                return ParcelFileDescriptor.open(f.getFile(), fileMode);
+            }
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
