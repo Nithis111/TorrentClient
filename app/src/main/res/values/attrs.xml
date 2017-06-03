@@ -7,4 +7,5 @@
     <attr name="roundprogress_style" format="reference" />
     <attr name="side_nav_bar" format="reference" />
     <attr name="search_rating_bg" format="reference" />
+    <attr name="round_corners" format="reference" />
 </resources>

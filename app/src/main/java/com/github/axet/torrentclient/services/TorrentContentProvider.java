@@ -39,8 +39,8 @@ import java.util.Map;
 
 // <application>
 //   <provider
-//     android:name="com.github.axet.androidlibrary.services.FileProvider"
-//     android:authorities="com.github.axet.android-library"
+//     android:name="com.github.axet.torrentclient.services.TorrentContentProvider"
+//     android:authorities="com.github.axet.torrentclient"
 //     android:exported="false"
 //     android:grantUriPermissions="true">
 //   </provider>
@@ -54,7 +54,6 @@ public class TorrentContentProvider extends ContentProvider {
 
     public static String FILE_PREFIX = "player";
     public static String FILE_SUFFIX = ".tmp";
-
 
     public static String getType(String file) {
         String type = MimeTypeMap.getFileExtensionFromUrl(file);
