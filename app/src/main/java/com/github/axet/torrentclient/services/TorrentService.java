@@ -15,6 +15,7 @@ import android.support.annotation.Nullable;
 import android.support.v4.app.NotificationCompat;
 import android.support.v7.preference.PreferenceManager;
 import android.util.Log;
+import android.view.View;
 import android.widget.RemoteViews;
 
 import com.github.axet.androidlibrary.widgets.OptimizationPreferenceCompat;
@@ -22,6 +23,7 @@ import com.github.axet.torrentclient.R;
 import com.github.axet.torrentclient.activities.BootActivity;
 import com.github.axet.torrentclient.activities.MainActivity;
 import com.github.axet.torrentclient.app.MainApplication;
+import com.github.axet.torrentclient.app.TorrentPlayer;
 
 public class TorrentService extends Service {
     public static final String TAG = TorrentService.class.getSimpleName();
@@ -41,7 +43,7 @@ public class TorrentService extends Service {
         @Override
         public void onReceive(Context context, Intent intent) {
             if (intent.getAction().equals(UPDATE_NOTIFY)) {
-                showNotificationAlarm(true, intent.getStringExtra(TITLE));
+                showNotificationAlarm(true, intent);
             }
             if (intent.getAction().equals(Intent.ACTION_SCREEN_ON)) {
                 // showRecordingActivity();
@@ -62,8 +64,11 @@ public class TorrentService extends Service {
         context.startService(i);
     }
 
-    public static void updateNotify(Context context, String title) {
-        Intent i = new Intent(UPDATE_NOTIFY).putExtra(TITLE, title);
+    public static void updateNotify(Context context, String title, String player, boolean playing) {
+        Intent i = new Intent(UPDATE_NOTIFY)
+                .putExtra(TITLE, title)
+                .putExtra("player", player)
+                .putExtra("playing", playing);
         context.sendBroadcast(i);
     }
 
@@ -103,7 +108,7 @@ public class TorrentService extends Service {
             return;
         }
 
-        startForeground(NOTIFICATION_TORRENT_ICON, buildNotification(getString(R.string.tap_restart)));
+        startForeground(NOTIFICATION_TORRENT_ICON, buildNotification(getString(R.string.tap_restart), "", false));
     }
 
     MainApplication getApp() {
@@ -128,9 +133,10 @@ public class TorrentService extends Service {
             String a = intent.getAction();
             if (a != null) {
                 if (a.equals(PAUSE_BUTTON)) {
+                    ;
                 }
                 if (a.equals(UPDATE_NOTIFY)) {
-                    showNotificationAlarm(true, intent.getStringExtra(TITLE));
+                    showNotificationAlarm(true, intent);
                 }
                 if (a.equals(SHOW_ACTIVITY)) {
                     MainActivity.startActivity(this);
@@ -167,12 +173,12 @@ public class TorrentService extends Service {
 
         stopForeground(false);
 
-        showNotificationAlarm(false, null);
+        showNotificationAlarm(false, new Intent());
 
         unregisterReceiver(receiver);
     }
 
-    Notification buildNotification(String title) {
+    Notification buildNotification(String title, String player, boolean playing) {
         PendingIntent main = PendingIntent.getService(this, 0,
                 new Intent(this, TorrentService.class).setAction(SHOW_ACTIVITY),
                 PendingIntent.FLAG_UPDATE_CURRENT);
@@ -180,6 +186,10 @@ public class TorrentService extends Service {
 //        PendingIntent pe = PendingIntent.getService(this, 0,
 //                new Intent(this, TorrentService.class).setAction(PAUSE_BUTTON),
 //                PendingIntent.FLAG_UPDATE_CURRENT);
+
+        PendingIntent pause = PendingIntent.getBroadcast(this, 0,
+                new Intent(TorrentPlayer.PLAYER_PAUSE),
+                PendingIntent.FLAG_UPDATE_CURRENT);
 
         RemoteViews view = new RemoteViews(getPackageName(), MainApplication.getTheme(getBaseContext(),
                 R.layout.notifictaion_recording_light,
@@ -191,6 +201,16 @@ public class TorrentService extends Service {
         view.setTextViewText(R.id.notification_text, title);
         //view.setOnClickPendingIntent(R.id.notification_pause, pe);
         //view.setImageViewResource(R.id.notification_pause, pause ? R.drawable.play : R.drawable.pause);
+        if (player == null || player.isEmpty()) {
+            view.setViewVisibility(R.id.notification_play, View.GONE);
+            view.setViewVisibility(R.id.notification_playing, View.GONE);
+        } else {
+            view.setViewVisibility(R.id.notification_play, View.VISIBLE);
+            view.setViewVisibility(R.id.notification_playing, View.VISIBLE);
+            view.setTextViewText(R.id.notification_play, player);
+            view.setImageViewResource(R.id.notification_playing, playing ? R.drawable.ic_pause_24dp : R.drawable.ic_play_arrow_black_24dp);
+        }
+        view.setOnClickPendingIntent(R.id.notification_playing, pause);
 
         NotificationCompat.Builder builder = new NotificationCompat.Builder(this)
                 .setOngoing(true)
@@ -206,12 +226,15 @@ public class TorrentService extends Service {
         return builder.build();
     }
 
-    public void showNotificationAlarm(boolean show, String title) {
+    public void showNotificationAlarm(boolean show, Intent intent) {
+        String title = intent.getStringExtra(TITLE);
+        String play = intent.getStringExtra("player");
+        boolean playing = intent.getBooleanExtra("playing", false);
         NotificationManager notificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
         if (!show) {
             notificationManager.cancel(NOTIFICATION_TORRENT_ICON);
         } else {
-            notificationManager.notify(NOTIFICATION_TORRENT_ICON, buildNotification(title));
+            notificationManager.notify(NOTIFICATION_TORRENT_ICON, buildNotification(title, play, playing));
         }
     }
 
@@ -222,4 +245,3 @@ public class TorrentService extends Service {
         optimization.onTaskRemoved(rootIntent);
     }
 }
-

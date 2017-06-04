@@ -1,25 +1,19 @@
 package com.github.axet.torrentclient.app;
 
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
+import android.content.IntentFilter;
 import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Handler;
-import android.os.ParcelFileDescriptor;
-import android.support.v7.preference.PreferenceManager;
 
 import com.github.axet.torrentclient.services.TorrentContentProvider;
 
-import org.apache.commons.io.IOUtils;
-
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
 import java.util.ArrayList;
@@ -27,10 +21,8 @@ import java.util.Enumeration;
 import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
-import java.util.zip.ZipInputStream;
 
 import de.innosystec.unrar.Archive;
-import de.innosystec.unrar.exception.RarException;
 import de.innosystec.unrar.rarfile.FileHeader;
 import libtorrent.Libtorrent;
 
@@ -39,6 +31,7 @@ public class TorrentPlayer {
     public static final String PLAYER_NEXT = TorrentPlayer.class.getCanonicalName() + ".PLAYER_NEXT";
     public static final String PLAYER_PROGRESS = TorrentPlayer.class.getCanonicalName() + ".PLAYER_PROGRESS";
     public static final String PLAYER_STOP = TorrentPlayer.class.getCanonicalName() + ".PLAYER_STOP";
+    public static final String PLAYER_PAUSE = TorrentPlayer.class.getCanonicalName() + ".PLAYER_PAUSE";
 
     Context context;
     Storage.Torrent torrent;
@@ -59,6 +52,44 @@ public class TorrentPlayer {
         }
     };
     Handler handler;
+
+    BroadcastReceiver receiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            String a = intent.getAction();
+            if(a.equals(PLAYER_PAUSE)) {
+                pause();
+            }
+        }
+    };
+
+    public static class Receiver extends BroadcastReceiver {
+        Context context;
+
+        public Receiver(Context context) {
+            this.context = context;
+            IntentFilter ff = new IntentFilter();
+            ff.addAction(PLAYER_NEXT);
+            ff.addAction(PLAYER_PROGRESS);
+            ff.addAction(PLAYER_STOP);
+            context.registerReceiver(this, ff);
+        }
+
+        @Override
+        public void onReceive(Context context, Intent intent) {
+        }
+
+        public void close() {
+            context.unregisterReceiver(this);
+        }
+    }
+
+    public static String formatHeader(Context context, int pos, int dur) {
+        String header = MainApplication.formatDuration(context, pos);
+        if (dur > 0)
+            header += "/" + MainApplication.formatDuration(context, dur);
+        return header;
+    }
 
     public Decoder RAR = new Decoder() {
         @Override
@@ -180,17 +211,17 @@ public class TorrentPlayer {
     Decoder[] DECODERS = new Decoder[]{RAR, ZIP};
 
     public interface Decoder {
-        public boolean supported(TorFile f);
+        boolean supported(TorFile f);
 
-        public ArrayList<ArchiveFile> list(TorFile f);
+        ArrayList<ArchiveFile> list(TorFile f);
     }
 
     public interface ArchiveFile {
-        public String getPath();
+        String getPath();
 
-        public InputStream open();
+        InputStream open();
 
-        public long getLength();
+        long getLength();
     }
 
     public static class TorFile {
@@ -282,6 +313,11 @@ public class TorrentPlayer {
         this.context = context;
         this.storage = ((MainApplication) context.getApplicationContext()).getStorage();
         this.torrent = storage.find(t);
+
+        IntentFilter ff = new IntentFilter();
+        ff.addAction(PLAYER_PAUSE);
+        context.registerReceiver(receiver, ff);
+
         update();
     }
 
@@ -422,6 +458,7 @@ public class TorrentPlayer {
             player.release();
             player = null;
         }
+        context.unregisterReceiver(receiver);
     }
 
     public long getTorrent() {
@@ -446,5 +483,9 @@ public class TorrentPlayer {
     public void seek(int i) {
         player.seekTo(i);
         notifyPlayer();
+    }
+
+    public String formatHeader() {
+        return formatHeader(context, player.getCurrentPosition(), player.getDuration());
     }
 }

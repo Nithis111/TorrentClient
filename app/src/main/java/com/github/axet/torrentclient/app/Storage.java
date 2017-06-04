@@ -280,7 +280,15 @@ public class Storage extends com.github.axet.androidlibrary.app.Storage {
                 }
             }
         }
-        TorrentService.updateNotify(context, header);
+        TorrentPlayer p = getApp().player;
+        String player = "";
+        boolean playing = false;
+        if(p !=null) {
+            playing = p.isPlaying();
+            player = p.formatHeader();
+
+        }
+        TorrentService.updateNotify(context, header, player, playing);
     }
 
     public void load() {

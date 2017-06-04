@@ -97,28 +97,7 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
     EnginesManager engies;
 
     public long playerTorrent;
-    BroadcastReceiver playerReceiver = new BroadcastReceiver() {
-
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            String a = intent.getAction();
-            if (a.equals(TorrentPlayer.PLAYER_PROGRESS)) {
-                fab_panel.setVisibility(View.VISIBLE);
-                playerTorrent = intent.getLongExtra("t", -1);
-                int pos = intent.getIntExtra("pos", 0);
-                int dur = intent.getIntExtra("dur", 0);
-                boolean play = intent.getBooleanExtra("play", false);
-                fab_status.setText(MainApplication.formatDuration(MainActivity.this, pos) + "/" + MainApplication.formatDuration(MainActivity.this, dur));
-                if (play)
-                    fab_play.setImageResource(R.drawable.ic_pause_24dp);
-                else
-                    fab_play.setImageResource(R.drawable.play);
-            }
-            if (a.equals(TorrentPlayer.PLAYER_STOP)) {
-                fab_panel.setVisibility(View.GONE);
-            }
-        }
-    };
+    TorrentPlayer.Receiver playerReceiver;
     View fab_panel;
     android.support.design.widget.FloatingActionButton fab_play;
     View fab_stop;
@@ -537,10 +516,27 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
         });
         fab_panel.setVisibility(View.GONE);
 
-        IntentFilter ff = new IntentFilter();
-        ff.addAction(TorrentPlayer.PLAYER_PROGRESS);
-        ff.addAction(TorrentPlayer.PLAYER_STOP);
-        registerReceiver(playerReceiver, ff);
+        playerReceiver = new TorrentPlayer.Receiver(this) {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                String a = intent.getAction();
+                if (a.equals(TorrentPlayer.PLAYER_PROGRESS)) {
+                    fab_panel.setVisibility(View.VISIBLE);
+                    playerTorrent = intent.getLongExtra("t", -1);
+                    int pos = intent.getIntExtra("pos", 0);
+                    int dur = intent.getIntExtra("dur", 0);
+                    boolean play = intent.getBooleanExtra("play", false);
+                    fab_status.setText(TorrentPlayer.formatHeader(MainActivity.this, pos, dur));
+                    if (play)
+                        fab_play.setImageResource(R.drawable.ic_pause_24dp);
+                    else
+                        fab_play.setImageResource(R.drawable.ic_play_arrow_black_24dp);
+                }
+                if (a.equals(TorrentPlayer.PLAYER_STOP)) {
+                    fab_panel.setVisibility(View.GONE);
+                }
+            }
+        };
     }
 
     @Override
@@ -622,7 +618,7 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
         }
 
         if (playerReceiver != null) {
-            unregisterReceiver(playerReceiver);
+            playerReceiver.close();
             playerReceiver = null;
         }
 

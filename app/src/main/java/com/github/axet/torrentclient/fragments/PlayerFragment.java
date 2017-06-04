@@ -40,29 +40,7 @@ public class PlayerFragment extends Fragment implements MainActivity.TorrentFrag
     Files files;
     String torrentName;
     TorrentPlayer player;
-    BroadcastReceiver playerReceiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            String a = intent.getAction();
-            if (a.equals(TorrentPlayer.PLAYER_NEXT)) {
-                files.notifyDataSetChanged();
-                postScroll();
-            }
-            if (a.equals(TorrentPlayer.PLAYER_PROGRESS)) {
-                int pos = intent.getIntExtra("pos", 0);
-                int dur = intent.getIntExtra("dur", 0);
-                boolean p = intent.getBooleanExtra("play", false);
-                playerPos.setText(MainApplication.formatDuration(context, pos));
-                playerDur.setText(MainApplication.formatDuration(context, dur));
-                if (p)
-                    play.setImageResource(R.drawable.ic_pause_24dp);
-                else
-                    play.setImageResource(R.drawable.play);
-                seek.setMax(dur);
-                seek.setProgress(pos);
-            }
-        }
-    };
+    TorrentPlayer.Receiver playerReceiver;
     ImageView play;
     TextView playerPos;
     TextView playerDur;
@@ -277,11 +255,29 @@ public class PlayerFragment extends Fragment implements MainActivity.TorrentFrag
             }
         });
 
-        IntentFilter ff = new IntentFilter();
-        ff.addAction(TorrentPlayer.PLAYER_PROGRESS);
-        ff.addAction(TorrentPlayer.PLAYER_STOP);
-        ff.addAction(TorrentPlayer.PLAYER_NEXT);
-        getContext().registerReceiver(playerReceiver, ff);
+        playerReceiver = new TorrentPlayer.Receiver(getContext()) {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                String a = intent.getAction();
+                if (a.equals(TorrentPlayer.PLAYER_NEXT)) {
+                    files.notifyDataSetChanged();
+                    postScroll();
+                }
+                if (a.equals(TorrentPlayer.PLAYER_PROGRESS)) {
+                    int pos = intent.getIntExtra("pos", 0);
+                    int dur = intent.getIntExtra("dur", 0);
+                    boolean p = intent.getBooleanExtra("play", false);
+                    playerPos.setText(MainApplication.formatDuration(context, pos));
+                    playerDur.setText(MainApplication.formatDuration(context, dur));
+                    if (p)
+                        play.setImageResource(R.drawable.ic_pause_24dp);
+                    else
+                        play.setImageResource(R.drawable.play);
+                    seek.setMax(dur);
+                    seek.setProgress(pos);
+                }
+            }
+        };
 
         openPlayer(t);
         update();
@@ -338,7 +334,7 @@ public class PlayerFragment extends Fragment implements MainActivity.TorrentFrag
             }
             player = null;
         }
-        getContext().unregisterReceiver(playerReceiver);
+       playerReceiver.close();
     }
 
     void postScroll() {
