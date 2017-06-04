@@ -65,6 +65,7 @@ public class Torrents extends BaseAdapter implements DialogInterface.OnDismissLi
     HeaderGridView list;
     Map<Storage.Torrent, Boolean> unread = new HashMap<>();
     BroadcastReceiver receiver;
+    boolean openFolder;
 
     public static class Tag {
         public int tag;
@@ -120,6 +121,9 @@ public class Torrents extends BaseAdapter implements DialogInterface.OnDismissLi
         IntentFilter fi = new IntentFilter();
         fi.addAction(PLAY);
         getContext().registerReceiver(receiver, fi);
+
+        Intent intent = MainActivity.openFolderIntent(getStorage().getStoragePath());
+        openFolder = intent.resolveActivityInfo(context.getPackageManager(), 0) != null;
     }
 
     public Context getContext() {
@@ -188,6 +192,11 @@ public class Torrents extends BaseAdapter implements DialogInterface.OnDismissLi
         if (convertView == null) {
             convertView = inflater.inflate(R.layout.torrent, parent, false);
             convertView.setTag(null);
+        }
+
+        if (!openFolder) {
+            convertView.findViewById(R.id.recording_player_open).setVisibility(View.GONE);
+            convertView.findViewById(R.id.recording_player_open_space).setVisibility(View.GONE);
         }
 
         final View view = convertView;

@@ -81,7 +81,7 @@
     <string name="peers_tab">Peers:</string>
     <string name="ok">OK</string>
     <string name="cancel">Cancel</string>
-    <string name="tab_details">DETAILS</string>
+    <string name="tab_info">INFO</string>
     <string name="tab_files">FILES</string>
     <string name="tab_peers">PEERS</string>
     <string name="tab_trackers">TRACKERS</string>
@@ -121,6 +121,6 @@
     <string name="google_proxy" translatable="false">Google Data Saver</string>
     <string name="tor_proxy" translatable="false">Tor</string>
     <string name="storage_path">Storage Path</string>
-    <string name="stop">Stop</string>
-    <string name="start">Start</string>
+    <string name="stop">Stop Torrent</string>
+    <string name="start">Start Torrent</string>
 </resources>

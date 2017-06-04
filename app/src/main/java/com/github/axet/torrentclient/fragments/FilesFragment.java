@@ -48,8 +48,8 @@ public class FilesFragment extends Fragment implements MainActivity.TorrentFragm
     static class SortFiles implements Comparator<TorFile> {
         @Override
         public int compare(TorFile file, TorFile file2) {
-            List<String> s1 = splitPath(file.file.getPath());
-            List<String> s2 = splitPath(file2.file.getPath());
+            List<String> s1 = MainApplication.splitPath(file.file.getPath());
+            List<String> s2 = MainApplication.splitPath(file2.file.getPath());
 
             int c = new Integer(s1.size()).compareTo(s2.size());
             if (c != 0)
@@ -166,14 +166,10 @@ public class FilesFragment extends Fragment implements MainActivity.TorrentFragm
     }
 
     public List<String> splitPathFilter(String s) {
-        List<String> ss = splitPath(s);
+        List<String> ss = MainApplication.splitPath(s);
         if (ss.get(0).equals(torrentName))
             ss.remove(0);
         return ss;
-    }
-
-    public static List<String> splitPath(String s) {
-        return new ArrayList<String>(Arrays.asList(s.split(Pattern.quote(File.separator))));
     }
 
     @Override
@@ -249,6 +245,5 @@ public class FilesFragment extends Fragment implements MainActivity.TorrentFragm
 
     @Override
     public void close() {
-
     }
 }

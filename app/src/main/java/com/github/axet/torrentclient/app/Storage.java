@@ -72,8 +72,8 @@ public class Storage extends com.github.axet.androidlibrary.app.Storage {
     public static class Torrent {
         Context context;
 
-        public long t;
-        public String path;
+        public long t; // libtorrent handler
+        public String path; // path to where torrent data located
         public boolean message;
         public boolean check; // force check required, files were altered
         public boolean readonly; // readonly files or target path, show warning
@@ -280,7 +280,15 @@ public class Storage extends com.github.axet.androidlibrary.app.Storage {
                 }
             }
         }
-        TorrentService.updateNotify(context, header);
+        TorrentPlayer p = getApp().player;
+        String player = "";
+        boolean playing = false;
+        if(p !=null) {
+            playing = p.isPlaying();
+            player = p.formatHeader();
+
+        }
+        TorrentService.updateNotify(context, header, player, playing);
     }
 
     public void load() {
@@ -356,6 +364,7 @@ public class Storage extends com.github.axet.androidlibrary.app.Storage {
         for (int i = 0; i < torrents.size(); i++) {
             save(edit, i);
         }
+        getApp().playerSave(edit);
         edit.commit();
     }
 
@@ -868,6 +877,14 @@ public class Storage extends com.github.axet.androidlibrary.app.Storage {
         return null;
     }
 
+    public Torrent find(String hash) {
+        for (int i = 0; i < torrents.size(); i++) {
+            Torrent tt = torrents.get(i);
+            if (Libtorrent.torrentHash(tt.t).equals(hash))
+                return tt;
+        }
+        return null;
+    }
 
     public int getUnreadCount() {
         int count = 0;

@@ -1,145 +1,114 @@
 package com.github.axet.torrentclient.fragments;
 
-import android.app.AlertDialog;
-import android.app.KeyguardManager;
-import android.content.ClipData;
-import android.content.ClipboardManager;
 import android.content.Context;
-import android.content.DialogInterface;
-import android.content.Intent;
-import android.graphics.Color;
-import android.net.Uri;
 import android.os.Bundle;
+import android.support.design.widget.TabLayout;
 import android.support.v4.app.Fragment;
-import android.support.v4.content.ContextCompat;
+import android.support.v4.app.FragmentManager;
+import android.support.v4.app.FragmentPagerAdapter;
+import android.support.v4.view.ViewPager;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ImageButton;
-import android.widget.ImageView;
-import android.widget.TextView;
-import android.widget.Toast;
 
-import com.github.axet.androidlibrary.widgets.ThemeUtils;
 import com.github.axet.torrentclient.R;
 import com.github.axet.torrentclient.activities.MainActivity;
-import com.github.axet.torrentclient.app.MainApplication;
-import com.github.axet.torrentclient.app.Storage;
-import com.github.axet.torrentclient.widgets.Pieces;
 
-import java.io.File;
-
-import libtorrent.InfoTorrent;
-import libtorrent.Libtorrent;
-import libtorrent.StatsTorrent;
+import java.util.HashMap;
+import java.util.Map;
 
 public class DetailsFragment extends Fragment implements MainActivity.TorrentFragmentInterface {
     View v;
+    ViewPager pager;
 
-    Pieces pview;
-    TextView size;
-    TextView hash;
-    TextView pieces;
-    TextView creator;
-    TextView createdon;
-    TextView comment;
-    TextView status;
-    TextView progress;
-    TextView added;
-    TextView completed;
-    TextView downloading;
-    TextView seeding;
-    TextView name;
-    View pathButton;
-    View renameButton;
-    ImageButton pathImage;
-    ImageView check;
-    TextView downloaded;
-    TextView uploaded;
-    TextView ratio;
-    View meta;
-    View parts;
+    public static class DetailsPagerAdapter extends FragmentPagerAdapter {
+        long t;
 
-    KeyguardManager myKM;
+        Map<Integer, Fragment> map = new HashMap<>();
+        Context context;
+
+        public DetailsPagerAdapter(Context context, FragmentManager fm, long t) {
+            super(fm);
+            this.context = context;
+            this.t = t;
+        }
+
+        @Override
+        public Fragment getItem(int i) {
+            Fragment f;
+
+            switch (i) {
+                case 0:
+                    f = new InfoFragment();
+                    break;
+                case 1:
+                    f = new FilesFragment();
+                    break;
+                case 2:
+                    f = new PeersFragment();
+                    break;
+                case 3:
+                    f = new TrackersFragment();
+                    break;
+                default:
+                    return null;
+            }
+
+            Bundle args = new Bundle();
+            args.putLong("torrent", t);
+            f.setArguments(args);
+
+            return f;
+        }
+
+        @Override
+        public Object instantiateItem(ViewGroup container, int position) {
+            Object o = super.instantiateItem(container, position);
+            map.put(position, (Fragment) o);
+            return o;
+        }
+
+        public MainActivity.TorrentFragmentInterface getFragment(int pos) {
+            return (MainActivity.TorrentFragmentInterface) map.get(pos);
+        }
+
+        @Override
+        public int getCount() {
+            return 4;
+        }
+
+        @Override
+        public CharSequence getPageTitle(int position) {
+            switch (position) {
+                case 0:
+                    return context.getString(R.string.tab_info);
+                case 1:
+                    return context.getString(R.string.tab_files);
+                case 2:
+                    return context.getString(R.string.tab_peers);
+                case 3:
+                    return context.getString(R.string.tab_trackers);
+                default:
+                    return "EMPTY";
+            }
+        }
+    }
 
     @Override
     public View onCreateView(LayoutInflater inflater,
                              ViewGroup container, Bundle savedInstanceState) {
-        v = inflater.inflate(R.layout.torrent_status, container, false);
-
-        pview = (Pieces) v.findViewById(R.id.torrent_status_pieces);
-        size = (TextView) v.findViewById(R.id.torrent_size);
-        hash = (TextView) v.findViewById(R.id.torrent_hash);
-        pieces = (TextView) v.findViewById(R.id.torrent_pieces);
-        creator = (TextView) v.findViewById(R.id.torrent_creator);
-        createdon = (TextView) v.findViewById(R.id.torrent_created_on);
-        comment = (TextView) v.findViewById(R.id.torrent_comment);
-        status = (TextView) v.findViewById(R.id.torrent_status);
-        progress = (TextView) v.findViewById(R.id.torrent_progress);
-        added = (TextView) v.findViewById(R.id.torrent_added);
-        completed = (TextView) v.findViewById(R.id.torrent_completed);
-        downloading = (TextView) v.findViewById(R.id.torrent_downloading);
-        seeding = (TextView) v.findViewById(R.id.torrent_seeding);
-        check = (ImageView) v.findViewById(R.id.torrent_status_check);
-        meta = v.findViewById(R.id.torrent_status_metadata);
-        parts = v.findViewById(R.id.torrent_status_parts);
+        v = inflater.inflate(R.layout.torrent_details, container, false);
 
         final long t = getArguments().getLong("torrent");
 
-        final String h = Libtorrent.torrentHash(t);
-        hash.setText(h);
+        pager = (ViewPager) v.findViewById(R.id.pager);
+        DetailsPagerAdapter adapter = new DetailsPagerAdapter(getContext(), getChildFragmentManager(), t);
+        pager.setAdapter(adapter);
 
-        View hashCopy = v.findViewById(R.id.torrent_hash_copy);
-        hashCopy.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                ClipboardManager clipboard = (ClipboardManager) getContext().getSystemService(Context.CLIPBOARD_SERVICE);
-                ClipData clip = ClipData.newPlainText("hash", h);
-                clipboard.setPrimaryClip(clip);
-                Toast.makeText(getContext(), R.string.hash_copied, Toast.LENGTH_SHORT).show();
-            }
-        });
+        TabLayout tabLayout = (TabLayout) v.findViewById(R.id.tab_layout);
+        tabLayout.setupWithViewPager(pager);
 
-        meta.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (!Libtorrent.downloadMetadata(t)) {
-                    ((MainActivity) getActivity().getApplicationContext()).Error(Libtorrent.error());
-                    return;
-                }
-            }
-        });
-
-        final String p = ((MainApplication) getContext().getApplicationContext()).getStorage().path(t);
-
-        TextView path = (TextView) v.findViewById(R.id.torrent_path);
-        path.setText(p);
-
-        pathButton = v.findViewById(R.id.torrent_path_open);
-        pathButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                ((MainActivity) getActivity()).openFolder(new File(p));
-            }
-        });
-
-        name = (TextView) v.findViewById(R.id.torrent_name);
-
-        renameButton = v.findViewById(R.id.torrent_status_rename);
-        renameButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                ((MainActivity) getActivity()).renameDialog(t);
-            }
-        });
-
-        pathImage = (ImageButton) v.findViewById(R.id.torrent_path_image);
-
-        myKM = (KeyguardManager) getContext().getSystemService(Context.KEYGUARD_SERVICE);
-
-        downloaded = (TextView) v.findViewById(R.id.torrent_downloaded);
-        uploaded = (TextView) v.findViewById(R.id.torrent_uploaded);
-        ratio = (TextView) v.findViewById(R.id.torrent_ratio);
+        pager.addOnPageChangeListener(new TabLayout.TabLayoutOnPageChangeListener(tabLayout));
 
         update();
 
@@ -148,150 +117,10 @@ public class DetailsFragment extends Fragment implements MainActivity.TorrentFra
 
     @Override
     public void update() {
-        final long t = getArguments().getLong("torrent");
-
-        if (myKM.inKeyguardRestrictedInputMode()) {
-            pathButton.setEnabled(false);
-            pathImage.setColorFilter(Color.GRAY);
-        } else {
-            pathButton.setEnabled(true);
-            pathImage.setColorFilter(ThemeUtils.getThemeColor(getContext(), R.attr.colorAccent));
-        }
-
-        if (Libtorrent.metaTorrent(t)) {
-            meta.setVisibility(View.GONE);
-            parts.setVisibility(View.VISIBLE);
-        } else {
-            meta.setVisibility(View.VISIBLE);
-            parts.setVisibility(View.GONE);
-        }
-
-        final Runnable checkUpdate = new Runnable() {
-            @Override
-            public void run() {
-                int s = Libtorrent.torrentStatus(t);
-                switch (s) {
-                    case Libtorrent.StatusChecking:
-                        check.setImageDrawable(ContextCompat.getDrawable(getContext(), R.drawable.ic_stop_black_24dp));
-                        check.setColorFilter(ThemeUtils.getThemeColor(getContext(), R.attr.colorAccent));
-                        check.setEnabled(true);
-                        break;
-                    case Libtorrent.StatusDownloading:
-                    case Libtorrent.StatusQueued:
-                    case Libtorrent.StatusSeeding:
-                        check.setImageDrawable(ContextCompat.getDrawable(getContext(), R.drawable.ic_done_all_black_24dp));
-                        check.setColorFilter(Color.GRAY);
-                        check.setEnabled(false);
-                        break;
-                    default:
-                        check.setImageDrawable(ContextCompat.getDrawable(getContext(), R.drawable.ic_done_all_black_24dp));
-                        check.setColorFilter(ThemeUtils.getThemeColor(getContext(), R.attr.colorAccent));
-                        check.setEnabled(true);
-                        break;
-                }
-            }
-        };
-        checkUpdate.run();
-        check.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                ((MainActivity) getActivity()).checkTorrent(t);
-                checkUpdate.run();
-            }
-        });
-
-        pview.setTorrent(t);
-
-        name.setText(Libtorrent.torrentName(t));
-
-        MainApplication.setTextNA(size, !Libtorrent.metaTorrent(t) ? "" : MainApplication.formatSize(getContext(), Libtorrent.torrentBytesLength(t)));
-
-        MainApplication.setTextNA(pieces, !Libtorrent.metaTorrent(t) ? "" : Libtorrent.torrentPiecesCount(t) + " / " + MainApplication.formatSize(getContext(), Libtorrent.torrentPieceLength(t)));
-
-        InfoTorrent i = Libtorrent.torrentInfo(t);
-
-        MainApplication.setTextNA(creator, i.getCreator());
-
-        MainApplication.setDate(createdon, i.getCreateOn());
-
-        final String c = i.getComment().trim();
-        MainApplication.setTextNA(comment, c);
-        comment.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (!c.startsWith("http"))
-                    return;
-
-                AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
-                builder.setTitle(R.string.open_url);
-
-                builder.setMessage(c + "\n\n" + getContext().getString(R.string.are_you_sure));
-                builder.setPositiveButton(R.string.yes, new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        dialog.cancel();
-                        Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(c));
-                        startActivity(browserIntent);
-                    }
-                });
-                builder.setNegativeButton(R.string.no, new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        dialog.cancel();
-                    }
-                });
-                builder.show();
-            }
-        });
-
-        switch (Libtorrent.torrentStatus(t)) {
-            case Libtorrent.StatusQueued:
-                status.setText(R.string.status_queue);
-                break;
-            case Libtorrent.StatusDownloading:
-                status.setText(R.string.status_downloading);
-                break;
-            case Libtorrent.StatusPaused:
-                status.setText(R.string.status_paused);
-                break;
-            case Libtorrent.StatusSeeding:
-                status.setText(R.string.status_seeding);
-                break;
-            case Libtorrent.StatusChecking:
-                status.setText(R.string.status_checking);
-                break;
-        }
-
-        progress.setText(String.format("%d%%", Storage.Torrent.getProgress(t)));
-
-        StatsTorrent b = Libtorrent.torrentStats(t);
-        downloaded.setText(MainApplication.formatSize(getContext(), b.getDownloaded()));
-
-        uploaded.setText(MainApplication.formatSize(getContext(), b.getUploaded()));
-
-        float r = 0;
-        if (Libtorrent.metaTorrent(t)) {
-            if (b.getDownloaded() >= Libtorrent.torrentBytesLength(t)) {
-                r = b.getUploaded() / (float) b.getDownloaded();
-            } else {
-                r = b.getUploaded() / (float) Libtorrent.torrentBytesLength(t);
-            }
-        }
-        ratio.setText(String.format("%.2f", r));
-
-        InfoTorrent info = Libtorrent.torrentInfo(t);
-
-        MainApplication.setDate(added, info.getDateAdded());
-
-        MainApplication.setDate(completed, info.getDateCompleted());
-
-        downloading.setText(MainApplication.formatDuration(getContext(), b.getDownloading() / 1000000));
-
-        seeding.setText(MainApplication.formatDuration(getContext(), b.getSeeding() / 1000000));
+        long t = getArguments().getLong("torrent");
     }
 
     @Override
     public void close() {
-
     }
 }

@@ -45,10 +45,12 @@ import com.github.axet.torrentclient.app.Drawer;
 import com.github.axet.torrentclient.app.EnginesManager;
 import com.github.axet.torrentclient.app.MainApplication;
 import com.github.axet.torrentclient.app.Storage;
+import com.github.axet.torrentclient.app.TorrentPlayer;
 import com.github.axet.torrentclient.dialogs.AddDialogFragment;
 import com.github.axet.torrentclient.dialogs.CreateDialogFragment;
 import com.github.axet.torrentclient.dialogs.OpenIntentDialogFragment;
 import com.github.axet.torrentclient.dialogs.RatesDialogFragment;
+import com.github.axet.torrentclient.dialogs.TorrentDialogFragment;
 import com.github.axet.torrentclient.navigators.Torrents;
 
 import java.io.File;
@@ -93,6 +95,13 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
     BroadcastReceiver screenreceiver;
 
     EnginesManager engies;
+
+    public long playerTorrent;
+    TorrentPlayer.Receiver playerReceiver;
+    View fab_panel;
+    android.support.design.widget.FloatingActionButton fab_play;
+    View fab_stop;
+    TextView fab_status;
 
     public static void startActivity(Context context) {
         Intent i = new Intent(context, MainActivity.class);
@@ -477,6 +486,57 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
                 }
             }
         });
+
+
+        fab_panel = findViewById(R.id.fab_panel);
+        fab_status = (TextView) findViewById(R.id.fab_status);
+        fab_play = (android.support.design.widget.FloatingActionButton) findViewById(R.id.fab_play);
+        fab_stop = findViewById(R.id.fab_stop);
+        fab_panel.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (dialog != null)
+                    return;
+                TorrentDialogFragment d = TorrentDialogFragment.create(playerTorrent);
+                dialog = d;
+                d.show(getSupportFragmentManager(), "");
+            }
+        });
+        fab_play.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                getApp().pausePlayer();
+            }
+        });
+        fab_stop.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                getApp().closePlayer();
+            }
+        });
+        fab_panel.setVisibility(View.GONE);
+
+        playerReceiver = new TorrentPlayer.Receiver(this) {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                String a = intent.getAction();
+                if (a.equals(TorrentPlayer.PLAYER_PROGRESS)) {
+                    fab_panel.setVisibility(View.VISIBLE);
+                    playerTorrent = intent.getLongExtra("t", -1);
+                    int pos = intent.getIntExtra("pos", 0);
+                    int dur = intent.getIntExtra("dur", 0);
+                    boolean play = intent.getBooleanExtra("play", false);
+                    fab_status.setText(TorrentPlayer.formatHeader(MainActivity.this, pos, dur));
+                    if (play)
+                        fab_play.setImageResource(R.drawable.ic_pause_24dp);
+                    else
+                        fab_play.setImageResource(R.drawable.ic_play_arrow_black_24dp);
+                }
+                if (a.equals(TorrentPlayer.PLAYER_STOP)) {
+                    fab_panel.setVisibility(View.GONE);
+                }
+            }
+        };
     }
 
     @Override
@@ -509,8 +569,14 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
 
         KeyguardManager myKM = (KeyguardManager) getSystemService(Context.KEYGUARD_SERVICE);
         if (myKM.inKeyguardRestrictedInputMode() || delayedInit != null) {
-            menu.removeItem(R.id.action_settings);
-            menu.removeItem(R.id.action_show_folder);
+            menu.findItem(R.id.action_settings).setVisible(false);
+            menu.findItem(R.id.action_show_folder).setVisible(false);
+        }
+
+        File path = getStorage().getStoragePath();
+        Intent intent = openFolderIntent(path);
+        if (intent.resolveActivityInfo(getPackageManager(), 0) == null) {
+            menu.findItem(R.id.action_show_folder).setVisible(false);
         }
 
         return true;
@@ -549,6 +615,11 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
         if (screenreceiver != null) {
             unregisterReceiver(screenreceiver);
             screenreceiver = null;
+        }
+
+        if (playerReceiver != null) {
+            playerReceiver.close();
+            playerReceiver = null;
         }
 
         final SharedPreferences shared = PreferenceManager.getDefaultSharedPreferences(MainActivity.this);
@@ -635,10 +706,15 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
         return super.onOptionsItemSelected(item);
     }
 
-    public void openFolder(File path) {
-        Uri selectedUri = Uri.fromFile(path);
+    public static Intent openFolderIntent(File file) {
+        Uri selectedUri = Uri.fromFile(file);
         Intent intent = new Intent(Intent.ACTION_VIEW);
         intent.setDataAndType(selectedUri, "resource/folder");
+        return intent;
+    }
+
+    public void openFolder(File file) {
+        Intent intent = openFolderIntent(file);
         if (intent.resolveActivityInfo(getPackageManager(), 0) != null) {
             startActivity(intent);
         } else {
@@ -806,7 +882,6 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
                 updateUnread();
             }
         }
-
         dialog = null;
         ListAdapter a = list.getAdapter();
         if (a != null && a instanceof HeaderGridView.HeaderViewGridAdapter) {
