@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
+import android.net.Uri;
 import android.os.Environment;
 import android.os.Handler;
 import android.support.v7.preference.PreferenceManager;
@@ -43,6 +44,7 @@ public class MainApplication extends com.github.axet.androidlibrary.app.MainAppl
     public static final String PREFERENCE_DOWNLOAD = "download_rate";
     public static final String PREFERENCE_SPEEDLIMIT = "speedlimit";
     public static final String PREFERENCE_OPTIMIZATION = "optimization";
+    public static final String PREFERENCE_PLAYER = "player";
 
     public static final String SAVE_STATE = MainApplication.class.getName() + ".SAVE_STATE";
 
@@ -81,6 +83,29 @@ public class MainApplication extends com.github.axet.androidlibrary.app.MainAppl
         context.setTheme(getUserTheme());
     }
 
+    public void playerLoad() {
+        final SharedPreferences shared = PreferenceManager.getDefaultSharedPreferences(this);
+        String uri = shared.getString(MainApplication.PREFERENCE_PLAYER, "");
+        if (!uri.isEmpty()) {
+            Uri u = Uri.parse(uri);
+            String p = u.getPath();
+            String[] pp = p.split("/");
+            String hash = pp[1];
+            String v = u.getQueryParameter("t");
+            int q = Integer.parseInt(v);
+            Uri.Builder b = u.buildUpon();
+            b.clearQuery();
+            Storage.Torrent t = storage.find(hash);
+            if (t == null)
+                return;
+            if (player != null)
+                player.close();
+            player = new TorrentPlayer(this, t.t);
+            player.open(b.build());
+            player.seek(q);
+        }
+    }
+
     public TorrentPlayer openPlayer(long t) {
         if (player != null) {
             if (player.torrent.t == t)
@@ -100,6 +125,17 @@ public class MainApplication extends com.github.axet.androidlibrary.app.MainAppl
             return;
         player.close();
         player = null;
+    }
+
+    public void playerSave() {
+        final SharedPreferences shared = PreferenceManager.getDefaultSharedPreferences(this);
+        SharedPreferences.Editor edit = shared.edit();
+        if (player != null) {
+            edit.putString(MainApplication.PREFERENCE_PLAYER, player.getUri().toString());
+        } else {
+            edit.remove(MainApplication.PREFERENCE_PLAYER);
+        }
+        edit.commit();
     }
 
     public void createThread(Runnable run) {
@@ -143,6 +179,7 @@ public class MainApplication extends com.github.axet.androidlibrary.app.MainAppl
             filter.addAction(Intent.ACTION_PACKAGE_RESTARTED);
             registerReceiver(savestate, filter);
         }
+        playerLoad();
     }
 
     public void close() {
@@ -167,18 +204,21 @@ public class MainApplication extends com.github.axet.androidlibrary.app.MainAppl
             unregisterReceiver(savestate);
             savestate = null;
         }
+        playerSave();
     }
 
     @Override
     public void onTerminate() {
         super.onTerminate();
         Log.d(TAG, "onTerminate");
+        playerSave();
     }
 
     @Override
     public void onLowMemory() {
         super.onLowMemory();
         Log.d(TAG, "onLowMemory");
+        playerSave();
     }
 
     public static String onTrimString(int level) {
@@ -205,6 +245,7 @@ public class MainApplication extends com.github.axet.androidlibrary.app.MainAppl
     public void onTrimMemory(int level) {
         super.onTrimMemory(level);
         Log.d(TAG, "onTrimMemory: " + onTrimString(level));
+        playerSave();
     }
 
     public static int getTheme(Context context, int light, int dark) {

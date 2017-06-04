@@ -45,19 +45,8 @@
         android:layout_centerHorizontal="true"
         android:orientation="horizontal">
 
-        <ToggleButton
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:layout_margin="5dp"
-            android:background="@drawable/roundlabel_light"
-            android:drawableTop="@drawable/ic_loop_black_24dp"
-            android:gravity="center"
-            android:textOff=""
-            android:textOn=""
-            android:textSize="0dp"
-            android:tint="@android:color/white" />
-
         <ImageView
+            android:id="@+id/player_prev"
             android:layout_width="40dp"
             android:layout_height="40dp"
             android:layout_margin="5dp"
@@ -75,21 +64,13 @@
             android:tint="@android:color/white" />
 
         <ImageView
+            android:id="@+id/player_next"
             android:layout_width="40dp"
             android:layout_height="40dp"
             android:layout_margin="5dp"
             android:background="@drawable/roundlabel_light"
             android:src="@drawable/ic_skip_next_black_24dp"
             android:tint="@android:color/white" />
-
-        <ImageView
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:layout_margin="5dp"
-            android:background="@drawable/roundlabel_light"
-            android:src="@drawable/ic_open_with_black_24dp"
-            android:tint="@android:color/white" />
-
     </LinearLayout>
 
     <LinearLayout
@@ -101,16 +82,19 @@
         android:padding="5dp">
 
         <TextView
+            android:id="@+id/player_pos"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="00:00" />
 
         <SeekBar
+            android:id="@+id/player_seek"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1" />
 
         <TextView
+            android:id="@+id/player_dur"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="16:00" />

@@ -2,10 +2,12 @@ package com.github.axet.torrentclient.app;
 
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Handler;
 import android.os.ParcelFileDescriptor;
+import android.support.v7.preference.PreferenceManager;
 
 import com.github.axet.torrentclient.services.TorrentContentProvider;
 
@@ -34,6 +36,7 @@ import libtorrent.Libtorrent;
 
 public class TorrentPlayer {
 
+    public static final String PLAYER_NEXT = TorrentPlayer.class.getCanonicalName() + ".PLAYER_NEXT";
     public static final String PLAYER_PROGRESS = TorrentPlayer.class.getCanonicalName() + ".PLAYER_PROGRESS";
     public static final String PLAYER_STOP = TorrentPlayer.class.getCanonicalName() + ".PLAYER_STOP";
 
@@ -44,18 +47,18 @@ public class TorrentPlayer {
     public String torrentName;
     Storage storage;
     MediaPlayer player;
+    int playing = -1;
+    Uri playingUri;
+    Runnable next;
     Runnable progress = new Runnable() {
         @Override
         public void run() {
-            Intent intent = new Intent(PLAYER_PROGRESS);
-            intent.putExtra("pos", player.getCurrentPosition());
-            intent.putExtra("dur", player.getDuration());
-            intent.putExtra("play", player.isPlaying());
-            context.sendBroadcast(intent);
+            notifyPlayer();
+            handler.removeCallbacks(progress);
             handler.postDelayed(progress, 1000);
         }
     };
-    Handler handler = new Handler();
+    Handler handler;
 
     public Decoder RAR = new Decoder() {
         @Override
@@ -174,7 +177,7 @@ public class TorrentPlayer {
         }
     };
 
-    Decoder[] DECODERS = new Decoder[] {RAR, ZIP};
+    Decoder[] DECODERS = new Decoder[]{RAR, ZIP};
 
     public interface Decoder {
         public boolean supported(TorFile f);
@@ -275,6 +278,7 @@ public class TorrentPlayer {
     }
 
     public TorrentPlayer(Context context, long t) {
+        this.handler = new Handler(context.getMainLooper());
         this.context = context;
         this.storage = ((MainApplication) context.getApplicationContext()).getStorage();
         this.torrent = storage.find(t);
@@ -314,6 +318,10 @@ public class TorrentPlayer {
         return ff.size();
     }
 
+    public int getPlaying() {
+        return playing;
+    }
+
     public PlayerFile get(int i) {
         return ff.get(i);
     }
@@ -327,21 +335,68 @@ public class TorrentPlayer {
         return null;
     }
 
-    public void play(int i) {
-        PlayerFile f = get(i);
+    public void open(Uri uri) {
+        TorrentPlayer.PlayerFile f = find(uri);
+        open(f);
+    }
+
+    public void open(PlayerFile f) {
+        final int i = ff.indexOf(f);
         if (player != null) {
             player.release();
         }
+        playing = i;
+        playingUri = f.uri;
+        Intent intent = new Intent(PLAYER_NEXT);
+        context.sendBroadcast(intent);
         player = MediaPlayer.create(context, f.uri);
-        if (player == null)
+        if (player == null) {
+            next(i + 1);
             return;
+        }
+        player.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
+            @Override
+            public void onCompletion(MediaPlayer mp) {
+                next(i + 1);
+            }
+        });
+        notifyPlayer();
+    }
+
+    public void play(final int i) {
+        PlayerFile f = get(i);
+        open(f);
         player.start();
         progress.run();
     }
 
+    public void next(int next) {
+        if (next >= ff.size()) {
+            next = 0;
+        }
+        final int n = next;
+        handler.removeCallbacks(this.next);
+        this.next = new Runnable() {
+            @Override
+            public void run() {
+                play(n);
+            }
+        };
+        handler.postDelayed(this.next, 1000);
+    }
+
+    public boolean isPlaying() {
+        if (player == null)
+            return false;
+        return player.isPlaying();
+    }
+
     public void pause() {
+        if (player == null)
+            return;
         if (player.isPlaying()) {
             player.pause();
+            progress.run();
             handler.removeCallbacks(progress);
         } else {
             player.start();
@@ -356,6 +411,9 @@ public class TorrentPlayer {
             player.stop();
         }
         handler.removeCallbacks(progress);
+        handler.removeCallbacks(next);
+        playing = -1;
+        playingUri = null;
     }
 
     public void close() {
@@ -364,5 +422,29 @@ public class TorrentPlayer {
             player.release();
             player = null;
         }
+    }
+
+    public long getTorrent() {
+        return torrent.t;
+    }
+
+    public void notifyPlayer() {
+        Intent intent = new Intent(PLAYER_PROGRESS);
+        intent.putExtra("t", torrent.t);
+        intent.putExtra("pos", player.getCurrentPosition());
+        intent.putExtra("dur", player.getDuration());
+        intent.putExtra("play", player.isPlaying());
+        context.sendBroadcast(intent);
+    }
+
+    public Uri getUri() {
+        Uri.Builder b = playingUri.buildUpon();
+        b.appendQueryParameter("t", "" + player.getCurrentPosition());
+        return b.build();
+    }
+
+    public void seek(int i) {
+        player.seekTo(i);
+        notifyPlayer();
     }
 }

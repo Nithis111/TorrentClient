@@ -50,6 +50,7 @@ import com.github.axet.torrentclient.dialogs.AddDialogFragment;
 import com.github.axet.torrentclient.dialogs.CreateDialogFragment;
 import com.github.axet.torrentclient.dialogs.OpenIntentDialogFragment;
 import com.github.axet.torrentclient.dialogs.RatesDialogFragment;
+import com.github.axet.torrentclient.dialogs.TorrentDialogFragment;
 import com.github.axet.torrentclient.navigators.Torrents;
 
 import java.io.File;
@@ -95,12 +96,15 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
 
     EnginesManager engies;
 
+    public long playerTorrent;
     BroadcastReceiver playerReceiver = new BroadcastReceiver() {
+
         @Override
         public void onReceive(Context context, Intent intent) {
             String a = intent.getAction();
             if (a.equals(TorrentPlayer.PLAYER_PROGRESS)) {
                 fab_panel.setVisibility(View.VISIBLE);
+                playerTorrent = intent.getLongExtra("t", -1);
                 int pos = intent.getIntExtra("pos", 0);
                 int dur = intent.getIntExtra("dur", 0);
                 boolean play = intent.getBooleanExtra("play", false);
@@ -509,6 +513,16 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
         fab_status = (TextView) findViewById(R.id.fab_status);
         fab_play = (android.support.design.widget.FloatingActionButton) findViewById(R.id.fab_play);
         fab_stop = findViewById(R.id.fab_stop);
+        fab_panel.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (dialog != null)
+                    return;
+                TorrentDialogFragment d = TorrentDialogFragment.create(playerTorrent);
+                dialog = d;
+                d.show(getSupportFragmentManager(), "");
+            }
+        });
         fab_play.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -872,7 +886,6 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
                 updateUnread();
             }
         }
-
         dialog = null;
         ListAdapter a = list.getAdapter();
         if (a != null && a instanceof HeaderGridView.HeaderViewGridAdapter) {
