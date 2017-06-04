@@ -130,12 +130,16 @@ public class MainApplication extends com.github.axet.androidlibrary.app.MainAppl
     public void playerSave() {
         final SharedPreferences shared = PreferenceManager.getDefaultSharedPreferences(this);
         SharedPreferences.Editor edit = shared.edit();
+        playerSave(edit);
+        edit.commit();
+    }
+
+    public void playerSave(SharedPreferences.Editor edit) {
         if (player != null) {
             edit.putString(MainApplication.PREFERENCE_PLAYER, player.getUri().toString());
         } else {
             edit.remove(MainApplication.PREFERENCE_PLAYER);
         }
-        edit.commit();
     }
 
     public void createThread(Runnable run) {

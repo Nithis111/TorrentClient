@@ -364,6 +364,7 @@ public class Storage extends com.github.axet.androidlibrary.app.Storage {
         for (int i = 0; i < torrents.size(); i++) {
             save(edit, i);
         }
+        getApp().playerSave(edit);
         edit.commit();
     }
 
