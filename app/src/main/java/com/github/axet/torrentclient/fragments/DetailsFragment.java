@@ -13,6 +13,7 @@ import android.view.ViewGroup;
 
 import com.github.axet.torrentclient.R;
 import com.github.axet.torrentclient.activities.MainActivity;
+import com.github.axet.torrentclient.dialogs.TorrentDialogFragment;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -117,7 +118,14 @@ public class DetailsFragment extends Fragment implements MainActivity.TorrentFra
 
     @Override
     public void update() {
-        long t = getArguments().getLong("torrent");
+        if (pager == null)
+            return;
+        int i = pager.getCurrentItem();
+        DetailsPagerAdapter a = (DetailsPagerAdapter) pager.getAdapter();
+        MainActivity.TorrentFragmentInterface f = a.getFragment(i);
+        if (f == null)
+            return;
+        f.update();
     }
 
     @Override
