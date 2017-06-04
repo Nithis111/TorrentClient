@@ -47,28 +47,6 @@ public class PlayerFragment extends Fragment implements MainActivity.TorrentFrag
     SeekBar seek;
     Handler handler = new Handler();
 
-    static class SortFiles implements Comparator<TorrentPlayer.PlayerFile> {
-        @Override
-        public int compare(TorrentPlayer.PlayerFile file, TorrentPlayer.PlayerFile file2) {
-            List<String> s1 = MainApplication.splitPath(file.getPath());
-            List<String> s2 = MainApplication.splitPath(file2.getPath());
-
-            int c = new Integer(s1.size()).compareTo(s2.size());
-            if (c != 0)
-                return c;
-
-            for (int i = 0; i < s1.size(); i++) {
-                String p1 = s1.get(i);
-                String p2 = s2.get(i);
-                c = p1.compareTo(p2);
-                if (c != 0)
-                    return c;
-            }
-
-            return 0;
-        }
-    }
-
     public class Files extends BaseAdapter {
         public int selected = -1;
 
@@ -218,7 +196,9 @@ public class PlayerFragment extends Fragment implements MainActivity.TorrentFrag
         play.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (player.isPlaying() || player.getPlaying() == files.selected || files.selected == -1) {
+                if (player.getPlaying() == -1 && files.selected == -1) {
+                    play(0);
+                } else if (player.isPlaying() || player.getPlaying() == files.selected || files.selected == -1) {
                     player.pause();
                     MainApplication app = ((MainApplication) getContext().getApplicationContext());
                     app.playerSave();
@@ -255,6 +235,9 @@ public class PlayerFragment extends Fragment implements MainActivity.TorrentFrag
             }
         });
 
+        playerPos.setText(MainApplication.formatDuration(getContext(), 0));
+        playerDur.setText(MainApplication.formatDuration(getContext(), 0));
+
         playerReceiver = new TorrentPlayer.Receiver(getContext()) {
             @Override
             public void onReceive(Context context, Intent intent) {
@@ -279,9 +262,9 @@ public class PlayerFragment extends Fragment implements MainActivity.TorrentFrag
             }
         };
 
-        openPlayer(t);
         update();
-        list.setSelection(player.getPlaying());
+        if (player != null)
+            list.setSelection(player.getPlaying());
 
         return v;
     }
@@ -289,8 +272,6 @@ public class PlayerFragment extends Fragment implements MainActivity.TorrentFrag
     public void openPlayer(long t) {
         MainApplication app = ((MainApplication) getContext().getApplicationContext());
         if (player != null) {
-            if (player.getTorrent() == t)
-                return;
             player.close();
         }
         if (app.player != null) {
@@ -300,7 +281,7 @@ public class PlayerFragment extends Fragment implements MainActivity.TorrentFrag
                 return;
             }
         }
-        player = new TorrentPlayer(getContext(), t);
+        player = new TorrentPlayer(getContext(), app.getStorage(), t);
     }
 
     public void play(int i) {
@@ -320,6 +301,11 @@ public class PlayerFragment extends Fragment implements MainActivity.TorrentFrag
 
         empty.setVisibility(Libtorrent.metaTorrent(t) ? View.GONE : View.VISIBLE);
 
+        if (Libtorrent.metaTorrent(t)) {
+            if (Libtorrent.torrentPendingBytesLength(t) != Libtorrent.torrentPendingBytesCompleted(t) || player == null || player.getPlaying() == -1) {
+                openPlayer(t);
+            }
+        }
         torrentName = Libtorrent.torrentName(t);
 
         files.notifyDataSetChanged();
@@ -334,7 +320,7 @@ public class PlayerFragment extends Fragment implements MainActivity.TorrentFrag
             }
             player = null;
         }
-       playerReceiver.close();
+        playerReceiver.close();
     }
 
     void postScroll() {

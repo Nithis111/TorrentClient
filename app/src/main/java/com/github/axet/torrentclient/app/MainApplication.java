@@ -100,7 +100,7 @@ public class MainApplication extends com.github.axet.androidlibrary.app.MainAppl
                 return;
             if (player != null)
                 player.close();
-            player = new TorrentPlayer(this, t.t);
+            player = new TorrentPlayer(this, getStorage(), t.t);
             player.open(b.build());
             player.seek(q);
         }
@@ -112,7 +112,7 @@ public class MainApplication extends com.github.axet.androidlibrary.app.MainAppl
                 return player;
             player.close();
         }
-        player = new TorrentPlayer(this, t);
+        player = new TorrentPlayer(this, getStorage(), t);
         return player;
     }
 

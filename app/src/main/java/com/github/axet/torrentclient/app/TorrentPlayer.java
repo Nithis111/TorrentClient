@@ -17,6 +17,9 @@ import java.io.InputStream;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.zip.ZipEntry;
@@ -57,11 +60,55 @@ public class TorrentPlayer {
         @Override
         public void onReceive(Context context, Intent intent) {
             String a = intent.getAction();
-            if(a.equals(PLAYER_PAUSE)) {
+            if (a.equals(PLAYER_PAUSE)) {
                 pause();
             }
         }
     };
+
+    public static class SortPlayerFiles implements Comparator<PlayerFile> {
+        @Override
+        public int compare(TorrentPlayer.PlayerFile file, TorrentPlayer.PlayerFile file2) {
+            List<String> s1 = MainApplication.splitPath(file.getPath());
+            List<String> s2 = MainApplication.splitPath(file2.getPath());
+
+            int c = new Integer(s1.size()).compareTo(s2.size());
+            if (c != 0)
+                return c;
+
+            for (int i = 0; i < s1.size(); i++) {
+                String p1 = s1.get(i);
+                String p2 = s2.get(i);
+                c = p1.compareTo(p2);
+                if (c != 0)
+                    return c;
+            }
+
+            return 0;
+        }
+    }
+
+    public static class SortArchiveFiles implements Comparator<ArchiveFile> {
+        @Override
+        public int compare(ArchiveFile file, ArchiveFile file2) {
+            List<String> s1 = MainApplication.splitPath(file.getPath());
+            List<String> s2 = MainApplication.splitPath(file2.getPath());
+
+            int c = new Integer(s1.size()).compareTo(s2.size());
+            if (c != 0)
+                return c;
+
+            for (int i = 0; i < s1.size(); i++) {
+                String p1 = s1.get(i);
+                String p2 = s2.get(i);
+                c = p1.compareTo(p2);
+                if (c != 0)
+                    return c;
+            }
+
+            return 0;
+        }
+    }
 
     public static class Receiver extends BroadcastReceiver {
         Context context;
@@ -308,10 +355,10 @@ public class TorrentPlayer {
         }
     }
 
-    public TorrentPlayer(Context context, long t) {
+    public TorrentPlayer(Context context, Storage storage, long t) {
         this.handler = new Handler(context.getMainLooper());
         this.context = context;
-        this.storage = ((MainApplication) context.getApplicationContext()).getStorage();
+        this.storage = storage;
         this.torrent = storage.find(t);
 
         IntentFilter ff = new IntentFilter();
@@ -336,15 +383,21 @@ public class TorrentPlayer {
         long l = Libtorrent.torrentFilesCount(torrent.t);
 
         ff.clear();
+        ArrayList<PlayerFile> ff = new ArrayList<>();
         for (long i = 0; i < l; i++) {
             TorFile f = new TorFile(i, Libtorrent.torrentFiles(torrent.t, i));
             ff.add(new PlayerFile(f).index((int) i, (int) l));
-            Decoder d = getDecoder(f);
+        }
+        Collections.sort(ff, new SortPlayerFiles());
+        for (PlayerFile f : ff) {
+            this.ff.add(f);
+            Decoder d = getDecoder(f.tor);
             if (d != null) {
-                ArrayList<ArchiveFile> list = d.list(f);
+                ArrayList<ArchiveFile> list = d.list(f.tor);
+                Collections.sort(list, new SortArchiveFiles());
                 int q = 0;
                 for (ArchiveFile a : list) {
-                    ff.add(new PlayerFile(f, a).index(q++, list.size()));
+                    this.ff.add(new PlayerFile(f.tor, a).index(q++, list.size()));
                 }
             }
         }
@@ -385,7 +438,8 @@ public class TorrentPlayer {
         playingUri = f.uri;
         Intent intent = new Intent(PLAYER_NEXT);
         context.sendBroadcast(intent);
-        player = MediaPlayer.create(context, f.uri);
+        if (f.tor.file.getBytesCompleted() == f.tor.file.getLength())
+            player = MediaPlayer.create(context, f.uri);
         if (player == null) {
             next(i + 1);
             return;
@@ -486,6 +540,8 @@ public class TorrentPlayer {
     }
 
     public String formatHeader() {
+        if (player == null)
+            return "";
         return formatHeader(context, player.getCurrentPosition(), player.getDuration());
     }
 }
