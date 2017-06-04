@@ -34,6 +34,8 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_above="@+id/player_progress"
+        android:clipToPadding="false"
+        android:paddingBottom="45dp"
         tools:listitem="@layout/torrent_files_item" />
 
     <LinearLayout

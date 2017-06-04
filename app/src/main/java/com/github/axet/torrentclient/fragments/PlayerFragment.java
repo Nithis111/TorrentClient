@@ -115,12 +115,19 @@ public class PlayerFragment extends Fragment implements MainActivity.TorrentFrag
             TextView folder = (TextView) view.findViewById(R.id.torrent_files_folder);
             TextView file = (TextView) view.findViewById(R.id.torrent_files_name);
             TextView archive = (TextView) view.findViewById(R.id.torrent_files_archive);
+            TextView archiveEnd = (TextView) view.findViewById(R.id.torrent_files_archive_end);
 
             if (f.file != null && f.index == 0) {
                 archive.setVisibility(View.VISIBLE);
                 archive.setText(FilenameUtils.getExtension(f.tor.file.getPath()));
             } else {
                 archive.setVisibility(View.GONE);
+            }
+            if (f.file != null && f.index == (f.count - 1)) {
+                archiveEnd.setVisibility(View.VISIBLE);
+                archiveEnd.setText(FilenameUtils.getExtension(f.tor.file.getPath()));
+            } else {
+                archiveEnd.setVisibility(View.GONE);
             }
 
             String s = f.getPath();
@@ -197,6 +204,9 @@ public class PlayerFragment extends Fragment implements MainActivity.TorrentFrag
 
         list.setAdapter(files);
 
+        MainApplication app = ((MainApplication) getContext().getApplicationContext());
+        player = app.openPlayer(t);
+
         update();
 
         return v;
@@ -209,9 +219,6 @@ public class PlayerFragment extends Fragment implements MainActivity.TorrentFrag
         empty.setVisibility(Libtorrent.metaTorrent(t) ? View.GONE : View.VISIBLE);
 
         torrentName = Libtorrent.torrentName(t);
-
-        MainApplication app = ((MainApplication) getContext().getApplicationContext());
-        player = app.openPlayer(t);
 
         files.notifyDataSetChanged();
     }

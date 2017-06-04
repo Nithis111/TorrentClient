@@ -82,8 +82,24 @@ public class MainApplication extends com.github.axet.androidlibrary.app.MainAppl
     }
 
     public TorrentPlayer openPlayer(long t) {
+        if (player != null) {
+            if (player.torrent.t == t)
+                return player;
+            player.close();
+        }
         player = new TorrentPlayer(this, t);
         return player;
+    }
+
+    public void pausePlayer() {
+        player.pause();
+    }
+
+    public void closePlayer() {
+        if (player == null)
+            return;
+        player.close();
+        player = null;
     }
 
     public void createThread(Runnable run) {

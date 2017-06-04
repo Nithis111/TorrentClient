@@ -68,6 +68,16 @@
                     android:text="80%" />
             </LinearLayout>
         </LinearLayout>
+
+        <TextView
+            android:layout_marginTop="5dp"
+            android:id="@+id/torrent_files_archive_end"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="#38a738"
+            android:gravity="center"
+            android:textSize="12sp"
+            android:text=".rar" />
     </LinearLayout>
 
 </LinearLayout>

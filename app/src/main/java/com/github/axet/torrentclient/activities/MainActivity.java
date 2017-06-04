@@ -45,6 +45,7 @@ import com.github.axet.torrentclient.app.Drawer;
 import com.github.axet.torrentclient.app.EnginesManager;
 import com.github.axet.torrentclient.app.MainApplication;
 import com.github.axet.torrentclient.app.Storage;
+import com.github.axet.torrentclient.app.TorrentPlayer;
 import com.github.axet.torrentclient.dialogs.AddDialogFragment;
 import com.github.axet.torrentclient.dialogs.CreateDialogFragment;
 import com.github.axet.torrentclient.dialogs.OpenIntentDialogFragment;
@@ -93,6 +94,31 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
     BroadcastReceiver screenreceiver;
 
     EnginesManager engies;
+
+    BroadcastReceiver playerReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            String a = intent.getAction();
+            if (a.equals(TorrentPlayer.PLAYER_PROGRESS)) {
+                fab_panel.setVisibility(View.VISIBLE);
+                int pos = intent.getIntExtra("pos", 0);
+                int dur = intent.getIntExtra("dur", 0);
+                boolean play = intent.getBooleanExtra("play", false);
+                fab_status.setText(MainApplication.formatDuration(MainActivity.this, pos) + "/" + MainApplication.formatDuration(MainActivity.this, dur));
+                if (play)
+                    fab_play.setImageResource(R.drawable.ic_pause_24dp);
+                else
+                    fab_play.setImageResource(R.drawable.play);
+            }
+            if (a.equals(TorrentPlayer.PLAYER_STOP)) {
+                fab_panel.setVisibility(View.GONE);
+            }
+        }
+    };
+    View fab_panel;
+    android.support.design.widget.FloatingActionButton fab_play;
+    View fab_stop;
+    TextView fab_status;
 
     public static void startActivity(Context context) {
         Intent i = new Intent(context, MainActivity.class);
@@ -477,6 +503,30 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
                 }
             }
         });
+
+
+        fab_panel = findViewById(R.id.fab_panel);
+        fab_status = (TextView) findViewById(R.id.fab_status);
+        fab_play = (android.support.design.widget.FloatingActionButton) findViewById(R.id.fab_play);
+        fab_stop = findViewById(R.id.fab_stop);
+        fab_play.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                getApp().pausePlayer();
+            }
+        });
+        fab_stop.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                getApp().closePlayer();
+            }
+        });
+        fab_panel.setVisibility(View.GONE);
+
+        IntentFilter ff = new IntentFilter();
+        ff.addAction(TorrentPlayer.PLAYER_PROGRESS);
+        ff.addAction(TorrentPlayer.PLAYER_STOP);
+        registerReceiver(playerReceiver, ff);
     }
 
     @Override
@@ -555,6 +605,11 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
         if (screenreceiver != null) {
             unregisterReceiver(screenreceiver);
             screenreceiver = null;
+        }
+
+        if (playerReceiver != null) {
+            unregisterReceiver(playerReceiver);
+            playerReceiver = null;
         }
 
         final SharedPreferences shared = PreferenceManager.getDefaultSharedPreferences(MainActivity.this);

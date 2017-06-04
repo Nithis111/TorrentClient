@@ -1,8 +1,10 @@
 package com.github.axet.torrentclient.app;
 
 import android.content.Context;
+import android.content.Intent;
 import android.media.MediaPlayer;
 import android.net.Uri;
+import android.os.Handler;
 import android.os.ParcelFileDescriptor;
 
 import com.github.axet.torrentclient.services.TorrentContentProvider;
@@ -32,14 +34,28 @@ import libtorrent.Libtorrent;
 
 public class TorrentPlayer {
 
+    public static final String PLAYER_PROGRESS = TorrentPlayer.class.getCanonicalName() + ".PLAYER_PROGRESS";
+    public static final String PLAYER_STOP = TorrentPlayer.class.getCanonicalName() + ".PLAYER_STOP";
+
     Context context;
+    Storage.Torrent torrent;
     ArrayList<PlayerFile> ff = new ArrayList<>();
     public String torrentHash;
     public String torrentName;
-    Storage.Torrent torrent;
     Storage storage;
-    ArrayList<Decoder> decoders = new ArrayList<>();
     MediaPlayer player;
+    Runnable progress = new Runnable() {
+        @Override
+        public void run() {
+            Intent intent = new Intent(PLAYER_PROGRESS);
+            intent.putExtra("pos", player.getCurrentPosition());
+            intent.putExtra("dur", player.getDuration());
+            intent.putExtra("play", player.isPlaying());
+            context.sendBroadcast(intent);
+            handler.postDelayed(progress, 1000);
+        }
+    };
+    Handler handler = new Handler();
 
     public Decoder RAR = new Decoder() {
         @Override
@@ -158,10 +174,7 @@ public class TorrentPlayer {
         }
     };
 
-    {
-        decoders.add(RAR);
-        decoders.add(ZIP);
-    }
+    Decoder[] DECODERS = new Decoder[] {RAR, ZIP};
 
     public interface Decoder {
         public boolean supported(TorFile f);
@@ -170,8 +183,6 @@ public class TorrentPlayer {
     }
 
     public interface ArchiveFile {
-        public int index = 0;
-
         public String getPath();
 
         public InputStream open();
@@ -180,17 +191,18 @@ public class TorrentPlayer {
     }
 
     public static class TorFile {
-        public long index;
+        public long index; // libtorrent index
         public libtorrent.File file;
 
         public TorFile(long i, libtorrent.File f) {
-            this.file = f;
             this.index = i;
+            this.file = f;
         }
     }
 
     public class PlayerFile {
         public int index; // file index in dirrectory / archive
+        public int count; // directory count
         public Uri uri;
         public TorFile tor;
         public ArchiveFile file;
@@ -207,8 +219,9 @@ public class TorrentPlayer {
             uri = TorrentContentProvider.getUriForFile(torrentHash, ff.getPath());
         }
 
-        public PlayerFile index(int i) {
+        public PlayerFile index(int i, int count) {
             this.index = i;
+            this.count = count;
             return this;
         }
 
@@ -269,7 +282,7 @@ public class TorrentPlayer {
     }
 
     public Decoder getDecoder(TorFile f) {
-        for (Decoder d : decoders) {
+        for (Decoder d : DECODERS) {
             if (d.supported(f))
                 return d;
         }
@@ -285,13 +298,13 @@ public class TorrentPlayer {
         ff.clear();
         for (long i = 0; i < l; i++) {
             TorFile f = new TorFile(i, Libtorrent.torrentFiles(torrent.t, i));
-            ff.add(new PlayerFile(f).index((int) i));
+            ff.add(new PlayerFile(f).index((int) i, (int) l));
             Decoder d = getDecoder(f);
             if (d != null) {
                 ArrayList<ArchiveFile> list = d.list(f);
                 int q = 0;
                 for (ArchiveFile a : list) {
-                    ff.add(new PlayerFile(f, a).index(q++));
+                    ff.add(new PlayerFile(f, a).index(q++, list.size()));
                 }
             }
         }
@@ -316,13 +329,37 @@ public class TorrentPlayer {
 
     public void play(int i) {
         PlayerFile f = get(i);
-        if (player != null)
+        if (player != null) {
             player.release();
+        }
         player = MediaPlayer.create(context, f.uri);
+        if (player == null)
+            return;
         player.start();
+        progress.run();
+    }
+
+    public void pause() {
+        if (player.isPlaying()) {
+            player.pause();
+            handler.removeCallbacks(progress);
+        } else {
+            player.start();
+            progress.run();
+        }
+    }
+
+    public void stop() {
+        Intent intent = new Intent(PLAYER_STOP);
+        context.sendBroadcast(intent);
+        if (player != null) {
+            player.stop();
+        }
+        handler.removeCallbacks(progress);
     }
 
     public void close() {
+        stop();
         if (player != null) {
             player.release();
             player = null;

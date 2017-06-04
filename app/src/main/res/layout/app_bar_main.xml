@@ -46,7 +46,7 @@
             app:borderWidth="0dp" />
 
         <TextView
-            android:id="@+id/recording_player_status"
+            android:id="@+id/fab_status"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
