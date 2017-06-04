@@ -433,6 +433,7 @@ public class TorrentPlayer {
         final int i = ff.indexOf(f);
         if (player != null) {
             player.release();
+            player = null;
         }
         playing = i;
         playingUri = f.uri;
