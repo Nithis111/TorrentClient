@@ -42,6 +42,8 @@ public class PlayerFragment extends Fragment implements MainActivity.TorrentFrag
     TorrentPlayer player;
     TorrentPlayer.Receiver playerReceiver;
     ImageView play;
+    View prev;
+    View next;
     TextView playerPos;
     TextView playerDur;
     SeekBar seek;
@@ -170,10 +172,12 @@ public class PlayerFragment extends Fragment implements MainActivity.TorrentFrag
 
         empty = v.findViewById(R.id.torrent_files_empty);
 
-        View next = v.findViewById(R.id.player_next);
+        next = v.findViewById(R.id.player_next);
         next.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                if (player == null)
+                    return; // not yet open, no metadata
                 int i = player.getPlaying() + 1;
                 if (i >= player.getSize())
                     i = 0;
@@ -181,10 +185,12 @@ public class PlayerFragment extends Fragment implements MainActivity.TorrentFrag
                 files.notifyDataSetChanged();
             }
         });
-        View prev = v.findViewById(R.id.player_prev);
+        prev = v.findViewById(R.id.player_prev);
         prev.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                if (player == null)
+                    return; // not yet open, no metadata
                 int i = player.getPlaying() - 1;
                 if (i < 0)
                     i = player.getSize() - 1;
@@ -196,6 +202,8 @@ public class PlayerFragment extends Fragment implements MainActivity.TorrentFrag
         play.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                if (player == null)
+                    return; // not yet open, no metadata
                 if (player.getPlaying() == -1 && files.selected == -1) {
                     play(0);
                 } else if (player.isPlaying() || player.getPlaying() == files.selected || files.selected == -1) {
@@ -282,6 +290,7 @@ public class PlayerFragment extends Fragment implements MainActivity.TorrentFrag
             }
         }
         player = new TorrentPlayer(getContext(), app.getStorage(), t);
+        updatePlayer();
     }
 
     public void play(int i) {
@@ -309,6 +318,18 @@ public class PlayerFragment extends Fragment implements MainActivity.TorrentFrag
         torrentName = Libtorrent.torrentName(t);
 
         files.notifyDataSetChanged();
+
+        updatePlayer();
+    }
+
+    void updatePlayer() {
+        int i = player != null ? View.VISIBLE : View.GONE;
+        play.setVisibility(i);
+        prev.setVisibility(i);
+        next.setVisibility(i);
+        seek.setVisibility(i);
+        playerPos.setVisibility(i);
+        playerDur.setVisibility(i);
     }
 
     @Override
