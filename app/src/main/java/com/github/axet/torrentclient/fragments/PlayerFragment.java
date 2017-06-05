@@ -250,11 +250,16 @@ public class PlayerFragment extends Fragment implements MainActivity.TorrentFrag
                 String a = intent.getAction();
                 if (a.equals(TorrentPlayer.PLAYER_NEXT)) {
                     files.notifyDataSetChanged();
-                    postScroll();
+                    handler.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            if (player != null)
+                                list.smoothScrollToPosition(player.getPlaying());
+                        }
+                    });
                 }
                 if (a.equals(TorrentPlayer.PLAYER_STOP)) {
                     files.notifyDataSetChanged();
-                    postScroll();
                 }
                 if (a.equals(TorrentPlayer.PLAYER_PROGRESS)) {
                     int pos = intent.getIntExtra("pos", 0);
@@ -318,9 +323,10 @@ public class PlayerFragment extends Fragment implements MainActivity.TorrentFrag
             if (player == null) {
                 openPlayer(t);
             } else {
-                if (pendindBytesUpdate != Libtorrent.torrentPendingBytesCompleted(t)) {
+                long p = Libtorrent.torrentPendingBytesCompleted(t);
+                if (pendindBytesUpdate != p) {
                     player.update();
-                    pendindBytesUpdate = Libtorrent.torrentPendingBytesCompleted(t);
+                    pendindBytesUpdate = p;
                 }
             }
         }
@@ -350,16 +356,9 @@ public class PlayerFragment extends Fragment implements MainActivity.TorrentFrag
             }
             player = null;
         }
-        playerReceiver.close();
-    }
-
-    void postScroll() {
-        handler.post(new Runnable() {
-            @Override
-            public void run() {
-                if (player != null)
-                    list.smoothScrollToPosition(player.getPlaying());
-            }
-        });
+        if (playerReceiver != null) {
+            playerReceiver.close();
+            playerReceiver = null;
+        }
     }
 }
