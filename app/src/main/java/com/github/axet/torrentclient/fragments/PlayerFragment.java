@@ -1,9 +1,7 @@
 package com.github.axet.torrentclient.fragments;
 
-import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
@@ -27,7 +25,6 @@ import com.github.axet.torrentclient.app.TorrentPlayer;
 import org.apache.commons.io.FilenameUtils;
 
 import java.io.File;
-import java.util.Comparator;
 import java.util.List;
 
 import libtorrent.Libtorrent;
@@ -39,6 +36,7 @@ public class PlayerFragment extends Fragment implements MainActivity.TorrentFrag
     View empty;
     Files files;
     String torrentName;
+    long pendindBytesUpdate; // update every new byte
     TorrentPlayer player;
     TorrentPlayer.Receiver playerReceiver;
     ImageView play;
@@ -254,6 +252,10 @@ public class PlayerFragment extends Fragment implements MainActivity.TorrentFrag
                     files.notifyDataSetChanged();
                     postScroll();
                 }
+                if (a.equals(TorrentPlayer.PLAYER_STOP)) {
+                    files.notifyDataSetChanged();
+                    postScroll();
+                }
                 if (a.equals(TorrentPlayer.PLAYER_PROGRESS)) {
                     int pos = intent.getIntExtra("pos", 0);
                     int dur = intent.getIntExtra("dur", 0);
@@ -281,6 +283,8 @@ public class PlayerFragment extends Fragment implements MainActivity.TorrentFrag
         MainApplication app = ((MainApplication) getContext().getApplicationContext());
         if (player != null) {
             player.close();
+            if (player == app.player)
+                app.player = null;
         }
         if (app.player != null) {
             if (app.player.getTorrent() == t) {
@@ -311,8 +315,13 @@ public class PlayerFragment extends Fragment implements MainActivity.TorrentFrag
         empty.setVisibility(Libtorrent.metaTorrent(t) ? View.GONE : View.VISIBLE);
 
         if (Libtorrent.metaTorrent(t)) {
-            if (Libtorrent.torrentPendingBytesLength(t) != Libtorrent.torrentPendingBytesCompleted(t) || player == null || player.getPlaying() == -1) {
+            if (player == null) {
                 openPlayer(t);
+            } else {
+                if (pendindBytesUpdate != Libtorrent.torrentPendingBytesCompleted(t)) {
+                    player.update();
+                    pendindBytesUpdate = Libtorrent.torrentPendingBytesCompleted(t);
+                }
             }
         }
         torrentName = Libtorrent.torrentName(t);

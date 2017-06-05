@@ -463,15 +463,16 @@ public class TorrentPlayer {
         progress.run();
     }
 
-    public void next(int next) {
-        if (next >= ff.size()) {
-            next = 0;
-        }
-        final int n = next;
+    public void next(final int next) {
         handler.removeCallbacks(this.next);
         this.next = new Runnable() {
             @Override
             public void run() {
+                int n = next;
+                if (n >= ff.size()) {
+                    stop();
+                    return; // n = 0;
+                }
                 play(n);
             }
         };
@@ -537,6 +538,8 @@ public class TorrentPlayer {
     }
 
     public Uri getUri() {
+        if (player == null)
+            return null;
         if (playingUri == null)
             return null;
         Uri.Builder b = playingUri.buildUpon();
