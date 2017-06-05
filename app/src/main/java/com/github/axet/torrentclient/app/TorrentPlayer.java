@@ -424,12 +424,12 @@ public class TorrentPlayer {
         return null;
     }
 
-    public void open(Uri uri) {
+    public boolean open(Uri uri) {
         TorrentPlayer.PlayerFile f = find(uri);
-        open(f);
+        return open(f);
     }
 
-    public void open(PlayerFile f) {
+    public boolean open(PlayerFile f) {
         final int i = ff.indexOf(f);
         if (player != null) {
             player.release();
@@ -443,7 +443,7 @@ public class TorrentPlayer {
             player = MediaPlayer.create(context, f.uri);
         if (player == null) {
             next(i + 1);
-            return;
+            return false;
         }
         player.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
             @Override
@@ -452,11 +452,13 @@ public class TorrentPlayer {
             }
         });
         notifyPlayer();
+        return true;
     }
 
     public void play(final int i) {
         PlayerFile f = get(i);
-        open(f);
+        if (!open(f))
+            return;
         player.start();
         progress.run();
     }
@@ -513,7 +515,10 @@ public class TorrentPlayer {
             player.release();
             player = null;
         }
-        context.unregisterReceiver(receiver);
+        if (receiver != null) {
+            context.unregisterReceiver(receiver);
+            receiver = null;
+        }
     }
 
     public long getTorrent() {
@@ -521,6 +526,8 @@ public class TorrentPlayer {
     }
 
     public void notifyPlayer() {
+        if (player == null)
+            return;
         Intent intent = new Intent(PLAYER_PROGRESS);
         intent.putExtra("t", torrent.t);
         intent.putExtra("pos", player.getCurrentPosition());
@@ -530,6 +537,8 @@ public class TorrentPlayer {
     }
 
     public Uri getUri() {
+        if (playingUri == null)
+            return null;
         Uri.Builder b = playingUri.buildUpon();
         b.appendQueryParameter("t", "" + player.getCurrentPosition());
         return b.build();

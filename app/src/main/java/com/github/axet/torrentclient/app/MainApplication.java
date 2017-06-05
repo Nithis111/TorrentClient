@@ -101,7 +101,8 @@ public class MainApplication extends com.github.axet.androidlibrary.app.MainAppl
             if (player != null)
                 player.close();
             player = new TorrentPlayer(this, getStorage(), t.t);
-            player.open(b.build());
+            if (!player.open(b.build()))
+                return;
             player.seek(q);
         }
     }
@@ -136,10 +137,13 @@ public class MainApplication extends com.github.axet.androidlibrary.app.MainAppl
 
     public void playerSave(SharedPreferences.Editor edit) {
         if (player != null) {
-            edit.putString(MainApplication.PREFERENCE_PLAYER, player.getUri().toString());
-        } else {
-            edit.remove(MainApplication.PREFERENCE_PLAYER);
+            Uri uri = player.getUri();
+            if (uri != null) {
+                edit.putString(MainApplication.PREFERENCE_PLAYER, uri.toString());
+                return;
+            }
         }
+        edit.remove(MainApplication.PREFERENCE_PLAYER);
     }
 
     public void createThread(Runnable run) {

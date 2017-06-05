@@ -175,7 +175,10 @@ public class TorrentService extends Service {
 
         showNotificationAlarm(false, new Intent());
 
-        unregisterReceiver(receiver);
+        if (receiver != null) {
+            unregisterReceiver(receiver);
+            receiver = null;
+        }
     }
 
     Notification buildNotification(String title, String player, boolean playing) {
