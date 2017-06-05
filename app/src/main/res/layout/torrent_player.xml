@@ -12,13 +12,6 @@
         android:layout_height="wrap_content"
         android:orientation="vertical">
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:padding="5dp"
-            android:text="Player files is empty, please download torrent first" />
-
         <Button
             android:id="@+id/torrent_files_metadata"
             android:layout_width="wrap_content"
@@ -85,18 +78,21 @@
             android:id="@+id/player_pos"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_gravity="center"
             android:text="00:00" />
 
         <SeekBar
             android:id="@+id/player_seek"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
+            android:layout_gravity="center"
             android:layout_weight="1" />
 
         <TextView
             android:id="@+id/player_dur"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_gravity="center"
             android:text="16:00" />
     </LinearLayout>
 
