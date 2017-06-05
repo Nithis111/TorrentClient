@@ -4,9 +4,11 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.SharedPreferences;
 import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Handler;
+import android.support.v7.preference.PreferenceManager;
 
 import com.github.axet.torrentclient.services.TorrentContentProvider;
 
@@ -556,5 +558,47 @@ public class TorrentPlayer {
         if (player == null)
             return "";
         return formatHeader(context, player.getCurrentPosition(), player.getDuration());
+    }
+
+    public static TorrentPlayer load(Context context, Storage storage) {
+        TorrentPlayer player = null;
+        final SharedPreferences shared = PreferenceManager.getDefaultSharedPreferences(context);
+        String uri = shared.getString(MainApplication.PREFERENCE_PLAYER, "");
+        if (!uri.isEmpty()) {
+            Uri u = Uri.parse(uri);
+            String p = u.getPath();
+            String[] pp = p.split("/");
+            String hash = pp[1];
+            String v = u.getQueryParameter("t");
+            int q = Integer.parseInt(v);
+            Uri.Builder b = u.buildUpon();
+            b.clearQuery();
+            Storage.Torrent t = storage.find(hash);
+            if (t == null)
+                return player;
+            player = new TorrentPlayer(context, storage, t.t);
+            if (!player.open(b.build()))
+                return player;
+            player.seek(q);
+        }
+        return player;
+    }
+
+    public static void save(Context context, TorrentPlayer player) {
+        final SharedPreferences shared = PreferenceManager.getDefaultSharedPreferences(context);
+        SharedPreferences.Editor edit = shared.edit();
+        save(player, edit);
+        edit.commit();
+    }
+
+    public static void save(TorrentPlayer player, SharedPreferences.Editor edit) {
+        if (player != null) {
+            Uri uri = player.getUri();
+            if (uri != null) {
+                edit.putString(MainApplication.PREFERENCE_PLAYER, uri.toString());
+                return;
+            }
+        }
+        edit.remove(MainApplication.PREFERENCE_PLAYER);
     }
 }

@@ -207,7 +207,7 @@ public class PlayerFragment extends Fragment implements MainActivity.TorrentFrag
                 } else if (player.isPlaying() || player.getPlaying() == files.selected || files.selected == -1) {
                     player.pause();
                     MainApplication app = ((MainApplication) getContext().getApplicationContext());
-                    app.playerSave();
+                    TorrentPlayer.save(getContext(), app.player);
                 } else {
                     play(files.selected);
                 }

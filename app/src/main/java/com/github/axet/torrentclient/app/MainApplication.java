@@ -83,59 +83,6 @@ public class MainApplication extends com.github.axet.androidlibrary.app.MainAppl
         context.setTheme(getUserTheme());
     }
 
-    public void playerLoad() {
-        final SharedPreferences shared = PreferenceManager.getDefaultSharedPreferences(this);
-        String uri = shared.getString(MainApplication.PREFERENCE_PLAYER, "");
-        if (!uri.isEmpty()) {
-            Uri u = Uri.parse(uri);
-            String p = u.getPath();
-            String[] pp = p.split("/");
-            String hash = pp[1];
-            String v = u.getQueryParameter("t");
-            int q = Integer.parseInt(v);
-            Uri.Builder b = u.buildUpon();
-            b.clearQuery();
-            Storage.Torrent t = storage.find(hash);
-            if (t == null)
-                return;
-            if (player != null)
-                player.close();
-            player = new TorrentPlayer(this, getStorage(), t.t);
-            if (!player.open(b.build()))
-                return;
-            player.seek(q);
-        }
-    }
-
-    public void pausePlayer() {
-        player.pause();
-    }
-
-    public void closePlayer() {
-        if (player == null)
-            return;
-        player.close();
-        player = null;
-    }
-
-    public void playerSave() {
-        final SharedPreferences shared = PreferenceManager.getDefaultSharedPreferences(this);
-        SharedPreferences.Editor edit = shared.edit();
-        playerSave(edit);
-        edit.commit();
-    }
-
-    public void playerSave(SharedPreferences.Editor edit) {
-        if (player != null) {
-            Uri uri = player.getUri();
-            if (uri != null) {
-                edit.putString(MainApplication.PREFERENCE_PLAYER, uri.toString());
-                return;
-            }
-        }
-        edit.remove(MainApplication.PREFERENCE_PLAYER);
-    }
-
     public void createThread(Runnable run) {
         synchronized (initArray) {
             if (run != null)
@@ -177,7 +124,7 @@ public class MainApplication extends com.github.axet.androidlibrary.app.MainAppl
             filter.addAction(Intent.ACTION_PACKAGE_RESTARTED);
             registerReceiver(savestate, filter);
         }
-        playerLoad();
+        player = TorrentPlayer.load(this, storage);
     }
 
     public void close() {
@@ -202,21 +149,21 @@ public class MainApplication extends com.github.axet.androidlibrary.app.MainAppl
             unregisterReceiver(savestate);
             savestate = null;
         }
-        playerSave();
+        TorrentPlayer.save(this, player);
     }
 
     @Override
     public void onTerminate() {
         super.onTerminate();
         Log.d(TAG, "onTerminate");
-        playerSave();
+        TorrentPlayer.save(this, player);
     }
 
     @Override
     public void onLowMemory() {
         super.onLowMemory();
         Log.d(TAG, "onLowMemory");
-        playerSave();
+        TorrentPlayer.save(this, player);
     }
 
     public static String onTrimString(int level) {
@@ -243,7 +190,7 @@ public class MainApplication extends com.github.axet.androidlibrary.app.MainAppl
     public void onTrimMemory(int level) {
         super.onTrimMemory(level);
         Log.d(TAG, "onTrimMemory: " + onTrimString(level));
-        playerSave();
+        TorrentPlayer.save(this, player);
     }
 
     public static int getTheme(Context context, int light, int dark) {
