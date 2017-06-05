@@ -76,9 +76,9 @@ public class TorrentDialogFragment extends DialogFragment implements MainActivit
         public CharSequence getPageTitle(int position) {
             switch (position) {
                 case 0:
-                    return "Player";
+                    return context.getString(R.string.tab_player);
                 case 1:
-                    return "Details";
+                    return context.getString(R.string.tab_details);
                 default:
                     return "EMPTY";
             }
