@@ -270,7 +270,6 @@ public class Drawer implements com.mikepenz.materialdrawer.Drawer.OnDrawerItemCl
                                     dialog.cancel();
 
                                     engines.remove(search);
-                                    search.close();
 
                                     engines.save();
                                     updateManager();

@@ -9,6 +9,7 @@ import android.graphics.Color;
 import android.os.AsyncTask;
 import android.os.Handler;
 import android.os.Looper;
+import android.os.Message;
 import android.preference.PreferenceManager;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.widget.AppCompatImageButton;
@@ -749,6 +750,10 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
     public void close() {
         final SharedPreferences shared = PreferenceManager.getDefaultSharedPreferences(context);
         shared.unregisterOnSharedPreferenceChangeListener(this);
+        for (DownloadImageTask t : downloads) {
+            t.cancel(true);
+        }
+        downloads.clear();
     }
 
     @Override
@@ -1019,6 +1024,8 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         web.setInject(script);
         web.setInjectPost(script_post);
         web.addJavascriptInterface(exec, "torrentclient");
+        web.getSettings().setAllowFileAccess(true);
+        web.getSettings().setJavaScriptCanOpenWindowsAutomatically(true);
         // Uncaught SecurityError: Failed to read the 'cookie' property from 'Document': Cookies are disabled inside 'data:' URLs.
         // called when page loaded with loadData()
         if (html == null)

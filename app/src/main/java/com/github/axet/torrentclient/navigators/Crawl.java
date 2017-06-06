@@ -382,8 +382,14 @@ public class Crawl extends Search {
         long now = System.currentTimeMillis();
         for (String key : crawls.keySet()) {
             State next = crawls.get(key);
-            if (next.end && next.last + REFRESH_CRAWL > now)
-                continue;
+            if (next.end) {
+                if (next.last + REFRESH_CRAWL > now) {
+                    continue;
+                } else {
+                    if (next.next == null) // if we reach the end, and here is no crawl in progress reset page counter
+                        next.page = 0;
+                }
+            }
             if (next.last < last) {
                 s = next;
                 last = next.last;
@@ -397,13 +403,23 @@ public class Crawl extends Search {
         }
 
         progressFrame.setVisibility(View.VISIBLE);
-        progressStatus.setText("" + db.count());
+        progressStatus.setText("" + s.page);
 
         final State ss = s;
         thread = new Thread(new Runnable() {
             @Override
             public void run() {
-                crawlLoad(ss, crawlDelay);
+                try {
+                    crawlLoad(ss, crawlDelay);
+                } catch (RuntimeException e) {
+                    post(e);
+                }
+                handler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        progressStatus.setText("" + ss.page);
+                    }
+                });
             }
         });
         thread.start();
@@ -471,7 +487,7 @@ public class Crawl extends Search {
             handler.post(done);
     }
 
-    void crawlList(State state, String url, String html) {
+    void crawlList(final State state, String url, String html) {
         String select = state.s.get("list");
 
         Document doc = Jsoup.parse(html);
@@ -507,13 +523,6 @@ public class Crawl extends Search {
         if (next == null) {
             state.end = true;
         }
-
-        handler.post(new Runnable() {
-            @Override
-            public void run() {
-                progressStatus.setText("" + db.count());
-            }
-        });
 
         state.last = System.currentTimeMillis();
         state.page++;
@@ -598,7 +607,7 @@ public class Crawl extends Search {
 
         next = null;
         nextType = null;
-        nextSearch = s;
+        nextSearch = engine.getMap("crawl");
 
         notifyDataSetChanged();
 
