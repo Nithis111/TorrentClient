@@ -19,7 +19,6 @@ import java.io.InputStream;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Enumeration;
@@ -37,30 +36,6 @@ public class TorrentPlayer {
     public static final String PLAYER_PROGRESS = TorrentPlayer.class.getCanonicalName() + ".PLAYER_PROGRESS";
     public static final String PLAYER_STOP = TorrentPlayer.class.getCanonicalName() + ".PLAYER_STOP";
     public static final String PLAYER_PAUSE = TorrentPlayer.class.getCanonicalName() + ".PLAYER_PAUSE";
-
-    public static TorrentPlayer load(Context context, Storage storage) {
-        TorrentPlayer player = null;
-        final SharedPreferences shared = PreferenceManager.getDefaultSharedPreferences(context);
-        String uri = shared.getString(MainApplication.PREFERENCE_PLAYER, "");
-        if (!uri.isEmpty()) {
-            Uri u = Uri.parse(uri);
-            String p = u.getPath();
-            String[] pp = p.split("/");
-            String hash = pp[1];
-            String v = u.getQueryParameter("t");
-            int q = Integer.parseInt(v);
-            Uri.Builder b = u.buildUpon();
-            b.clearQuery();
-            Storage.Torrent t = storage.find(hash);
-            if (t == null)
-                return player;
-            player = new TorrentPlayer(context, storage, t.t);
-            if (!player.open(b.build()))
-                return player;
-            player.seek(q);
-        }
-        return player;
-    }
 
     public static void save(Context context, TorrentPlayer player) {
         final SharedPreferences shared = PreferenceManager.getDefaultSharedPreferences(context);
@@ -153,6 +128,105 @@ public class TorrentPlayer {
         }
     }
 
+
+    public interface Decoder {
+        boolean supported(TorFile f);
+
+        ArrayList<ArchiveFile> list(TorFile f);
+    }
+
+    public interface ArchiveFile {
+        String getPath();
+
+        InputStream open();
+
+        long getLength();
+    }
+
+    public static class TorFile {
+        public long index; // libtorrent index
+        public libtorrent.File file;
+
+        public TorFile(long i, libtorrent.File f) {
+            this.index = i;
+            this.file = f;
+        }
+    }
+
+    public class PlayerFile {
+        public int index; // file index in dirrectory / archive
+        public int count; // directory count
+        public Uri uri;
+        public TorFile tor;
+        public ArchiveFile file;
+
+        public PlayerFile(TorFile t) {
+            this.tor = t;
+            uri = TorrentContentProvider.getUriForFile(torrentHash, t.file.getPath());
+        }
+
+        public PlayerFile(TorFile t, ArchiveFile f) {
+            this.tor = t;
+            this.file = f;
+            File ff = new File(tor.file.getPath(), file.getPath());
+            uri = TorrentContentProvider.getUriForFile(torrentHash, ff.getPath());
+        }
+
+        public PlayerFile index(int i, int count) {
+            this.index = i;
+            this.count = count;
+            return this;
+        }
+
+        public File getFile() {
+            if (file != null) {
+                return new File(torrent.path, file.getPath());
+            }
+            return new File(torrent.path, tor.file.getPath());
+        }
+
+        public String getPath() {
+            if (file != null) {
+                return new File(tor.file.getPath(), file.getPath()).toString();
+            }
+            return tor.file.getPath();
+        }
+
+        public String getName() {
+            if (file != null) {
+                return new File(file.getPath()).getName();
+            }
+            return new File(tor.file.getPath()).getName();
+        }
+
+        public long getLength() {
+            if (file != null)
+                return file.getLength();
+            return tor.file.getLength();
+        }
+
+        public boolean isLoaded() {
+            return tor.file.getBytesCompleted() == tor.file.getLength();
+        }
+
+        public int getPercent() {
+            return (int) (tor.file.getBytesCompleted() * 100 / tor.file.getLength());
+        }
+
+        public InputStream open() {
+            if (file != null) {
+                return file.open();
+            }
+            try {
+                final File local = new File(torrent.path, tor.file.getPath());
+                FileInputStream is = new FileInputStream(local);
+                return is;
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
     Context context;
     Storage.Torrent torrent;
     ArrayList<PlayerFile> ff = new ArrayList<>();
@@ -160,7 +234,7 @@ public class TorrentPlayer {
     public String torrentName;
     Storage storage;
     MediaPlayer player;
-    int playing = -1;
+    int playingIndex = -1;
     Uri playingUri;
     Runnable next;
     Runnable progress = new Runnable() {
@@ -302,104 +376,6 @@ public class TorrentPlayer {
 
     Decoder[] DECODERS = new Decoder[]{RAR, ZIP};
 
-    public interface Decoder {
-        boolean supported(TorFile f);
-
-        ArrayList<ArchiveFile> list(TorFile f);
-    }
-
-    public interface ArchiveFile {
-        String getPath();
-
-        InputStream open();
-
-        long getLength();
-    }
-
-    public static class TorFile {
-        public long index; // libtorrent index
-        public libtorrent.File file;
-
-        public TorFile(long i, libtorrent.File f) {
-            this.index = i;
-            this.file = f;
-        }
-    }
-
-    public class PlayerFile {
-        public int index; // file index in dirrectory / archive
-        public int count; // directory count
-        public Uri uri;
-        public TorFile tor;
-        public ArchiveFile file;
-
-        public PlayerFile(TorFile t) {
-            this.tor = t;
-            uri = TorrentContentProvider.getUriForFile(torrentHash, t.file.getPath());
-        }
-
-        public PlayerFile(TorFile t, ArchiveFile f) {
-            this.tor = t;
-            this.file = f;
-            File ff = new File(tor.file.getPath(), file.getPath());
-            uri = TorrentContentProvider.getUriForFile(torrentHash, ff.getPath());
-        }
-
-        public PlayerFile index(int i, int count) {
-            this.index = i;
-            this.count = count;
-            return this;
-        }
-
-        public File getFile() {
-            if (file != null) {
-                return new File(torrent.path, file.getPath());
-            }
-            return new File(torrent.path, tor.file.getPath());
-        }
-
-        public String getPath() {
-            if (file != null) {
-                return new File(tor.file.getPath(), file.getPath()).toString();
-            }
-            return tor.file.getPath();
-        }
-
-        public String getName() {
-            if (file != null) {
-                return new File(file.getPath()).getName();
-            }
-            return new File(tor.file.getPath()).getName();
-        }
-
-        public long getLength() {
-            if (file != null)
-                return file.getLength();
-            return tor.file.getLength();
-        }
-
-        public boolean isLoaded() {
-            return tor.file.getBytesCompleted() == tor.file.getLength();
-        }
-
-        public int getPercent() {
-            return (int) (tor.file.getBytesCompleted() * 100 / tor.file.getLength());
-        }
-
-        public InputStream open() {
-            if (file != null) {
-                return file.open();
-            }
-            try {
-                final File local = new File(torrent.path, tor.file.getPath());
-                FileInputStream is = new FileInputStream(local);
-                return is;
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        }
-    }
-
     public TorrentPlayer(Context context, Storage storage, long t) {
         this.handler = new Handler(context.getMainLooper());
         this.context = context;
@@ -453,7 +429,7 @@ public class TorrentPlayer {
     }
 
     public int getPlaying() {
-        return playing;
+        return playingIndex;
     }
 
     public PlayerFile get(int i) {
@@ -480,7 +456,7 @@ public class TorrentPlayer {
             player.release();
             player = null;
         }
-        playing = i;
+        playingIndex = i;
         playingUri = f.uri;
         Intent intent = new Intent(PLAYER_NEXT);
         context.sendBroadcast(intent);
@@ -513,6 +489,7 @@ public class TorrentPlayer {
         this.next = new Runnable() {
             @Override
             public void run() {
+                TorrentPlayer.this.next = null;
                 int n = next;
                 if (n >= ff.size()) {
                     stop();
@@ -555,7 +532,8 @@ public class TorrentPlayer {
         }
         handler.removeCallbacks(progress);
         handler.removeCallbacks(next);
-        playing = -1;
+        next = null;
+        playingIndex = -1;
         playingUri = null;
     }
 
@@ -582,7 +560,7 @@ public class TorrentPlayer {
         intent.putExtra("t", torrent.t);
         intent.putExtra("pos", player.getCurrentPosition());
         intent.putExtra("dur", player.getDuration());
-        intent.putExtra("play", player.isPlaying());
+        intent.putExtra("play", player.isPlaying() || next != null);
         context.sendBroadcast(intent);
     }
 
