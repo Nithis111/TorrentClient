@@ -569,15 +569,31 @@ public class Crawl extends Search {
         }
         gridUpdate();
 
-        Cursor c = index.getWordMatches(engine.getName(), search, null);
-        if (c != null) {
-            while (c.moveToNext()) {
-                long id = getLong(c, CrawlDbIndexHelper.COL_CRAWL);
-                SearchItem item = db.get(id);
-                if (item != null)
-                    this.list.add(item);
+        String[] qq = search.split("\\s+");
+
+        TreeSet<Long> prev = null;
+        for (String q : qq) {
+            TreeSet<Long> ids = new TreeSet<>();
+            Cursor c = index.getWordMatches(engine.getName(), q, null);
+            if (c != null) {
+                while (c.moveToNext()) {
+                    long id = getLong(c, CrawlDbIndexHelper.COL_CRAWL);
+                    if (prev != null) {
+                        if (prev.contains(id)) {
+                            ids.add(id);
+                        }
+                    } else {
+                        ids.add(id);
+                    }
+                }
+                c.close();
             }
-            c.close();
+            prev = ids;
+        }
+        for (Long id : prev) {
+            SearchItem item = db.get(id);
+            if (item != null)
+                this.list.add(item);
         }
 
         next = null;
