@@ -4,7 +4,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    tools:listitem="@layout/torrent_files_item">
+    tools:listitem="@layout/torrent_player_item">
 
     <LinearLayout
         android:id="@+id/torrent_files_empty"

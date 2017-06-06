@@ -38,35 +38,55 @@ public class TorrentPlayer {
     public static final String PLAYER_STOP = TorrentPlayer.class.getCanonicalName() + ".PLAYER_STOP";
     public static final String PLAYER_PAUSE = TorrentPlayer.class.getCanonicalName() + ".PLAYER_PAUSE";
 
-    Context context;
-    Storage.Torrent torrent;
-    ArrayList<PlayerFile> ff = new ArrayList<>();
-    public String torrentHash;
-    public String torrentName;
-    Storage storage;
-    MediaPlayer player;
-    int playing = -1;
-    Uri playingUri;
-    Runnable next;
-    Runnable progress = new Runnable() {
-        @Override
-        public void run() {
-            notifyPlayer();
-            handler.removeCallbacks(progress);
-            handler.postDelayed(progress, 1000);
+    public static TorrentPlayer load(Context context, Storage storage) {
+        TorrentPlayer player = null;
+        final SharedPreferences shared = PreferenceManager.getDefaultSharedPreferences(context);
+        String uri = shared.getString(MainApplication.PREFERENCE_PLAYER, "");
+        if (!uri.isEmpty()) {
+            Uri u = Uri.parse(uri);
+            String p = u.getPath();
+            String[] pp = p.split("/");
+            String hash = pp[1];
+            String v = u.getQueryParameter("t");
+            int q = Integer.parseInt(v);
+            Uri.Builder b = u.buildUpon();
+            b.clearQuery();
+            Storage.Torrent t = storage.find(hash);
+            if (t == null)
+                return player;
+            player = new TorrentPlayer(context, storage, t.t);
+            if (!player.open(b.build()))
+                return player;
+            player.seek(q);
         }
-    };
-    Handler handler;
+        return player;
+    }
 
-    BroadcastReceiver receiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            String a = intent.getAction();
-            if (a.equals(PLAYER_PAUSE)) {
-                pause();
+    public static void save(Context context, TorrentPlayer player) {
+        final SharedPreferences shared = PreferenceManager.getDefaultSharedPreferences(context);
+        SharedPreferences.Editor edit = shared.edit();
+        save(player, edit);
+        edit.commit();
+    }
+
+    public static void save(TorrentPlayer player, SharedPreferences.Editor edit) {
+        if (player != null) {
+            Uri uri = player.getUri();
+            if (uri != null) {
+                edit.putString(MainApplication.PREFERENCE_PLAYER, uri.toString());
+                return;
             }
         }
-    };
+        edit.remove(MainApplication.PREFERENCE_PLAYER);
+    }
+
+    public static String formatHeader(Context context, int pos, int dur) {
+        String header = MainApplication.formatDuration(context, pos);
+        if (dur > 0)
+            header += "/" + MainApplication.formatDuration(context, dur);
+        return header;
+    }
+
 
     public static class SortPlayerFiles implements Comparator<PlayerFile> {
         @Override
@@ -133,12 +153,35 @@ public class TorrentPlayer {
         }
     }
 
-    public static String formatHeader(Context context, int pos, int dur) {
-        String header = MainApplication.formatDuration(context, pos);
-        if (dur > 0)
-            header += "/" + MainApplication.formatDuration(context, dur);
-        return header;
-    }
+    Context context;
+    Storage.Torrent torrent;
+    ArrayList<PlayerFile> ff = new ArrayList<>();
+    public String torrentHash;
+    public String torrentName;
+    Storage storage;
+    MediaPlayer player;
+    int playing = -1;
+    Uri playingUri;
+    Runnable next;
+    Runnable progress = new Runnable() {
+        @Override
+        public void run() {
+            notifyPlayer();
+            handler.removeCallbacks(progress);
+            handler.postDelayed(progress, 1000);
+        }
+    };
+    Handler handler;
+
+    BroadcastReceiver receiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            String a = intent.getAction();
+            if (a.equals(PLAYER_PAUSE)) {
+                pause();
+            }
+        }
+    };
 
     public Decoder RAR = new Decoder() {
         @Override
@@ -488,15 +531,19 @@ public class TorrentPlayer {
     }
 
     public void pause() {
-        if (player == null)
-            return;
-        if (player.isPlaying()) {
-            player.pause();
-            progress.run();
-            handler.removeCallbacks(progress);
-        } else {
-            player.start();
-            progress.run();
+        if (getPlaying() != -1) {
+            if (player == null) {
+                stop(); // clear next()
+                return;
+            }
+            if (player.isPlaying()) {
+                player.pause();
+                progress.run();
+                handler.removeCallbacks(progress);
+            } else {
+                player.start();
+                progress.run();
+            }
         }
     }
 
@@ -560,45 +607,4 @@ public class TorrentPlayer {
         return formatHeader(context, player.getCurrentPosition(), player.getDuration());
     }
 
-    public static TorrentPlayer load(Context context, Storage storage) {
-        TorrentPlayer player = null;
-        final SharedPreferences shared = PreferenceManager.getDefaultSharedPreferences(context);
-        String uri = shared.getString(MainApplication.PREFERENCE_PLAYER, "");
-        if (!uri.isEmpty()) {
-            Uri u = Uri.parse(uri);
-            String p = u.getPath();
-            String[] pp = p.split("/");
-            String hash = pp[1];
-            String v = u.getQueryParameter("t");
-            int q = Integer.parseInt(v);
-            Uri.Builder b = u.buildUpon();
-            b.clearQuery();
-            Storage.Torrent t = storage.find(hash);
-            if (t == null)
-                return player;
-            player = new TorrentPlayer(context, storage, t.t);
-            if (!player.open(b.build()))
-                return player;
-            player.seek(q);
-        }
-        return player;
-    }
-
-    public static void save(Context context, TorrentPlayer player) {
-        final SharedPreferences shared = PreferenceManager.getDefaultSharedPreferences(context);
-        SharedPreferences.Editor edit = shared.edit();
-        save(player, edit);
-        edit.commit();
-    }
-
-    public static void save(TorrentPlayer player, SharedPreferences.Editor edit) {
-        if (player != null) {
-            Uri uri = player.getUri();
-            if (uri != null) {
-                edit.putString(MainApplication.PREFERENCE_PLAYER, uri.toString());
-                return;
-            }
-        }
-        edit.remove(MainApplication.PREFERENCE_PLAYER);
-    }
 }

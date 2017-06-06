@@ -204,7 +204,7 @@ public class PlayerFragment extends Fragment implements MainActivity.TorrentFrag
                     return; // not yet open, no metadata
                 if (player.getPlaying() == -1 && files.selected == -1) {
                     play(0);
-                } else if (player.isPlaying() || player.getPlaying() == files.selected || files.selected == -1) {
+                } else if (player.isPlaying() || player.getPlaying() != files.selected || files.selected == -1) {
                     player.pause();
                     MainApplication app = ((MainApplication) getContext().getApplicationContext());
                     TorrentPlayer.save(getContext(), app.player);
@@ -249,6 +249,7 @@ public class PlayerFragment extends Fragment implements MainActivity.TorrentFrag
             public void onReceive(Context context, Intent intent) {
                 String a = intent.getAction();
                 if (a.equals(TorrentPlayer.PLAYER_NEXT)) {
+                    play.setImageResource(R.drawable.ic_pause_24dp);
                     files.notifyDataSetChanged();
                     handler.post(new Runnable() {
                         @Override
@@ -259,6 +260,7 @@ public class PlayerFragment extends Fragment implements MainActivity.TorrentFrag
                     });
                 }
                 if (a.equals(TorrentPlayer.PLAYER_STOP)) {
+                    play.setImageResource(R.drawable.play);
                     files.notifyDataSetChanged();
                 }
                 if (a.equals(TorrentPlayer.PLAYER_PROGRESS)) {
@@ -287,9 +289,10 @@ public class PlayerFragment extends Fragment implements MainActivity.TorrentFrag
     public void openPlayer(long t) {
         MainApplication app = ((MainApplication) getContext().getApplicationContext());
         if (player != null) {
-            player.close();
             if (player == app.player)
                 app.player = null;
+            player.close();
+            player = null;
         }
         if (app.player != null) {
             if (app.player.getTorrent() == t) {
@@ -317,10 +320,16 @@ public class PlayerFragment extends Fragment implements MainActivity.TorrentFrag
     public void update() {
         long t = getArguments().getLong("torrent");
 
-        empty.setVisibility(Libtorrent.metaTorrent(t) ? View.GONE : View.VISIBLE);
+        if (Libtorrent.metaTorrent(t)) {
+            empty.setVisibility(View.GONE);
+            list.setVisibility(View.VISIBLE);
+        } else {
+            empty.setVisibility(View.VISIBLE);
+            list.setVisibility(View.GONE);
+        }
 
         if (Libtorrent.metaTorrent(t)) {
-            if (player == null) {
+            if (player == null || player.getTorrent() != t) {
                 openPlayer(t);
             } else {
                 long p = Libtorrent.torrentPendingBytesCompleted(t);
@@ -350,10 +359,11 @@ public class PlayerFragment extends Fragment implements MainActivity.TorrentFrag
     @Override
     public void close() {
         MainApplication app = ((MainApplication) getContext().getApplicationContext());
-        if (player != null && app.player != null) {
-            if (app.player != player) {
-                player.close();
+        if (player != null) {
+            if (player == app.player) {
+                app.player = null;
             }
+            player.close();
             player = null;
         }
         if (playerReceiver != null) {
