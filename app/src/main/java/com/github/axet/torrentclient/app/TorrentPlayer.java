@@ -452,13 +452,15 @@ public class TorrentPlayer {
         Collections.sort(ff, new SortPlayerFiles());
         for (PlayerFile f : ff) {
             this.ff.add(f);
-            Decoder d = getDecoder(f.tor);
-            if (d != null) {
-                ArrayList<ArchiveFile> list = d.list(f.tor);
-                Collections.sort(list, new SortArchiveFiles());
-                int q = 0;
-                for (ArchiveFile a : list) {
-                    this.ff.add(new PlayerFile(f.tor, a).index(q++, list.size()));
+            if (f.tor.file.getBytesCompleted() == f.tor.file.getLength()) {
+                Decoder d = getDecoder(f.tor);
+                if (d != null) {
+                    ArrayList<ArchiveFile> list = d.list(f.tor);
+                    Collections.sort(list, new SortArchiveFiles());
+                    int q = 0;
+                    for (ArchiveFile a : list) {
+                        this.ff.add(new PlayerFile(f.tor, a).index(q++, list.size()));
+                    }
                 }
             }
         }
