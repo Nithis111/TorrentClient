@@ -116,7 +116,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
     ProgressBar footer_progress; // progress bar / button
     View footer_stop; // stop image
 
-    // load next data
+    // 'load more' button helpers
     Map<String, String> nextSearch;
     String next;
     String nextType;
@@ -1340,10 +1340,8 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
 
         updateFooterButtons();
 
-        if (list.size() > 0) {
-            // hide keyboard on search sucecful completed
-            InputMethodManager imm = (InputMethodManager) context.getSystemService(Context.INPUT_METHOD_SERVICE);
-            imm.hideSoftInputFromWindow(searchText.getWindowToken(), 0);
+        if (list.size() > 0) { // hide keyboard on search sucecful completed
+            hideKeyboard();
         }
 
         notifyDataSetChanged();
@@ -1494,5 +1492,10 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
     @Override
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
         http.update(context);
+    }
+
+    public void hideKeyboard() {
+        InputMethodManager imm = (InputMethodManager) context.getSystemService(Context.INPUT_METHOD_SERVICE);
+        imm.hideSoftInputFromWindow(searchText.getWindowToken(), 0);
     }
 }

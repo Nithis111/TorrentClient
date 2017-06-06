@@ -3,12 +3,17 @@ package com.github.axet.torrentclient.navigators;
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
+import android.database.DatabaseUtils;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.database.sqlite.SQLiteQueryBuilder;
 import android.provider.BaseColumns;
+import android.support.v4.text.TextUtilsCompat;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
 import android.widget.AbsListView;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
@@ -22,9 +27,11 @@ import com.github.axet.torrentclient.R;
 import com.github.axet.torrentclient.activities.MainActivity;
 import com.github.axet.torrentclient.app.SearchEngine;
 
+import org.apache.commons.codec.binary.StringUtils;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
+import org.jsoup.helper.StringUtil;
 import org.jsoup.nodes.Document;
 import org.jsoup.select.Elements;
 
@@ -38,6 +45,10 @@ import java.util.regex.Pattern;
 
 public class Crawl extends Search {
     public static final String TAG = Crawl.class.getSimpleName();
+
+    public static Locale EN = new Locale("en");
+
+    public static int REFRESH_CRAWL = 24 * 60 * 60 * 1000; // 1 day
 
     private static final String TEXT_TYPE = " TEXT";
     private static final String COMMA_SEP = ",";
@@ -66,6 +77,32 @@ public class Crawl extends Search {
                 return true;
         }
         return true;
+    }
+
+    public static String getString(Cursor c, String name) {
+        int i = c.getColumnIndex(name);
+        if (i == -1)
+            return null;
+        return c.getString(i);
+    }
+
+    public static Long getLong(Cursor c, String name) {
+        int i = c.getColumnIndex(name);
+        if (i == -1)
+            return null;
+        return c.getLong(i);
+    }
+
+    public static String strip(String s, String cc) {
+        for (char c : cc.toCharArray()) {
+            while (s.startsWith("" + c)) {
+                s = s.substring(1, s.length());
+            }
+            while (s.endsWith("" + c)) {
+                s = s.substring(1, s.length());
+            }
+        }
+        return s;
     }
 
     public static class CrawlEntry implements BaseColumns {
@@ -133,18 +170,15 @@ public class Crawl extends Search {
             return s;
         }
 
-        String getString(Cursor c, String name) {
-            int i = c.getColumnIndex(name);
-            if (i == -1)
-                return null;
-            return c.getString(i);
-        }
-
         public Cursor exist(String title) {
             String selection = CrawlEntry.COLUMN_TITLE + " = ?";
             String[] selectionArgs = new String[]{title};
             Cursor c = query(selection, selectionArgs, null);
             return c;
+        }
+
+        public long count() {
+            return DatabaseUtils.queryNumEntries(getReadableDatabase(), CrawlEntry.TABLE_NAME, null, null);
         }
 
         private Cursor query(String selection, String[] selectionArgs, String[] columns) {
@@ -164,11 +198,12 @@ public class Crawl extends Search {
         }
     }
 
-    public static class CrawlDbIndexHelper extends SQLiteOpenHelper {
+    public static class CrawlDbIndexHelper extends SQLiteOpenHelper { // https://developer.android.com/training/search/search.html#populate
         public static final int DATABASE_VERSION = 1;
         public static final String FTS_VIRTUAL_TABLE = "FTS";
         public static final String DATABASE_NAME = "crawl-index.db";
 
+        public static final String COL_ENGINE = "ENGINE";
         public static final String COL_WORD = "WORD";
         public static final String COL_CRAWL = "CRAWL_ID";
 
@@ -178,6 +213,7 @@ public class Crawl extends Search {
         public static final String FTS_TABLE_CREATE =
                 "CREATE VIRTUAL TABLE " + FTS_VIRTUAL_TABLE +
                         " USING fts3 (" +
+                        COL_ENGINE + ", " +
                         COL_WORD + ", " +
                         COL_CRAWL + ")";
 
@@ -200,17 +236,18 @@ public class Crawl extends Search {
             onCreate(db);
         }
 
-        public long addWord(String word, long definition) {
+        public long addWord(String engine, String word, long definition) {
             SQLiteDatabase db = getWritableDatabase();
             ContentValues initialValues = new ContentValues();
+            initialValues.put(COL_ENGINE, engine);
             initialValues.put(COL_WORD, word);
             initialValues.put(COL_CRAWL, definition);
             return db.insert(FTS_VIRTUAL_TABLE, null, initialValues);
         }
 
-        public Cursor getWordMatches(String query, String[] columns) {
-            String selection = COL_WORD + " MATCH ?";
-            String[] selectionArgs = new String[]{query + "*"};
+        public Cursor getWordMatches(String engine, String query, String[] columns) {
+            String selection = COL_ENGINE + " = ? AND " + COL_WORD + " MATCH ?";
+            String[] selectionArgs = new String[]{engine, query + "*"};
             return query(selection, selectionArgs, columns);
         }
 
@@ -308,8 +345,12 @@ public class Crawl extends Search {
         AbsListView.LayoutParams lp = new AbsListView.LayoutParams(p24, p24);
         progressFrame.addView(progressBar, lp);
         progressStatus = new TextView(context);
-        progressFrame.addView(progressStatus);
+        progressStatus.setTextSize(6);
+        FrameLayout.LayoutParams lp1 = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        lp1.gravity = Gravity.CENTER;
+        progressFrame.addView(progressStatus, lp1);
         toolbar.addView(progressFrame, 0, lp);
+        progressFrame.setVisibility(View.GONE);
 
         Map<String, String> crawls = engine.getMap("crawls");
         for (String key : crawls.keySet()) {
@@ -336,13 +377,33 @@ public class Crawl extends Search {
     }
 
     void crawlNextThread() {
+        long last = Long.MAX_VALUE;
+        State s = null;
+        long now = System.currentTimeMillis();
+        for (String key : crawls.keySet()) {
+            State next = crawls.get(key);
+            if (next.end && next.last + REFRESH_CRAWL > now)
+                continue;
+            if (next.last < last) {
+                s = next;
+                last = next.last;
+            }
+        }
+        if (s == null)
+            return;
+
         if (thread != null) {
             stop();
         }
+
+        progressFrame.setVisibility(View.VISIBLE);
+        progressStatus.setText("" + db.count());
+
+        final State ss = s;
         thread = new Thread(new Runnable() {
             @Override
             public void run() {
-                crawlNext();
+                crawlLoad(ss, crawlDelay);
             }
         });
         thread.start();
@@ -430,14 +491,14 @@ public class Crawl extends Search {
                     c.close();
                 }
             }
-            long id = db.addCrawl(state.name, item.title, item.image, item.details, item.date);
+            long id = db.addCrawl(engine.getName(), item.title, item.image, item.details, item.date);
             String[] ss = item.title.split("\\s+");
-            Locale en = new Locale("en");
             for (String s : ss) {
                 s = s.trim();
-                s = s.toLowerCase(en);
+                s = strip(s, "-,._()");
+                s = s.toLowerCase(EN);
                 if (isString(s))
-                    index.addWord(s, id);
+                    index.addWord(engine.getName(), s, id);
             }
             Log.d(TAG, "item " + item.title);
         }
@@ -447,24 +508,21 @@ public class Crawl extends Search {
             state.end = true;
         }
 
+        handler.post(new Runnable() {
+            @Override
+            public void run() {
+                progressStatus.setText("" + db.count());
+            }
+        });
+
+        state.last = System.currentTimeMillis();
         state.page++;
         state.next = next;
     }
 
-    public void crawlNext() {
-        long last = 0;
-        State s = null;
-        for (String key : crawls.keySet()) {
-            State next = crawls.get(key);
-            if (next.last <= last) {
-                s = next;
-                last = next.last;
-            }
-        }
-        crawlLoad(s, crawlDelay);
-    }
-
     public void stop() {
+        if (progressFrame != null)
+            progressFrame.setVisibility(View.GONE);
         if (thread != null) {
             thread.interrupt();
             try {
@@ -482,6 +540,8 @@ public class Crawl extends Search {
     public void close() {
         super.close();
         stop();
+        db.close();
+        index.close();
     }
 
     @Override
@@ -489,7 +549,7 @@ public class Crawl extends Search {
         handler.post(new Runnable() {
             @Override
             public void run() {
-                searchUI(s, search, done);
+                searchUI(s, search.toLowerCase(EN), done);
             }
         });
     }
@@ -509,17 +569,27 @@ public class Crawl extends Search {
         }
         gridUpdate();
 
-        this.list.clear();
-        Cursor c = index.getWordMatches(search, null);
-        if (c == null)
-            return;
-        while (c.moveToNext()) {
-            long id = c.getLong(1);
-            SearchItem item = db.get(id);
-            this.list.add(item);
+        Cursor c = index.getWordMatches(engine.getName(), search, null);
+        if (c != null) {
+            while (c.moveToNext()) {
+                long id = getLong(c, CrawlDbIndexHelper.COL_CRAWL);
+                SearchItem item = db.get(id);
+                if (item != null)
+                    this.list.add(item);
+            }
+            c.close();
         }
-        c.close();
+
+        next = null;
+        nextType = null;
+        nextSearch = s;
+
         notifyDataSetChanged();
+
+        hideKeyboard();
+
+        if (done != null)
+            done.run();
     }
 
     void dropCrawl(long id) {
