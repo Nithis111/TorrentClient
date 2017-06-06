@@ -1,0 +1,48 @@
+{
+  "version": 2,
+  "name": "abook-club.ru",
+  "home": {
+    "get": "http://abook-club.ru"
+  },
+  "news": {
+    "get": "http://abook-club.ru/club_news/#expand_all",
+    "list": ".entry",
+    "title": ".entry_header_full a",
+    "details": ".entry_header_full a:regex(.*href=\"([^\"]*)\".*)",
+    "date": ".entry_time:regex(.*,([^—]*).*)",
+    "next": ".audiobooks_addon span a[style*=bold]+a:regex(.*href=\"([^\"]*)\".*)"
+  },
+  "login": {
+    "details": "http://torrent.abook-club.ru/login.php",
+    "post": "http://torrent.abook-club.ru/takelogin.php",
+    "post_login": "username",
+    "post_password": "password",
+    "js": "if(document.querySelectorAll('a[href*=userdetails]').length==0) {\n  alert('Not Logged In');\n}"
+  },
+  "crawl": {
+    "get": "crawls",
+    "list": ".entry",
+    "title": ".entry_header_full a",
+    "details": ".entry_header_full a:regex(.*href=\"([^\"]*)\".*)",
+    "details_js": "var ee = document.querySelectorAll('a[href*=details]')\nfor(var i = 0; i < ee.length; i++) {\n  var e = ee[i];\n  e.href = e.href.replace('details.php', 'download.php')\n}",
+    "image": "img:regex([^>]*src=\"([^\"]*)\".*)",
+    "details_torrent": "a[href*=details]:regex(.*href=\"([^\"]*)\".*)",
+    "date": ".entry_time:regex(.*,([^—]*).*)",
+    "next": ".audiobooks_addon span a[style*=bold]+a:regex(.*href=\"([^\"]*)\".*)"
+  },
+  "crawls": {
+    "Asr": "http://abook-club.ru/asr_abooks/#expand_all",
+    "New": "http://abook-club.ru/new_abooks/#expand_all"
+  },
+  "top": {
+    "crawl": "tops"
+  },
+  "tops": {
+    "Recents": "date",
+    "Top": "downloads"
+  },
+  "search": {
+    "grid": "",
+    "js": "if(document.querySelectorAll('a.logged-in-as-uname').length==0) {\n  alert('Not Logged In');\n}"
+  }
+}

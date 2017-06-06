@@ -9,6 +9,7 @@ import android.graphics.Color;
 import android.os.AsyncTask;
 import android.os.Handler;
 import android.os.Looper;
+import android.os.Message;
 import android.preference.PreferenceManager;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.widget.AppCompatImageButton;
@@ -116,7 +117,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
     ProgressBar footer_progress; // progress bar / button
     View footer_stop; // stop image
 
-    // load next data
+    // 'load more' button helpers
     Map<String, String> nextSearch;
     String next;
     String nextType;
@@ -749,6 +750,10 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
     public void close() {
         final SharedPreferences shared = PreferenceManager.getDefaultSharedPreferences(context);
         shared.unregisterOnSharedPreferenceChangeListener(this);
+        for (DownloadImageTask t : downloads) {
+            t.cancel(true);
+        }
+        downloads.clear();
     }
 
     @Override
@@ -1019,6 +1024,8 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         web.setInject(script);
         web.setInjectPost(script_post);
         web.addJavascriptInterface(exec, "torrentclient");
+        web.getSettings().setAllowFileAccess(true);
+        web.getSettings().setJavaScriptCanOpenWindowsAutomatically(true);
         // Uncaught SecurityError: Failed to read the 'cookie' property from 'Document': Cookies are disabled inside 'data:' URLs.
         // called when page loaded with loadData()
         if (html == null)
@@ -1340,10 +1347,8 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
 
         updateFooterButtons();
 
-        if (list.size() > 0) {
-            // hide keyboard on search sucecful completed
-            InputMethodManager imm = (InputMethodManager) context.getSystemService(Context.INPUT_METHOD_SERVICE);
-            imm.hideSoftInputFromWindow(searchText.getWindowToken(), 0);
+        if (list.size() > 0) { // hide keyboard on search sucecful completed
+            hideKeyboard();
         }
 
         notifyDataSetChanged();
@@ -1494,5 +1499,10 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
     @Override
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
         http.update(context);
+    }
+
+    public void hideKeyboard() {
+        InputMethodManager imm = (InputMethodManager) context.getSystemService(Context.INPUT_METHOD_SERVICE);
+        imm.hideSoftInputFromWindow(searchText.getWindowToken(), 0);
     }
 }
