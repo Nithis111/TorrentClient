@@ -127,12 +127,14 @@ public class MainApplication extends com.github.axet.androidlibrary.app.MainAppl
         if (player == null) {
             final SharedPreferences shared = PreferenceManager.getDefaultSharedPreferences(this);
             String uri = shared.getString(MainApplication.PREFERENCE_PLAYER, "");
-            TorrentPlayer.State state = new TorrentPlayer.State(uri);
-            Storage.Torrent t = storage.find(state.hash);
-            if (t != null) {
-                TorrentPlayer player = new TorrentPlayer(this, storage, t.t);
-                if (player.open(state.uri))
-                    player.seek(state.t);
+            if (!uri.isEmpty()) {
+                TorrentPlayer.State state = new TorrentPlayer.State(uri);
+                Storage.Torrent t = storage.find(state.hash);
+                if (t != null) {
+                    TorrentPlayer player = new TorrentPlayer(this, storage, t.t);
+                    if (player.open(state.uri))
+                        player.seek(state.t);
+                }
             }
         }
     }

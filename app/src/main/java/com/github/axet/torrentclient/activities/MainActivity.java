@@ -593,6 +593,7 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
 
         if (engies != null) {
             engies.save();
+            engies.close();
             engies = null;
         }
 
@@ -1073,7 +1074,7 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
         return engies;
     }
 
-    public void show(NavigatorInterface set) {
+    public void show(NavigatorInterface nav) {
         Adapter a = list.getAdapter();
         if (a != null && a instanceof HeaderGridView.HeaderViewGridAdapter) {
             a = ((HeaderGridView.HeaderViewGridAdapter) a).getWrappedAdapter();
@@ -1085,13 +1086,13 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
 
         empty.setVisibility(View.GONE);
 
-        if (set instanceof Torrents) {
+        if (nav instanceof Torrents) {
             list.setEmptyView(empty);
         } else {
             list.setEmptyView(null);
         }
 
-        set.install(list);
+        nav.install(list);
     }
 
     public Drawer getDrawer() {
