@@ -124,22 +124,15 @@ public class MainApplication extends com.github.axet.androidlibrary.app.MainAppl
             filter.addAction(Intent.ACTION_PACKAGE_RESTARTED);
             registerReceiver(savestate, filter);
         }
-        final SharedPreferences shared = PreferenceManager.getDefaultSharedPreferences(this);
-        String uri = shared.getString(MainApplication.PREFERENCE_PLAYER, "");
-        if (!uri.isEmpty()) {
-            Uri u = Uri.parse(uri);
-            String p = u.getPath();
-            String[] pp = p.split("/");
-            String hash = pp[1];
-            String v = u.getQueryParameter("t");
-            int q = Integer.parseInt(v);
-            Uri.Builder b = u.buildUpon();
-            b.clearQuery();
-            Storage.Torrent t = storage.find(hash);
+        if (player == null) {
+            final SharedPreferences shared = PreferenceManager.getDefaultSharedPreferences(this);
+            String uri = shared.getString(MainApplication.PREFERENCE_PLAYER, "");
+            TorrentPlayer.State state = new TorrentPlayer.State(uri);
+            Storage.Torrent t = storage.find(state.hash);
             if (t != null) {
-                player = new TorrentPlayer(this, storage, t.t);
-                if (player.open(b.build()))
-                    player.seek(q);
+                TorrentPlayer player = new TorrentPlayer(this, storage, t.t);
+                if (player.open(state.uri))
+                    player.seek(state.t);
             }
         }
     }

@@ -52,5 +52,4 @@ public class Crawl extends Search {
     public Crawl(MainActivity m) {
         super(m);
     }
-
 }
