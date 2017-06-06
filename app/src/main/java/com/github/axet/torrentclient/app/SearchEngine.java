@@ -72,16 +72,17 @@ public class SearchEngine {
         return list;
     }
 
-    public void loadJson(String json) {
+    public JSONObject loadJson(String json) {
         try {
             JSONObject obj = new JSONObject(json);
             map = toMap(obj);
+            return obj;
         } catch (JSONException e) {
             throw new RuntimeException(e);
         }
     }
 
-    public void loadUrl(Context context, String url) {
+    public JSONObject loadUrl(Context context, String url) {
         try {
             Uri uri = Uri.parse(url);
             String json;
@@ -98,7 +99,7 @@ public class SearchEngine {
                 json = w.getHtml();
             }
 
-            loadJson(json);
+            return loadJson(json);
         } catch (RuntimeException e) {
             throw e;
         } catch (Exception e) {

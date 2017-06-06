@@ -12,6 +12,7 @@ import android.util.Log;
 
 import com.github.axet.torrentclient.R;
 import com.github.axet.torrentclient.activities.MainActivity;
+import com.github.axet.torrentclient.navigators.Crawl;
 import com.github.axet.torrentclient.navigators.Search;
 
 import org.apache.commons.io.IOUtils;
@@ -124,14 +125,23 @@ public class EnginesManager {
         return add(url, engine);
     }
 
-    Search add(String url, SearchEngine engine) {
-        Search search = new Search(main);
+    public Search add(String url, SearchEngine engine) {
+        return add(System.currentTimeMillis(), url, engine);
+    }
+
+    public Search add(long time, String url, SearchEngine engine) {
+        Search search;
+        if (engine.getMap("crawl") != null) {
+            search = new Crawl(main);
+        } else {
+            search = new Search(main);
+        }
         search.setEngine(engine);
 
         Item item = new Item();
         item.search = search;
         item.url = url;
-        item.time = System.currentTimeMillis();
+        item.time = time;
 
         for (int i = 0; i < list.size(); i++) {
             Item m = list.get(i);
@@ -190,11 +200,8 @@ public class EnginesManager {
                 SearchEngine engine = new SearchEngine();
                 engine.loadJson(o.getString("data"));
 
-                Search search = new Search(main);
-                search.setEngine(engine);
+                Search search = add(o.getString("url"), engine);
                 search.load(o.getString("state"));
-
-                list.add(new Item(search, o.getString("url"), time));
             } catch (JSONException e) {
                 throw new RuntimeException(e);
             }
@@ -216,7 +223,6 @@ public class EnginesManager {
 
     public void save() {
         Log.d(TAG, "save()");
-
         final SharedPreferences shared = PreferenceManager.getDefaultSharedPreferences(context);
         SharedPreferences.Editor edit = shared.edit();
         edit.putInt("engine_count", list.size());
@@ -274,5 +280,12 @@ public class EnginesManager {
                 return true;
         }
         return false;
+    }
+
+    public void close() {
+        for (int i = 0; i < list.size(); i++) {
+            list.get(i).search.close();
+        }
+        list.clear();
     }
 }

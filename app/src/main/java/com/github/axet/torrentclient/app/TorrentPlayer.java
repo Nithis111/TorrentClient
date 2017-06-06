@@ -62,6 +62,46 @@ public class TorrentPlayer {
         return header;
     }
 
+    public static TorrentPlayer load(Context context, Storage storage) {
+        final SharedPreferences shared = PreferenceManager.getDefaultSharedPreferences(context);
+        String uri = shared.getString(MainApplication.PREFERENCE_PLAYER, "");
+        if (!uri.isEmpty()) {
+            State state = new State(uri);
+            Storage.Torrent t = storage.find(state.hash);
+            if (t != null) {
+                TorrentPlayer player = new TorrentPlayer(context, storage, t.t);
+                if (player.open(state.uri))
+                    player.seek(state.t);
+                return player;
+            }
+        }
+        return null;
+    }
+
+    public static class State {
+        public Uri state;
+        public Uri uri;
+        public String hash;
+        public long t;
+
+        public State(String u) {
+            this(Uri.parse(u));
+        }
+
+        public State(Uri u) {
+            state = u;
+            String p = u.getPath();
+            String[] pp = p.split("/");
+            hash = pp[1];
+            String v = u.getQueryParameter("t");
+            if (v != null && !v.isEmpty())
+                t = Integer.parseInt(v);
+            Uri.Builder b = u.buildUpon();
+            b.clearQuery();
+            uri = b.build();
+        }
+    }
+
 
     public static class SortPlayerFiles implements Comparator<PlayerFile> {
         @Override
@@ -574,8 +614,8 @@ public class TorrentPlayer {
         return b.build();
     }
 
-    public void seek(int i) {
-        player.seekTo(i);
+    public void seek(long i) {
+        player.seekTo((int) i);
         notifyPlayer();
     }
 

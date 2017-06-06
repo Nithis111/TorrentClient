@@ -1316,20 +1316,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         Document doc = Jsoup.parse(html);
         Elements list = doc.select(select);
         for (int i = 0; i < list.size(); i++) {
-            SearchItem item = new SearchItem();
-            item.html = list.get(i).outerHtml();
-            item.title = matcher(item.html, s.get("title"));
-            item.image = matcher(item.html, s.get("image"));
-            item.magnet = matcher(item.html, s.get("magnet"));
-            item.torrent = matcher(url, item.html, s.get("torrent"));
-            item.date = matcher(item.html, s.get("date"));
-            item.size = matcher(item.html, s.get("size"));
-            item.seed = matcher(item.html, s.get("seed"));
-            item.leech = matcher(item.html, s.get("leech"));
-            item.details = matcher(url, item.html, s.get("details"));
-            item.details_html = matcherHtml(item.html, s.get("details_html"));
-            item.search = s;
-            item.base = url;
+            SearchItem item = searchItem(s, url, list.get(i).outerHtml());
 
             // do not empty items
             if (isEmpty(item.title) && isEmpty(item.magnet) && isEmpty(item.torrent) && isEmpty(item.details))
@@ -1360,6 +1347,24 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         }
 
         notifyDataSetChanged();
+    }
+
+    SearchItem searchItem(Map<String, String> s, String url, String html) {
+        SearchItem item = new SearchItem();
+        item.html = html;
+        item.title = matcher(item.html, s.get("title"));
+        item.image = matcher(item.html, s.get("image"));
+        item.magnet = matcher(item.html, s.get("magnet"));
+        item.torrent = matcher(url, item.html, s.get("torrent"));
+        item.date = matcher(item.html, s.get("date"));
+        item.size = matcher(item.html, s.get("size"));
+        item.seed = matcher(item.html, s.get("seed"));
+        item.leech = matcher(item.html, s.get("leech"));
+        item.details = matcher(url, item.html, s.get("details"));
+        item.details_html = matcherHtml(item.html, s.get("details_html"));
+        item.search = s;
+        item.base = url;
+        return item;
     }
 
     String matcher(String url, String html, String q) {

@@ -90,10 +90,12 @@
 
             </LinearLayout>
 
-            <FrameLayout
+            <LinearLayout
+                android:id="@+id/search_header_toolbar_parent"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:clipChildren="false">
+                android:clipChildren="false"
+                android:orientation="horizontal">
 
                 <com.github.axet.androidlibrary.widgets.EqualLinearLayout
                     android:id="@+id/search_header_toolbar"
@@ -113,9 +115,9 @@
                         android:background="?attr/search_rating_bg"
                         android:button="@android:color/transparent"
                         android:clickable="false"
+                        android:gravity="center"
                         android:src="@drawable/ic_fiber_new_black_24dp"
-                        android:tint="?attr/colorAccent"
-                        android:gravity="center" />
+                        android:tint="?attr/colorAccent" />
 
                     <include layout="@layout/search_rating" />
 
@@ -127,11 +129,11 @@
                         android:background="?attr/search_rating_bg"
                         android:button="@android:color/transparent"
                         android:clickable="false"
+                        android:gravity="center"
                         android:src="@drawable/ic_search_black_24dp"
-                        android:tint="?attr/colorAccent"
-                        android:gravity="center" />
+                        android:tint="?attr/colorAccent" />
                 </com.github.axet.androidlibrary.widgets.EqualLinearLayout>
-            </FrameLayout>
+            </LinearLayout>
         </LinearLayout>
     </FrameLayout>
 
