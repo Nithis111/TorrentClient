@@ -24,7 +24,6 @@
     "list": ".entry",
     "title": ".entry_header_full a",
     "details": ".entry_header_full a:regex(.*href=\"([^\"]*)\".*)",
-    "details_js": "var ee = document.querySelectorAll('a[href*=details]')\nfor(var i = 0; i < ee.length; i++) {\n  var e = ee[i];\n  e.href = e.href.replace('details.php', 'download.php')\n}",
     "image": "img:regex([^>]*src=\"([^\"]*)\".*)",
     "details_torrent": "a[href*=details]:regex(.*href=\"([^\"]*)\".*)",
     "date": ".entry_time:regex(.*,([^—]*).*)",
@@ -35,12 +34,15 @@
     "New": "http://abook-club.ru/new_abooks/#expand_all"
   },
   "top": {
-    "get": "tops"
+    "get": "tops",
+    "grid": "substr(date,7,4)||substr(date,4,2)||substr(date,1,2)||substr(date,12,5) desc",
+    "details_js": "var ee = document.querySelectorAll('a[href*=details]')\nfor(var i = 0; i < ee.length; i++) {\n  var e = ee[i];\n  e.href = e.href.replace('details.php', 'download.php')\n}"
   },
   "tops": {
     "Recents": "substr(date,7,4)||substr(date,4,2)||substr(date,1,2)||substr(date,12,5) desc"
   },
   "search": {
-    "grid": "substr(date,7,4)||substr(date,4,2)||substr(date,1,2)||substr(date,12,5) desc"
+    "grid": "substr(date,7,4)||substr(date,4,2)||substr(date,1,2)||substr(date,12,5) desc",
+    "details_js": "var ee = document.querySelectorAll('a[href*=details]')\nfor(var i = 0; i < ee.length; i++) {\n  var e = ee[i];\n  e.href = e.href.replace('details.php', 'download.php')\n}"
   }
 }
