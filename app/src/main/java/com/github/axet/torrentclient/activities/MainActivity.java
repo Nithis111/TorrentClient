@@ -1105,4 +1105,8 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
         dialog.setArguments(args);
         dialog.show(getSupportFragmentManager(), "");
     }
+
+    public void openTorrents() {
+        show(torrents);
+    }
 }

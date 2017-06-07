@@ -1,5 +1,5 @@
 {
-  "version": 2,
+  "version": 3,
   "name": "abook-club.ru",
   "home": {
     "get": "http://abook-club.ru"
@@ -35,14 +35,12 @@
     "New": "http://abook-club.ru/new_abooks/#expand_all"
   },
   "top": {
-    "crawl": "tops"
+    "get": "tops"
   },
   "tops": {
-    "Recents": "date",
-    "Top": "downloads"
+    "Recents": "substr(date,7,4)||substr(date,4,2)||substr(date,1,2)||substr(date,12,5) desc"
   },
   "search": {
-    "grid": "",
-    "js": "if(document.querySelectorAll('a.logged-in-as-uname').length==0) {\n  alert('Not Logged In');\n}"
+    "grid": "substr(date,7,4)||substr(date,4,2)||substr(date,1,2)||substr(date,12,5) desc"
   }
 }

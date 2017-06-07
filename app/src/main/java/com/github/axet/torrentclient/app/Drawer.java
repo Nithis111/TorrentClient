@@ -269,6 +269,7 @@ public class Drawer implements com.mikepenz.materialdrawer.Drawer.OnDrawerItemCl
                                 public void onClick(DialogInterface dialog, int which) {
                                     dialog.cancel();
 
+                                    main.openTorrents();
                                     engines.remove(search);
 
                                     engines.save();
