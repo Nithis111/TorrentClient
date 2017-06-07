@@ -53,6 +53,7 @@ public class Crawl extends Search {
 
     public static int REFRESH_CRAWL = 24 * 60 * 60 * 1000; // 1 day
     public static int CRAWL_SHOW = 20; // how many items to load per page
+    public static int CRAWL_DELAY = 1 * 1000;
 
     private static final String TEXT_TYPE = " TEXT";
     private static final String COMMA_SEP = ",";
@@ -192,8 +193,8 @@ public class Crawl extends Search {
             return s;
         }
 
-        public Cursor search(String order, int offset, int limit) {
-            Cursor c = query(null, null, null, order, offset + ", " + limit);
+        public Cursor search(String engine, String order, int offset, int limit) {
+            Cursor c = query(CrawlEntry.COLUMN_ENGINE + " = ?", new String[]{engine}, null, order, offset + ", " + limit);
             return c;
         }
 
@@ -312,7 +313,7 @@ public class Crawl extends Search {
         @Override
         public void run() {
             handler.removeCallbacks(crawlNext);
-            handler.postDelayed(crawlNext, 5 * 1000);
+            handler.postDelayed(crawlNext, CRAWL_DELAY);
         }
     };
     Runnable crawlNext = new Runnable() {
@@ -667,7 +668,7 @@ public class Crawl extends Search {
                     break;
             }
         } else {
-            Cursor c = db.search(order, this.list.size(), CRAWL_SHOW + 1);
+            Cursor c = db.search(engine.getName(), order, this.list.size(), CRAWL_SHOW + 1);
             int count = 0;
             while (c != null) {
                 count++;
