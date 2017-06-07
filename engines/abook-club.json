@@ -1,5 +1,5 @@
 {
-  "version": 2,
+  "version": 3,
   "name": "abook-club.ru",
   "home": {
     "get": "http://abook-club.ru"
@@ -38,11 +38,9 @@
     "crawl": "tops"
   },
   "tops": {
-    "Recents": "date",
-    "Top": "downloads"
+    "Recents": "date"
   },
   "search": {
-    "grid": "",
-    "js": "if(document.querySelectorAll('a.logged-in-as-uname').length==0) {\n  alert('Not Logged In');\n}"
+    "crawl": "grid"
   }
 }

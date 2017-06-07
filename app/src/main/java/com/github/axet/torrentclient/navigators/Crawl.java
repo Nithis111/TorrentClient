@@ -413,6 +413,7 @@ public class Crawl extends Search {
                     crawlLoad(ss, crawlDelay);
                 } catch (RuntimeException e) {
                     post(e);
+                    crawlDelay.run();
                 }
                 handler.post(new Runnable() {
                     @Override
@@ -555,24 +556,26 @@ public class Crawl extends Search {
 
     @Override
     public void search(final Map<String, String> s, final String search, final Runnable done) {
-        handler.post(new Runnable() {
-            @Override
-            public void run() {
-                searchUI(s, search.toLowerCase(EN), done);
-            }
-        });
+        final String type = s.get("crawl");
+
+        if (type != null) {
+            handler.post(new Runnable() {
+                @Override
+                public void run() {
+                    searchCrawl(type, engine.getMap("crawl"), search.toLowerCase(EN), done);
+                }
+            });
+            return;
+        }
+
+        super.search(s, search, done);
     }
 
-    void searchUI(Map<String, String> s, String search, final Runnable done) {
-        String select = null;
-        String l = s.get("list");
-        if (l != null) {
-            select = l;
+    void searchCrawl(String type, Map<String, String> s, String search, final Runnable done) {
+        if (type.equals("list")) {
             gridView = null;
         }
-        String g = s.get("grid");
-        if (g != null) {
-            select = g;
+        if (type.equals("grid")) {
             LayoutInflater inflater = LayoutInflater.from(getContext());
             gridView = inflater.inflate(R.layout.search_item_grid, grid, false);
         }
@@ -603,11 +606,13 @@ public class Crawl extends Search {
             SearchItem item = db.get(id);
             if (item != null)
                 this.list.add(item);
+            if (this.list.size() >= 20)
+                break;
         }
 
         next = null;
         nextType = null;
-        nextSearch = engine.getMap("crawl");
+        nextSearch = s;
 
         notifyDataSetChanged();
 
