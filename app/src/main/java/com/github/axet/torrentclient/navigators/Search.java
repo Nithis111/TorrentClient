@@ -121,6 +121,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
     Map<String, String> nextSearch;
     String next;
     String nextType;
+    String nextText;
     ArrayList<String> nextLast = new ArrayList<>();
 
     HeaderGridView grid;
@@ -301,7 +302,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
                 request(new Runnable() {
                     @Override
                     public void run() {
-                        search(nextSearch, nextType, next, null, new Runnable() {
+                        search(nextSearch, nextType, next, nextText, new Runnable() {
                             @Override
                             public void run() {
                                 requestCancel(); // destory looper thread
@@ -695,6 +696,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         Search.this.list.clear();
         Search.this.next = null;
         Search.this.nextLast.clear();
+        Search.this.nextText = null;
         footer.setVisibility(View.GONE);
         notifyDataSetChanged();
     }
@@ -1350,6 +1352,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         this.next = next;
         this.nextSearch = s;
         this.nextType = type;
+        this.nextText = null;
 
         updateFooterButtons();
 
@@ -1510,5 +1513,9 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
     public void hideKeyboard() {
         InputMethodManager imm = (InputMethodManager) context.getSystemService(Context.INPUT_METHOD_SERVICE);
         imm.hideSoftInputFromWindow(searchText.getWindowToken(), 0);
+    }
+
+    public void delete() {
+        ;
     }
 }

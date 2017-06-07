@@ -320,7 +320,6 @@ public class Crawl extends Search {
     Thread thread;
 
     CrawlDbHelper db;
-    String crawlLast;
 
     public Crawl(MainActivity m) {
         super(m);
@@ -343,6 +342,13 @@ public class Crawl extends Search {
         progressFrame.addView(progressStatus, lp1);
         toolbar.addView(progressFrame, 0, lp);
         progressFrame.setVisibility(View.GONE);
+        progressFrame.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (thread == null)
+                    crawlNextThread();
+            }
+        });
 
         Map<String, String> crawls = engine.getMap("crawls");
         for (String key : crawls.keySet()) {
@@ -387,32 +393,27 @@ public class Crawl extends Search {
                 last = next.last;
             }
         }
-        if (s == null)
-            return;
 
         if (thread != null) {
             stop();
         }
 
+        if (s == null)
+            return;
+
         progressFrame.setVisibility(View.VISIBLE);
-        progressStatus.setText("" + s.page);
+        progressStatus.setText("" + s.page + "\n" + db.count());
 
         final State ss = s;
         thread = new Thread(new Runnable() {
             @Override
             public void run() {
                 try {
-                    crawlLoad(ss, crawlDelay);
+                    crawlLoad(ss);
                 } catch (RuntimeException e) {
                     post(e);
-                    crawlDelay.run();
                 }
-                handler.post(new Runnable() {
-                    @Override
-                    public void run() {
-                        progressStatus.setText("" + ss.page);
-                    }
-                });
+                crawlDelay.run();
             }
         });
         thread.start();
@@ -459,7 +460,7 @@ public class Crawl extends Search {
         }
     }
 
-    void crawlLoad(State state, Runnable done) {
+    void crawlLoad(State state) {
         String url = state.next;
         if (url == null || url.isEmpty())
             url = state.url;
@@ -469,15 +470,13 @@ public class Crawl extends Search {
             html.download();
         }
         if (html != null) {
-            crawlHtml(state, url, html, done);
+            crawlHtml(state, url, html);
             return;
         }
     }
 
-    void crawlHtml(State state, String url, final HttpClient.DownloadResponse html, final Runnable done) {
+    void crawlHtml(State state, String url, final HttpClient.DownloadResponse html) {
         crawlList(state, url, html.getHtml());
-        if (done != null)
-            handler.post(done);
     }
 
     void crawlList(final State state, String url, String html) {
@@ -504,6 +503,18 @@ public class Crawl extends Search {
             String s = item.title.toLowerCase(EN);
             db.addWord(engine.getName(), s, id);
             Log.d(TAG, "item " + item.title);
+            handler.post(new Runnable() {
+                @Override
+                public void run() {
+                    progressStatus.setText("" + state.page + "\n" + db.count());
+                }
+            });
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                return;
+            }
         }
 
         String next = matcher(url, html, state.s.get("next"));
@@ -588,10 +599,7 @@ public class Crawl extends Search {
                 @Override
                 public void run() {
                     gridUpdate();
-                    String ss = search;
-                    if (ss == null) // next, use crawlLast
-                        ss = crawlLast;
-                    searchCrawl(s, ss, url, done);
+                    searchCrawl(s, search, url, done);
                 }
             });
         } else {
@@ -609,7 +617,7 @@ public class Crawl extends Search {
                 count++;
                 if (count > CRAWL_SHOW) {
                     next = order;
-                    crawlLast = search;
+                    nextText = search;
                     break;
                 }
                 SearchItem item = db.getSearchItem(c);
@@ -625,7 +633,7 @@ public class Crawl extends Search {
                 count++;
                 if (count > CRAWL_SHOW) {
                     next = order;
-                    crawlLast = null;
+                    nextText = null;
                     break;
                 }
                 SearchItem item = db.getSearchItem(c);
@@ -652,8 +660,9 @@ public class Crawl extends Search {
     }
 
     @Override
-    void clearList() {
-        super.clearList();
-        crawlLast = null;
+    public void delete() {
+        super.delete();
+        db.getWritableDatabase().delete(CrawlEntry.TABLE_NAME, CrawlEntry.COLUMN_ENGINE + " == ?", new String[]{engine.getName()});
+        db.getWritableDatabase().delete(CrawlDbHelper.FTS_VIRTUAL_TABLE, CrawlDbHelper.COL_ENGINE + " == ?", new String[]{engine.getName()});
     }
 }
