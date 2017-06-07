@@ -688,6 +688,10 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
     }
 
     void clearList() {
+        for (DownloadImageTask t : downloads) {
+            t.cancel(true);
+        }
+        downloads.clear();
         Search.this.list.clear();
         Search.this.next = null;
         Search.this.nextLast.clear();
