@@ -121,6 +121,18 @@ public class Crawl extends Search {
         public static final int DATABASE_VERSION = 1;
         public static final String DATABASE_NAME = "crawl.db";
 
+        public static final String FTS_VIRTUAL_TABLE = "FTS";
+        public static final String COL_ENGINE = "ENGINE";
+        public static final String COL_WORD = "WORD";
+        public static final String COL_CRAWL = "CRAWL_ID";
+
+        public static final String FTS_TABLE_CREATE =
+                "CREATE VIRTUAL TABLE " + FTS_VIRTUAL_TABLE +
+                        " USING fts3 (" +
+                        COL_ENGINE + ", " +
+                        COL_WORD + ", " +
+                        COL_CRAWL + ")";
+
         private SQLiteDatabase mDatabase;
 
         public CrawlDbHelper(Context context) {
@@ -130,12 +142,14 @@ public class Crawl extends Search {
         public void onCreate(SQLiteDatabase db) {
             this.mDatabase = db;
             db.execSQL(SQL_CREATE_ENTRIES);
+            db.execSQL(FTS_TABLE_CREATE);
         }
 
         public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
             // This database is only a cache for online data, so its upgrade policy is
             // to simply to discard the data and start over
             db.execSQL(SQL_DELETE_ENTRIES);
+            db.execSQL("DROP TABLE IF EXISTS " + FTS_VIRTUAL_TABLE);
             onCreate(db);
         }
 
@@ -159,7 +173,7 @@ public class Crawl extends Search {
         public SearchItem get(long id) {
             String selection = CrawlEntry._ID + " = ?";
             String[] selectionArgs = new String[]{"" + id};
-            Cursor c = query(selection, selectionArgs, null, null);
+            Cursor c = query(selection, selectionArgs, null, null, null);
             if (c == null)
                 return null;
             return getSearchItem(c);
@@ -174,15 +188,15 @@ public class Crawl extends Search {
             return s;
         }
 
-        public Cursor search(String order) {
-            Cursor c = query(null, null, null, order);
+        public Cursor search(String order, int offset, int limit) {
+            Cursor c = query(null, null, null, order, offset + ", " + limit);
             return c;
         }
 
         public Cursor exist(String title) {
             String selection = CrawlEntry.COLUMN_TITLE + " = ?";
             String[] selectionArgs = new String[]{title};
-            Cursor c = query(selection, selectionArgs, null, null);
+            Cursor c = query(selection, selectionArgs, null, null, null);
             return c;
         }
 
@@ -190,12 +204,12 @@ public class Crawl extends Search {
             return DatabaseUtils.queryNumEntries(getReadableDatabase(), CrawlEntry.TABLE_NAME, null, null);
         }
 
-        private Cursor query(String selection, String[] selectionArgs, String[] columns, String order) {
+        private Cursor query(String selection, String[] selectionArgs, String[] columns, String order, String limit) {
             SQLiteQueryBuilder builder = new SQLiteQueryBuilder();
             builder.setTables(CrawlEntry.TABLE_NAME);
 
             Cursor cursor = builder.query(getReadableDatabase(),
-                    columns, selection, selectionArgs, null, null, order);
+                    columns, selection, selectionArgs, null, null, order, limit);
 
             if (cursor == null) {
                 return null;
@@ -205,45 +219,7 @@ public class Crawl extends Search {
             }
             return cursor;
         }
-    }
 
-    public static class CrawlDbIndexHelper extends SQLiteOpenHelper { // https://developer.android.com/training/search/search.html#populate
-        public static final int DATABASE_VERSION = 1;
-        public static final String FTS_VIRTUAL_TABLE = "FTS";
-        public static final String DATABASE_NAME = "crawl-index.db";
-
-        public static final String COL_ENGINE = "ENGINE";
-        public static final String COL_WORD = "WORD";
-        public static final String COL_CRAWL = "CRAWL_ID";
-
-        private final Context mHelperContext;
-        private SQLiteDatabase mDatabase;
-
-        public static final String FTS_TABLE_CREATE =
-                "CREATE VIRTUAL TABLE " + FTS_VIRTUAL_TABLE +
-                        " USING fts3 (" +
-                        COL_ENGINE + ", " +
-                        COL_WORD + ", " +
-                        COL_CRAWL + ")";
-
-        CrawlDbIndexHelper(Context context) {
-            super(context, DATABASE_NAME, null, DATABASE_VERSION);
-            mHelperContext = context;
-        }
-
-        @Override
-        public void onCreate(SQLiteDatabase db) {
-            mDatabase = db;
-            mDatabase.execSQL(FTS_TABLE_CREATE);
-        }
-
-        @Override
-        public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-            Log.w(TAG, "Upgrading database from version " + oldVersion + " to "
-                    + newVersion + ", which will destroy all old data");
-            db.execSQL("DROP TABLE IF EXISTS " + FTS_VIRTUAL_TABLE);
-            onCreate(db);
-        }
 
         public long addWord(String engine, String words, long definition) {
             SQLiteDatabase db = getWritableDatabase();
@@ -254,7 +230,7 @@ public class Crawl extends Search {
             return db.insert(FTS_VIRTUAL_TABLE, null, initialValues);
         }
 
-        public Cursor getWordMatches(String engine, String query, String[] columns) {
+        public Cursor getWordMatches(String engine, String query, String[] columns, String order, int offset, int limit) {
             String[] qq = query.split("\\s+");
             String s = "";
 
@@ -262,17 +238,17 @@ public class Crawl extends Search {
                 s += q + "*" + " ";
             }
 
-            String selection = COL_ENGINE + " = ? AND " + COL_WORD + " MATCH ?";
+            String selection = FTS_VIRTUAL_TABLE + "." + COL_ENGINE + " = ? AND " + COL_WORD + " MATCH ?";
             String[] selectionArgs = new String[]{engine, s};
-            return query(selection, selectionArgs, columns);
+            return queryIndex(selection, selectionArgs, columns, order, offset + ", " + limit);
         }
 
-        private Cursor query(String selection, String[] selectionArgs, String[] columns) {
+        private Cursor queryIndex(String selection, String[] selectionArgs, String[] columns, String order, String limit) {
             SQLiteQueryBuilder builder = new SQLiteQueryBuilder();
-            builder.setTables(FTS_VIRTUAL_TABLE);
+            builder.setTables(FTS_VIRTUAL_TABLE + " INNER JOIN " + CrawlEntry.TABLE_NAME + " ON " + FTS_VIRTUAL_TABLE + "." + COL_CRAWL + "=" + CrawlEntry.TABLE_NAME + "." + CrawlEntry._ID);
 
             Cursor cursor = builder.query(getReadableDatabase(),
-                    columns, selection, selectionArgs, null, null, null);
+                    columns, selection, selectionArgs, null, null, order, limit);
 
             if (cursor == null) {
                 return null;
@@ -343,12 +319,10 @@ public class Crawl extends Search {
     Thread thread;
 
     CrawlDbHelper db;
-    CrawlDbIndexHelper index;
 
     public Crawl(MainActivity m) {
         super(m);
         db = new CrawlDbHelper(m);
-        index = new CrawlDbIndexHelper(m);
     }
 
     public void install(final HeaderGridView list) {
@@ -526,7 +500,7 @@ public class Crawl extends Search {
             }
             long id = db.addCrawl(engine.getName(), item.title, item.image, item.details, item.date);
             String s = item.title.toLowerCase(EN);
-            index.addWord(engine.getName(), s, id);
+            db.addWord(engine.getName(), s, id);
             Log.d(TAG, "item " + item.title);
         }
 
@@ -561,7 +535,6 @@ public class Crawl extends Search {
         super.close();
         stop();
         db.close();
-        index.close();
     }
 
     @Override
@@ -609,30 +582,29 @@ public class Crawl extends Search {
 
         if (search != null) {
             search = search.toLowerCase(EN);
-            Cursor c = index.getWordMatches(engine.getName(), search, null);
-            while (c != null) {
-                SearchItem item = db.get(getLong(c, CrawlDbIndexHelper.COL_CRAWL));
-                if (item != null)
-                    this.list.add(item);
-                if (this.list.size() >= 20)
-                    break;
-                if (!c.moveToNext())
-                    break;
-            }
-        } else {
-            Cursor c = db.search(order);
+            Cursor c = db.getWordMatches(engine.getName(), search, null, select, this.list.size(), 20);
+            if (c != null)
+                next = select;
             while (c != null) {
                 SearchItem item = db.getSearchItem(c);
                 if (item != null)
                     this.list.add(item);
-                if (this.list.size() >= 20)
+                if (!c.moveToNext())
                     break;
+            }
+        } else {
+            Cursor c = db.search(order, this.list.size(), 20);
+            if (c != null)
+                next = order;
+            while (c != null) {
+                SearchItem item = db.getSearchItem(c);
+                if (item != null)
+                    this.list.add(item);
                 if (!c.moveToNext())
                     break;
             }
         }
 
-        next = null;
         nextType = null;
         nextSearch = s;
 
@@ -646,7 +618,7 @@ public class Crawl extends Search {
 
     void dropCrawl(long id) {
         db.getWritableDatabase().delete(CrawlEntry.TABLE_NAME, CrawlEntry._ID + " == ?", new String[]{"" + id});
-        index.getWritableDatabase().delete(CrawlDbIndexHelper.FTS_VIRTUAL_TABLE, CrawlDbIndexHelper.COL_CRAWL + " == ?", new String[]{"" + id});
+        db.getWritableDatabase().delete(CrawlDbHelper.FTS_VIRTUAL_TABLE, CrawlDbHelper.COL_CRAWL + " == ?", new String[]{"" + id});
     }
 
 }
