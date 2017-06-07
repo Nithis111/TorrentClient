@@ -204,8 +204,8 @@ public class Crawl extends Search {
             return c;
         }
 
-        public long count() {
-            return DatabaseUtils.queryNumEntries(getReadableDatabase(), CrawlEntry.TABLE_NAME, null, null);
+        public long count(String engine) {
+            return DatabaseUtils.queryNumEntries(getReadableDatabase(), CrawlEntry.TABLE_NAME, CrawlEntry.COLUMN_ENGINE + " = ?", new String[]{engine});
         }
 
         private Cursor query(String selection, String[] selectionArgs, String[] columns, String order, String limit) {
@@ -708,6 +708,6 @@ public class Crawl extends Search {
 
     void progressUpdate() {
         State s = getLast();
-        progressStatus.setText("" + s.page + "\n" + db.count());
+        progressStatus.setText("" + s.page + "\n" + db.count(engine.getName()));
     }
 }
