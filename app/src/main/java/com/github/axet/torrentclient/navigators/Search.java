@@ -368,6 +368,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
 
         updateHeaderButtons();
 
+        final Map<String, String> search = engine.getMap("search");
         header_search.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -376,7 +377,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
                 request(new Runnable() {
                     @Override
                     public void run() {
-                        search(engine.getMap("search"), searchText.getText().toString(), new Runnable() {
+                        search(search, searchText.getText().toString(), new Runnable() {
                             @Override
                             public void run() {
                                 requestCancel(); // destory looper thread
@@ -499,6 +500,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
             final Map<String, String> json_get = engine.getMap(top.get(type = "json_get"));
             loadTops(top, type, json_get);
         }
+
         if (toolbarIndex != -1) {
             if (toolbarIndex < toolbar.getChildCount()) // when we update engine and it has less items
                 selectToolbar(toolbar.getChildAt(toolbarIndex));
@@ -1093,7 +1095,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
             done.run();
     }
 
-    public void search(Map<String, String> s, String search, final Runnable done) {
+    public boolean search(Map<String, String> s, String search, final Runnable done) {
         String url;
         String type;
 
@@ -1101,7 +1103,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         if (post != null) {
             url = post;
             search(s, type, url, search, done);
-            return;
+            return true;
         }
 
         String get = s.get(type = "get");
@@ -1117,7 +1119,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
                 url = get;
             }
             search(s, type, url, search, done);
-            return;
+            return true;
         }
 
         String json_get = s.get(type = "json_get");
@@ -1133,15 +1135,16 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
                 url = json_get;
             }
             search(s, type, url, search, done);
-            return;
+            return true;
         }
 
         String json_post = s.get(type = "json_post");
         if (json_post != null) {
             url = json_post;
             search(s, type, url, search, done);
-            return;
+            return true;
         }
+        return false;
     }
 
     public void search(final Map<String, String> s, String type, String url, String search, final Runnable done) {

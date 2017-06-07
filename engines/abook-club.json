@@ -35,12 +35,12 @@
     "New": "http://abook-club.ru/new_abooks/#expand_all"
   },
   "top": {
-    "crawl": "tops"
+    "get": "tops"
   },
   "tops": {
-    "Recents": "date"
+    "Recents": "substr(date,7,4)||substr(date,4,2)||substr(date,1,2)||substr(date,12,5) desc"
   },
   "search": {
-    "crawl": "grid"
+    "grid": "substr(date,7,4)||substr(date,4,2)||substr(date,1,2)||substr(date,12,5) desc"
   }
 }

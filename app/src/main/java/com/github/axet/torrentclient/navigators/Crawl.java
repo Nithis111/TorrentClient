@@ -159,9 +159,13 @@ public class Crawl extends Search {
         public SearchItem get(long id) {
             String selection = CrawlEntry._ID + " = ?";
             String[] selectionArgs = new String[]{"" + id};
-            Cursor c = query(selection, selectionArgs, null);
+            Cursor c = query(selection, selectionArgs, null, null);
             if (c == null)
                 return null;
+            return getSearchItem(c);
+        }
+
+        public SearchItem getSearchItem(Cursor c) {
             SearchItem s = new SearchItem();
             s.title = getString(c, CrawlEntry.COLUMN_TITLE);
             s.image = getString(c, CrawlEntry.COLUMN_IMAGE);
@@ -170,10 +174,15 @@ public class Crawl extends Search {
             return s;
         }
 
+        public Cursor search(String order) {
+            Cursor c = query(null, null, null, order);
+            return c;
+        }
+
         public Cursor exist(String title) {
             String selection = CrawlEntry.COLUMN_TITLE + " = ?";
             String[] selectionArgs = new String[]{title};
-            Cursor c = query(selection, selectionArgs, null);
+            Cursor c = query(selection, selectionArgs, null, null);
             return c;
         }
 
@@ -181,12 +190,12 @@ public class Crawl extends Search {
             return DatabaseUtils.queryNumEntries(getReadableDatabase(), CrawlEntry.TABLE_NAME, null, null);
         }
 
-        private Cursor query(String selection, String[] selectionArgs, String[] columns) {
+        private Cursor query(String selection, String[] selectionArgs, String[] columns, String order) {
             SQLiteQueryBuilder builder = new SQLiteQueryBuilder();
             builder.setTables(CrawlEntry.TABLE_NAME);
 
             Cursor cursor = builder.query(getReadableDatabase(),
-                    columns, selection, selectionArgs, null, null, null);
+                    columns, selection, selectionArgs, null, null, order);
 
             if (cursor == null) {
                 return null;
@@ -236,18 +245,25 @@ public class Crawl extends Search {
             onCreate(db);
         }
 
-        public long addWord(String engine, String word, long definition) {
+        public long addWord(String engine, String words, long definition) {
             SQLiteDatabase db = getWritableDatabase();
             ContentValues initialValues = new ContentValues();
             initialValues.put(COL_ENGINE, engine);
-            initialValues.put(COL_WORD, word);
+            initialValues.put(COL_WORD, words);
             initialValues.put(COL_CRAWL, definition);
             return db.insert(FTS_VIRTUAL_TABLE, null, initialValues);
         }
 
         public Cursor getWordMatches(String engine, String query, String[] columns) {
+            String[] qq = query.split("\\s+");
+            String s = "";
+
+            for (String q : qq) {
+                s += q + "*" + " ";
+            }
+
             String selection = COL_ENGINE + " = ? AND " + COL_WORD + " MATCH ?";
-            String[] selectionArgs = new String[]{engine, query + "*"};
+            String[] selectionArgs = new String[]{engine, s};
             return query(selection, selectionArgs, columns);
         }
 
@@ -509,14 +525,8 @@ public class Crawl extends Search {
                 }
             }
             long id = db.addCrawl(engine.getName(), item.title, item.image, item.details, item.date);
-            String[] ss = item.title.split("\\s+");
-            for (String s : ss) {
-                s = s.trim();
-                s = strip(s, "-,._()");
-                s = s.toLowerCase(EN);
-                if (isString(s))
-                    index.addWord(engine.getName(), s, id);
-            }
+            String s = item.title.toLowerCase(EN);
+            index.addWord(engine.getName(), s, id);
             Log.d(TAG, "item " + item.title);
         }
 
@@ -555,59 +565,71 @@ public class Crawl extends Search {
     }
 
     @Override
-    public void search(final Map<String, String> s, final String search, final Runnable done) {
-        final String type = s.get("crawl");
-
-        if (type != null) {
-            handler.post(new Runnable() {
-                @Override
-                public void run() {
-                    searchCrawl(type, engine.getMap("crawl"), search.toLowerCase(EN), done);
-                }
-            });
-            return;
-        }
-
-        super.search(s, search, done);
+    public boolean search(final Map<String, String> s, final String search, final Runnable done) {
+        if (super.search(s, search, done))
+            return true;
+        handler.post(new Runnable() {
+            @Override
+            public void run() {
+                searchCrawl(engine.getMap("crawl"), search.toLowerCase(EN), null, done);
+            }
+        });
+        return true;
     }
 
-    void searchCrawl(String type, Map<String, String> s, String search, final Runnable done) {
-        if (type.equals("list")) {
+    @Override
+    public void search(final Map<String, String> s, final String type, final String url, final String search, final Runnable done) {
+        if (url.startsWith("http")) {
+            super.search(s, type, url, search, done);
+            return;
+        }
+        handler.post(new Runnable() {
+            @Override
+            public void run() {
+                searchCrawl(engine.getMap("crawl"), search, url, done);
+            }
+        });
+        return;
+    }
+
+    void searchCrawl(Map<String, String> s, String search, String order, final Runnable done) {
+        String select = null;
+        String l = s.get("list");
+        if (l != null) {
+            select = l;
             gridView = null;
         }
-        if (type.equals("grid")) {
+        String g = s.get("grid");
+        if (g != null) {
+            select = g;
             LayoutInflater inflater = LayoutInflater.from(getContext());
             gridView = inflater.inflate(R.layout.search_item_grid, grid, false);
         }
         gridUpdate();
 
-        String[] qq = search.split("\\s+");
-
-        TreeSet<Long> prev = null;
-        for (String q : qq) {
-            TreeSet<Long> ids = new TreeSet<>();
-            Cursor c = index.getWordMatches(engine.getName(), q, null);
-            if (c != null) {
-                while (c.moveToNext()) {
-                    long id = getLong(c, CrawlDbIndexHelper.COL_CRAWL);
-                    if (prev != null) {
-                        if (prev.contains(id)) {
-                            ids.add(id);
-                        }
-                    } else {
-                        ids.add(id);
-                    }
-                }
-                c.close();
+        if (search != null) {
+            search = search.toLowerCase(EN);
+            Cursor c = index.getWordMatches(engine.getName(), search, null);
+            while (c != null) {
+                SearchItem item = db.get(getLong(c, CrawlDbIndexHelper.COL_CRAWL));
+                if (item != null)
+                    this.list.add(item);
+                if (this.list.size() >= 20)
+                    break;
+                if (!c.moveToNext())
+                    break;
             }
-            prev = ids;
-        }
-        for (Long id : prev) {
-            SearchItem item = db.get(id);
-            if (item != null)
-                this.list.add(item);
-            if (this.list.size() >= 20)
-                break;
+        } else {
+            Cursor c = db.search(order);
+            while (c != null) {
+                SearchItem item = db.getSearchItem(c);
+                if (item != null)
+                    this.list.add(item);
+                if (this.list.size() >= 20)
+                    break;
+                if (!c.moveToNext())
+                    break;
+            }
         }
 
         next = null;
@@ -626,4 +648,5 @@ public class Crawl extends Search {
         db.getWritableDatabase().delete(CrawlEntry.TABLE_NAME, CrawlEntry._ID + " == ?", new String[]{"" + id});
         index.getWritableDatabase().delete(CrawlDbIndexHelper.FTS_VIRTUAL_TABLE, CrawlDbIndexHelper.COL_CRAWL + " == ?", new String[]{"" + id});
     }
+
 }
