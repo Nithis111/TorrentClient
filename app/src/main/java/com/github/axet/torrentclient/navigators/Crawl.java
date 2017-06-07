@@ -571,7 +571,7 @@ public class Crawl extends Search {
         handler.post(new Runnable() {
             @Override
             public void run() {
-                searchCrawl(engine.getMap("crawl"), search.toLowerCase(EN), null, done);
+                searchCrawl(s, search.toLowerCase(EN), null, done);
             }
         });
         return true;
@@ -586,7 +586,7 @@ public class Crawl extends Search {
         handler.post(new Runnable() {
             @Override
             public void run() {
-                searchCrawl(engine.getMap("crawl"), search, url, done);
+                searchCrawl(s, search, url, done);
             }
         });
         return;
