@@ -1099,7 +1099,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
             done.run();
     }
 
-    public boolean search(Map<String, String> s, String search, final Runnable done) {
+    public void search(Map<String, String> s, String search, final Runnable done) {
         String url;
         String type;
 
@@ -1107,7 +1107,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         if (post != null) {
             url = post;
             search(s, type, url, search, done);
-            return true;
+            return;
         }
 
         String get = s.get(type = "get");
@@ -1123,7 +1123,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
                 url = get;
             }
             search(s, type, url, search, done);
-            return true;
+            return;
         }
 
         String json_get = s.get(type = "json_get");
@@ -1139,16 +1139,15 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
                 url = json_get;
             }
             search(s, type, url, search, done);
-            return true;
+            return;
         }
 
         String json_post = s.get(type = "json_post");
         if (json_post != null) {
             url = json_post;
             search(s, type, url, search, done);
-            return true;
+            return;
         }
-        return false;
     }
 
     public void search(final Map<String, String> s, String type, String url, String search, final Runnable done) {

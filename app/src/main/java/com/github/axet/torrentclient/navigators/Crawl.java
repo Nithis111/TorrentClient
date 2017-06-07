@@ -49,6 +49,7 @@ public class Crawl extends Search {
     public static Locale EN = new Locale("en");
 
     public static int REFRESH_CRAWL = 24 * 60 * 60 * 1000; // 1 day
+    public static int CRAWL_SHOW = 20; // how many items to load per page
 
     private static final String TEXT_TYPE = " TEXT";
     private static final String COMMA_SEP = ",";
@@ -319,6 +320,7 @@ public class Crawl extends Search {
     Thread thread;
 
     CrawlDbHelper db;
+    String crawlLast;
 
     public Crawl(MainActivity m) {
         super(m);
@@ -538,34 +540,7 @@ public class Crawl extends Search {
     }
 
     @Override
-    public boolean search(final Map<String, String> s, final String search, final Runnable done) {
-        if (super.search(s, search, done))
-            return true;
-        handler.post(new Runnable() {
-            @Override
-            public void run() {
-                searchCrawl(s, search.toLowerCase(EN), null, done);
-            }
-        });
-        return true;
-    }
-
-    @Override
-    public void search(final Map<String, String> s, final String type, final String url, final String search, final Runnable done) {
-        if (url.startsWith("http")) {
-            super.search(s, type, url, search, done);
-            return;
-        }
-        handler.post(new Runnable() {
-            @Override
-            public void run() {
-                searchCrawl(s, search, url, done);
-            }
-        });
-        return;
-    }
-
-    void searchCrawl(Map<String, String> s, String search, String order, final Runnable done) {
+    public void search(final Map<String, String> s, final String search, final Runnable done) {
         String select = null;
         String l = s.get("list");
         if (l != null) {
@@ -578,14 +553,65 @@ public class Crawl extends Search {
             LayoutInflater inflater = LayoutInflater.from(getContext());
             gridView = inflater.inflate(R.layout.search_item_grid, grid, false);
         }
-        gridUpdate();
 
+        if (select.equals("crawl")) {
+            final String url = s.get("get");
+            handler.post(new Runnable() {
+                @Override
+                public void run() {
+                    gridUpdate();
+                    searchCrawl(s, search.toLowerCase(EN), url, done);
+                }
+            });
+        } else {
+            super.search(s, search, done);
+        }
+    }
+
+    @Override
+    public void search(final Map<String, String> s, final String type, final String url, final String search, final Runnable done) {
+        String select = null;
+        String l = s.get("list");
+        if (l != null) {
+            select = l;
+            gridView = null;
+        }
+        String g = s.get("grid");
+        if (g != null) {
+            select = g;
+            LayoutInflater inflater = LayoutInflater.from(getContext());
+            gridView = inflater.inflate(R.layout.search_item_grid, grid, false);
+        }
+
+        if (select.equals("crawl")) {
+            handler.post(new Runnable() {
+                @Override
+                public void run() {
+                    gridUpdate();
+                    String ss = search;
+                    if (ss == null) // next, use crawlLast
+                        ss = crawlLast;
+                    searchCrawl(s, ss, url, done);
+                }
+            });
+        } else {
+            super.search(s, type, url, search, done);
+        }
+        return;
+    }
+
+    void searchCrawl(Map<String, String> s, String search, String order, final Runnable done) {
         if (search != null) {
             search = search.toLowerCase(EN);
-            Cursor c = db.getWordMatches(engine.getName(), search, null, select, this.list.size(), 20);
-            if (c != null)
-                next = select;
+            Cursor c = db.getWordMatches(engine.getName(), search, null, order, this.list.size(), CRAWL_SHOW + 1);
+            int count = 0;
             while (c != null) {
+                count++;
+                if (count > CRAWL_SHOW) {
+                    next = order;
+                    crawlLast = search;
+                    break;
+                }
                 SearchItem item = db.getSearchItem(c);
                 if (item != null)
                     this.list.add(item);
@@ -593,10 +619,15 @@ public class Crawl extends Search {
                     break;
             }
         } else {
-            Cursor c = db.search(order, this.list.size(), 20);
-            if (c != null)
-                next = order;
+            Cursor c = db.search(order, this.list.size(), CRAWL_SHOW + 1);
+            int count = 0;
             while (c != null) {
+                count++;
+                if (count > CRAWL_SHOW) {
+                    next = order;
+                    crawlLast = null;
+                    break;
+                }
                 SearchItem item = db.getSearchItem(c);
                 if (item != null)
                     this.list.add(item);
@@ -605,7 +636,6 @@ public class Crawl extends Search {
             }
         }
 
-        nextType = null;
         nextSearch = s;
 
         notifyDataSetChanged();
@@ -621,4 +651,9 @@ public class Crawl extends Search {
         db.getWritableDatabase().delete(CrawlDbHelper.FTS_VIRTUAL_TABLE, CrawlDbHelper.COL_CRAWL + " == ?", new String[]{"" + id});
     }
 
+    @Override
+    void clearList() {
+        super.clearList();
+        crawlLast = null;
+    }
 }
