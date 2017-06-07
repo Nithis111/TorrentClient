@@ -1,0 +1,37 @@
+{
+  "version": 1,
+  "name": "arjlover.net",
+  "home": {
+    "get": "http://multiki.arjlover.net/"
+  },
+  "news": {
+    "get": "http://multiki.arjlover.net/",
+    "list": "tbody tr td:regex()",
+    "title": "b",
+    "details_html": ".entry_header_full a:regex(.*href=\"([^\"]*)\".*)",
+    "date": "b",
+    "next": ".audiobooks_addon span a[style*=bold]+a:regex(.*href=\"([^\"]*)\".*)"
+  },
+  "crawl": {
+    "get": "crawls",
+    "list": "tbody tr.o, tr.e",
+    "title": "td.l",
+    "details": "td.l:regex(.*href=\"([^\"]*)\".*)",
+    "date": "td:eq(2)",
+    "size": "td.r"
+  },
+  "crawls": {
+    "Mlt": "http://multiki.arjlover.net/multiki/indext.html",
+    "Flm": "http://film.arjlover.net/film/indext.html",
+    "Fls": "http://filmiki.arjlover.net/filmiki/indext.html"
+  },
+  "top": {
+    "crawl": "tops"
+  },
+  "tops": {
+    "Recent": "substr(date,7,4)||substr(date,4,2)||substr(date,1,2)||substr(date,12,5) desc"
+  },
+  "search": {
+    "list": "crawl"
+  }
+}

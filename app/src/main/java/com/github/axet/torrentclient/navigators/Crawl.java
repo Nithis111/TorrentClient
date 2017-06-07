@@ -7,6 +7,8 @@ import android.database.DatabaseUtils;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.database.sqlite.SQLiteQueryBuilder;
+import android.graphics.PorterDuff;
+import android.graphics.PorterDuffColorFilter;
 import android.provider.BaseColumns;
 import android.support.v4.text.TextUtilsCompat;
 import android.util.Log;
@@ -16,6 +18,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AbsListView;
 import android.widget.FrameLayout;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
@@ -302,6 +305,7 @@ public class Crawl extends Search {
 
     FrameLayout progressFrame;
     TextView progressStatus;
+    ImageView progressRefresh;
     ProgressBar progressBar;
     TreeMap<String, State> crawls = new TreeMap<>();
     Runnable crawlDelay = new Runnable() {
@@ -320,7 +324,6 @@ public class Crawl extends Search {
     Thread thread;
 
     CrawlDbHelper db;
-    String crawlLast;
 
     public Crawl(MainActivity m) {
         super(m);
@@ -331,18 +334,38 @@ public class Crawl extends Search {
         super.install(list);
         LinearLayout toolbar = (LinearLayout) header.findViewById(R.id.search_header_toolbar_parent);
         progressFrame = new FrameLayout(context);
+        progressRefresh = new ImageView(context);
+        progressRefresh.setImageResource(R.drawable.ic_refresh_black_24dp);
+        int color2 = ThemeUtils.getThemeColor(getContext(), R.attr.colorAccent);
+        PorterDuffColorFilter filter2 = new PorterDuffColorFilter(color2, PorterDuff.Mode.SRC_IN);
+        progressRefresh.setColorFilter(filter2);
+        progressFrame.addView(progressRefresh);
         progressBar = new ProgressBar(context);
         progressBar.setIndeterminate(true);
-        int p24 = ThemeUtils.dp2px(context, 24);
-        AbsListView.LayoutParams lp = new AbsListView.LayoutParams(p24, p24);
-        progressFrame.addView(progressBar, lp);
+        progressFrame.addView(progressBar);
         progressStatus = new TextView(context);
         progressStatus.setTextSize(6);
         FrameLayout.LayoutParams lp1 = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         lp1.gravity = Gravity.CENTER;
+        progressStatus.setGravity(Gravity.CENTER);
         progressFrame.addView(progressStatus, lp1);
+        int p24 = ThemeUtils.dp2px(context, 24);
+        AbsListView.LayoutParams lp = new AbsListView.LayoutParams(p24, p24);
         toolbar.addView(progressFrame, 0, lp);
-        progressFrame.setVisibility(View.GONE);
+        progressBar.setVisibility(View.GONE);
+        progressRefresh.setVisibility(View.VISIBLE);
+        progressRefresh.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (thread == null) {
+                    for (String key : crawls.keySet()) {
+                        State next = crawls.get(key);
+                        next.last = 0;
+                    }
+                    crawlNextThread();
+                }
+            }
+        });
 
         Map<String, String> crawls = engine.getMap("crawls");
         for (String key : crawls.keySet()) {
@@ -359,6 +382,8 @@ public class Crawl extends Search {
                 this.crawls.remove(key);
         }
 
+        progressUpdate();
+
         crawlNextThread();
     }
 
@@ -368,9 +393,9 @@ public class Crawl extends Search {
         stop();
     }
 
-    void crawlNextThread() {
-        long last = Long.MAX_VALUE;
+    State getNextState() {
         State s = null;
+        long last = Long.MAX_VALUE;
         long now = System.currentTimeMillis();
         for (String key : crawls.keySet()) {
             State next = crawls.get(key);
@@ -387,32 +412,47 @@ public class Crawl extends Search {
                 last = next.last;
             }
         }
-        if (s == null)
-            return;
+        return s;
+    }
+
+
+    State getLast() {
+        State s = null;
+        long last = Long.MIN_VALUE;
+        for (String key : crawls.keySet()) {
+            State next = crawls.get(key);
+            if (next.last > last) {
+                s = next;
+                last = next.last;
+            }
+        }
+        return s;
+    }
+
+    void crawlNextThread() {
+        State s = getNextState();
 
         if (thread != null) {
             stop();
         }
 
-        progressFrame.setVisibility(View.VISIBLE);
-        progressStatus.setText("" + s.page);
+        if (s == null)
+            return;
+
+        progressBar.setVisibility(View.VISIBLE);
+        progressRefresh.setVisibility(View.GONE);
+        progressUpdate();
 
         final State ss = s;
         thread = new Thread(new Runnable() {
             @Override
             public void run() {
                 try {
-                    crawlLoad(ss, crawlDelay);
+                    crawlLoad(ss);
                 } catch (RuntimeException e) {
                     post(e);
-                    crawlDelay.run();
                 }
-                handler.post(new Runnable() {
-                    @Override
-                    public void run() {
-                        progressStatus.setText("" + ss.page);
-                    }
-                });
+                crawlDelay.run();
             }
         });
         thread.start();
@@ -459,7 +499,7 @@ public class Crawl extends Search {
         }
     }
 
-    void crawlLoad(State state, Runnable done) {
+    void crawlLoad(State state) {
         String url = state.next;
         if (url == null || url.isEmpty())
             url = state.url;
@@ -469,15 +509,13 @@ public class Crawl extends Search {
             html.download();
         }
         if (html != null) {
-            crawlHtml(state, url, html, done);
+            crawlHtml(state, url, html);
             return;
         }
     }
 
-    void crawlHtml(State state, String url, final HttpClient.DownloadResponse html, final Runnable done) {
+    void crawlHtml(State state, String url, final HttpClient.DownloadResponse html) {
         crawlList(state, url, html.getHtml());
-        if (done != null)
-            handler.post(done);
     }
 
     void crawlList(final State state, String url, String html) {
@@ -492,6 +530,7 @@ public class Crawl extends Search {
                 if (c != null) {
                     state.next = null;
                     c.close();
+                    state.last = System.currentTimeMillis();
                     return;
                 }
             } else {
@@ -504,6 +543,18 @@ public class Crawl extends Search {
             String s = item.title.toLowerCase(EN);
             db.addWord(engine.getName(), s, id);
             Log.d(TAG, "item " + item.title);
+            handler.post(new Runnable() {
+                @Override
+                public void run() {
+                    progressUpdate();
+                }
+            });
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                return;
+            }
         }
 
         String next = matcher(url, html, state.s.get("next"));
@@ -517,8 +568,8 @@ public class Crawl extends Search {
     }
 
     public void stop() {
-        if (progressFrame != null)
-            progressFrame.setVisibility(View.GONE);
+        progressBar.setVisibility(View.GONE);
+        progressRefresh.setVisibility(View.VISIBLE);
         if (thread != null) {
             thread.interrupt();
             try {
@@ -588,10 +639,7 @@ public class Crawl extends Search {
                 @Override
                 public void run() {
                     gridUpdate();
-                    String ss = search;
-                    if (ss == null) // next, use crawlLast
-                        ss = crawlLast;
-                    searchCrawl(s, ss, url, done);
+                    searchCrawl(s, search, url, done);
                 }
             });
         } else {
@@ -609,7 +657,7 @@ public class Crawl extends Search {
                 count++;
                 if (count > CRAWL_SHOW) {
                     next = order;
-                    crawlLast = search;
+                    nextText = search;
                     break;
                 }
                 SearchItem item = db.getSearchItem(c);
@@ -625,7 +673,7 @@ public class Crawl extends Search {
                 count++;
                 if (count > CRAWL_SHOW) {
                     next = order;
-                    crawlLast = null;
+                    nextText = null;
                     break;
                 }
                 SearchItem item = db.getSearchItem(c);
@@ -652,8 +700,14 @@ public class Crawl extends Search {
     }
 
     @Override
-    void clearList() {
-        super.clearList();
-        crawlLast = null;
+    public void delete() {
+        super.delete();
+        db.getWritableDatabase().delete(CrawlEntry.TABLE_NAME, CrawlEntry.COLUMN_ENGINE + " == ?", new String[]{engine.getName()});
+        db.getWritableDatabase().delete(CrawlDbHelper.FTS_VIRTUAL_TABLE, CrawlDbHelper.COL_ENGINE + " == ?", new String[]{engine.getName()});
+    }
+
+    void progressUpdate() {
+        State s = getLast();
+        progressStatus.setText("" + s.page + "\n" + db.count());
     }
 }
