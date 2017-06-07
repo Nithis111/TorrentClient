@@ -35,14 +35,15 @@
   },
   "top": {
     "get": "tops",
-    "grid": "substr(date,7,4)||substr(date,4,2)||substr(date,1,2)||substr(date,12,5) desc",
+    "grid": "crawl",
     "details_js": "var ee = document.querySelectorAll('a[href*=details]')\nfor(var i = 0; i < ee.length; i++) {\n  var e = ee[i];\n  e.href = e.href.replace('details.php', 'download.php')\n}"
   },
   "tops": {
     "Recents": "substr(date,7,4)||substr(date,4,2)||substr(date,1,2)||substr(date,12,5) desc"
   },
   "search": {
-    "grid": "substr(date,7,4)||substr(date,4,2)||substr(date,1,2)||substr(date,12,5) desc",
+    "get": "substr(date,7,4)||substr(date,4,2)||substr(date,1,2)||substr(date,12,5) desc",
+    "grid": "crawl",
     "details_js": "var ee = document.querySelectorAll('a[href*=details]')\nfor(var i = 0; i < ee.length; i++) {\n  var e = ee[i];\n  e.href = e.href.replace('details.php', 'download.php')\n}"
   }
 }
