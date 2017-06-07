@@ -9,7 +9,7 @@
     "list": "tbody tr td:regex()",
     "title": "b",
     "details_html": ".entry_header_full a:regex(.*href=\"([^\"]*)\".*)",
-    "date": "b",
+    "date": "b"
   },
   "crawl": {
     "get": "crawls",
