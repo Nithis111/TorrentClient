@@ -17,7 +17,8 @@
     "title": "td.l",
     "details": "td.l:regex(.*href=\"([^\"]*)\".*)",
     "date": "td:eq(2)",
-    "size": "td.r"
+    "size": "td.r",
+    "torrent": "a[href*=torrent]:regex(.*href=\"([^\"]*)\".*)"
   },
   "crawls": {
     "Mlt": "http://multiki.arjlover.net/multiki/indext.html",
