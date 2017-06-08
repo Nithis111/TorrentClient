@@ -370,9 +370,10 @@ public class PlayerFragment extends Fragment implements MainActivity.TorrentFrag
         MainApplication app = ((MainApplication) getContext().getApplicationContext());
         if (player != null) {
             if (player == app.player) {
-                return;
+                ; // then it is playing. do nothing.
+            } else {
+                player.close();
             }
-            player.close();
             player = null;
         }
     }
