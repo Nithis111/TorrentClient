@@ -6,9 +6,9 @@
   },
   "news": {
     "get": "http://multiki.arjlover.net/",
-    "list": "tbody tr td:regex()",
-    "title": "b",
-    "details_html": ".entry_header_full a:regex(.*href=\"([^\"]*)\".*)",
+    "list": "tbody tr td b",
+    "title": "",
+    "details_html": "",
     "date": "b"
   },
   "crawl": {

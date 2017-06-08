@@ -917,11 +917,16 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
                     request(new Runnable() {
                         @Override
                         public void run() {
-                            final byte[] buf = http.getBytes(item.search.get(item.base), item.torrent);
+                            final HttpClient.DownloadResponse w = http.getResponse(item.torrent, item.torrent);
+                            w.download();
                             handler.post(new Runnable() {
                                 @Override
                                 public void run() {
-                                    main.addTorrentFromBytes(buf);
+                                    if (w.getError() != null) {
+                                        Error(w.getError());
+                                    } else {
+                                        main.addTorrentFromBytes(w.getBuf());
+                                    }
                                     requestCancel();  // destory looper thread
                                 }
                             });
