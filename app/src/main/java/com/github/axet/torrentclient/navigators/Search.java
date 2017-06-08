@@ -172,10 +172,10 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
 
     class DownloadImageTask extends AsyncTask<SearchItem, Void, Bitmap> {
         SearchItem item;
-        public HashSet<ImageView> ii = new HashSet<>(); // one task can set two images
+        public HashSet<ImageView> images = new HashSet<>(); // one task can set multiple ImageView's, except reused ones
 
         public DownloadImageTask(ImageView bmImage) {
-            this.ii.add(bmImage);
+            this.images.add(bmImage);
         }
 
         protected Bitmap doInBackground(SearchItem... items) {
@@ -201,11 +201,11 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
 
         protected void onPostExecute(Bitmap result) {
             downloadsItems.remove(item);
-            for (ImageView i : ii)
+            for (ImageView i : images)
                 downloadsImages.remove(i);
             if (result != null) {
                 item.imageBitmap = result;
-                for (ImageView i : ii)
+                for (ImageView i : images)
                     i.setImageBitmap(result);
             }
         }
@@ -869,15 +869,15 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
 
         ImageView image = (ImageView) convertView.findViewById(R.id.search_item_image);
         if (item.image != null) {
+            DownloadImageTask task = downloadsImages.get(image);
+            if (task != null) { // reuse imageview
+                task.images.remove(image);
+            }
             if (item.imageBitmap == null) {
                 image.setImageDrawable(ContextCompat.getDrawable(getContext(), R.drawable.ic_crop_original_black_24dp));
-                DownloadImageTask task = downloadsImages.get(image);
-                if (task != null) {
-                    task.ii.remove(image);
-                }
                 task = downloadsItems.get(item);
-                if (task != null) {
-                    task.ii.add(image);
+                if (task != null) { // add new ImageView to populate on finish
+                    task.images.add(image);
                 } else {
                     task = new DownloadImageTask(image);
                     task.execute(item);
