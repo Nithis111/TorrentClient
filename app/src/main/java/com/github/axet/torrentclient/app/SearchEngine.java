@@ -87,7 +87,10 @@ public class SearchEngine {
             Uri uri = Uri.parse(url);
             String json;
 
-            if (uri.getScheme().equals("android.resource")) {
+            if (uri.getScheme().equals("file")) {
+                InputStream is = context.getContentResolver().openInputStream(uri);
+                json = IOUtils.toString(is, MainApplication.UTF8);
+            } else if (uri.getScheme().equals("android.resource")) {
                 InputStream is = context.getContentResolver().openInputStream(uri);
                 json = IOUtils.toString(is, MainApplication.UTF8);
             } else {

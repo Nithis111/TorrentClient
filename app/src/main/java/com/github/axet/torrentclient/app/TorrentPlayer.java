@@ -328,7 +328,10 @@ public class TorrentPlayer {
 
                         @Override
                         public String getPath() {
-                            return header.getFileNameW();
+                            String s = header.getFileNameW();
+                            if (s == null || s.isEmpty())
+                                s = header.getFileNameString();
+                            return s;
                         }
 
                         @Override
@@ -551,16 +554,20 @@ public class TorrentPlayer {
         handler.postDelayed(this.next, 1000);
     }
 
-    public boolean isPlaying() {
+    public boolean isPlaying() { // actual sound
         if (player == null)
             return false;
         return player.isPlaying();
     }
 
+    public boolean isStop() {
+        return player == null;
+    }
+
     public void pause() {
         if (getPlaying() != -1) {
             if (player == null) {
-                stop(); // clear next()
+                stop(); // clear next
                 return;
             }
             if (player.isPlaying()) {

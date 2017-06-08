@@ -88,7 +88,10 @@ public class Crawl extends Search {
         int i = c.getColumnIndex(name);
         if (i == -1)
             return null;
-        return c.getString(i);
+        String s = c.getString(i);
+        if (s == null || s.isEmpty())
+            return null;
+        return s;
     }
 
     public static Long getLong(Cursor c, String name) {
