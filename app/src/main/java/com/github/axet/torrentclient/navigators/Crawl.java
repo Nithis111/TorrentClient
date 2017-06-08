@@ -569,8 +569,10 @@ public class Crawl extends Search {
     }
 
     public void stop() {
-        progressBar.setVisibility(View.GONE);
-        progressRefresh.setVisibility(View.VISIBLE);
+        if (progressFrame != null) { // stop after remove();
+            progressBar.setVisibility(View.GONE);
+            progressRefresh.setVisibility(View.VISIBLE);
+        }
         if (thread != null) {
             thread.interrupt();
             try {
