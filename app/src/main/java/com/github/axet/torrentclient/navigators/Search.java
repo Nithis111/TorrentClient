@@ -89,6 +89,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
     Thread thread;
     Looper threadLooper;
 
+    HttpProxyClient httpImages; // keep separated, to make requestCancel work
     HttpProxyClient http;
     WebViewCustom web;
     SearchEngine engine;
@@ -179,19 +180,21 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         protected Bitmap doInBackground(SearchItem... items) {
             SearchItem item = items[0];
             for (int i = 0; i < 5; i++) {
-                try {
-                    InputStream in = new java.net.URL(item.image).openStream();
-                    item.imageBitmap = BitmapFactory.decodeStream(in);
-                    return item.imageBitmap;
-                } catch (IOException e) {
-                    Log.e(TAG, "DownloadImageTask", e);
+                HttpClient.DownloadResponse w = httpImages.getResponse(item.image, item.image);
+                w.download();
+                if (w.getError() != null) {
+                    Log.e(TAG, "DownloadImageTask " + w.getError() + " : " + w.getUrl());
                     try {
                         Thread.sleep(1000);
                     } catch (InterruptedException ee) {
                         Thread.currentThread().interrupt();
                         return null;
                     }
+                    continue;
                 }
+                byte[] buf = w.getBuf();
+                item.imageBitmap = BitmapFactory.decodeByteArray(buf, 0, buf.length);
+                return item.imageBitmap;
             }
             return null;
         }
@@ -213,6 +216,15 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         this.handler = new Handler();
 
         final SharedPreferences shared = PreferenceManager.getDefaultSharedPreferences(context);
+
+        httpImages = new HttpProxyClient() {
+            @Override
+            protected CloseableHttpClient build(HttpClientBuilder builder) {
+                builder.setUserAgent(Search.USER_AGENT); // search requests shold go from desktop browser
+                return super.build(builder);
+            }
+        };
+        httpImages.update(context);
 
         http = new HttpProxyClient() {
             @Override
@@ -1518,6 +1530,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
     @Override
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
         http.update(context);
+        httpImages.update(context);
     }
 
     public void hideKeyboard() {
