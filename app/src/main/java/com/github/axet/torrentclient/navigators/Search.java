@@ -924,7 +924,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
                                 public void run() {
                                     if (w.getError() != null) {
                                         Error(w.getError());
-                                        return;Z
+                                        return;
                                     }
                                     main.addTorrentFromBytes(w.getBuf());
                                     requestCancel();  // destory looper thread
