@@ -59,7 +59,16 @@ public class Storage extends com.github.axet.androidlibrary.app.Storage {
     Runnable refresh;
 
     // save state every 5 min
-    Runnable save;
+    Runnable save = new Runnable() {
+        @Override
+        public void run() {
+            save();
+            if (!active())
+                return;
+            saveDelay();
+        }
+    };
+    ;
 
     BroadcastReceiver wifiReciver;
 
@@ -484,7 +493,7 @@ public class Storage extends com.github.axet.androidlibrary.app.Storage {
         context.registerReceiver(wifiReciver, wifiFilter);
 
         if (active()) {
-            saveUpdate();
+            saveDelay();
             if (wifi) {
                 if (isConnectedWifi()) {
                     resume();
@@ -517,21 +526,8 @@ public class Storage extends com.github.axet.androidlibrary.app.Storage {
         return false;
     }
 
-    void saveUpdate() {
-        if (save != null)
-            handler.removeCallbacks(save);
-
-        save = new Runnable() {
-            @Override
-            public void run() {
-                save();
-
-                if (!active())
-                    return;
-
-                saveUpdate();
-            }
-        };
+    void saveDelay() {
+        handler.removeCallbacks(save);
         handler.postDelayed(save, SAVE_INTERVAL);
     }
 
@@ -554,10 +550,7 @@ public class Storage extends com.github.axet.androidlibrary.app.Storage {
             refresh = null;
         }
 
-        if (save != null) {
-            handler.removeCallbacks(save);
-            save = null;
-        }
+        handler.removeCallbacks(save);
 
         if (wifiReciver != null) {
             context.unregisterReceiver(wifiReciver);
@@ -751,7 +744,7 @@ public class Storage extends com.github.axet.androidlibrary.app.Storage {
         Libtorrent.resume();
 
         if (active()) {
-            saveUpdate();
+            saveDelay();
         }
     }
 
@@ -856,12 +849,12 @@ public class Storage extends com.github.axet.androidlibrary.app.Storage {
 
     public void start(Torrent t) {
         t.start();
-        saveUpdate();
+        saveDelay();
     }
 
     public void stop(Torrent t) {
         t.stop();
-        saveUpdate();
+        saveDelay();
     }
 
     public Torrent find(long t) {

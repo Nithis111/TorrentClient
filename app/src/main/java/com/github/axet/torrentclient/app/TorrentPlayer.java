@@ -289,8 +289,7 @@ public class TorrentPlayer {
         @Override
         public void run() {
             save(context, TorrentPlayer.this);
-            handler.removeCallbacks(saveDelay);
-            handler.postDelayed(saveDelay, 60 * 1000);
+            saveDelay();
         }
     };
     Handler handler;
@@ -530,7 +529,7 @@ public class TorrentPlayer {
         PlayerFile f = get(i);
         if (!open(f))
             return;
-        saveDelay.run();
+        saveDelay();
         player.start();
         progress.run();
     }
@@ -572,7 +571,7 @@ public class TorrentPlayer {
             } else {
                 player.start();
                 progress.run();
-                saveDelay.run();
+                saveDelay();
             }
         }
     }
@@ -639,4 +638,8 @@ public class TorrentPlayer {
         return formatHeader(context, player.getCurrentPosition(), player.getDuration());
     }
 
+    public void saveDelay() {
+        handler.removeCallbacks(saveDelay);
+        handler.postDelayed(saveDelay, 60 * 1000);
+    }
 }
