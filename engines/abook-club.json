@@ -1,5 +1,5 @@
 {
-  "version": 3,
+  "version": 4,
   "name": "abook-club.ru",
   "home": {
     "get": "http://abook-club.ru"
@@ -24,7 +24,7 @@
     "list": ".entry",
     "title": ".entry_header_full a",
     "details": ".entry_header_full a:regex(.*href=\"([^\"]*)\".*)",
-    "image": "img:regex([^>]*src=\"([^\"]*)\".*)",
+    "image": "img[alt*=user]:regex([^>]*src=\"([^\"]*)\".*)",
     "details_torrent": "a[href*=details]:regex(.*href=\"([^\"]*)\".*)",
     "date": ".entry_time:regex(.*,([^—]*).*)",
     "next": ".audiobooks_addon span a[style*=bold]+a:regex(.*href=\"([^\"]*)\".*)"

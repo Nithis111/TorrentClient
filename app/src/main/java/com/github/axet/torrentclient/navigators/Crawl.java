@@ -723,6 +723,7 @@ public class Crawl extends Search {
 
     @Override
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
+        super.onSharedPreferenceChanged(sharedPreferences, key);
         crawlHttp.update(context);
     }
 }

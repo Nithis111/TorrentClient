@@ -9,7 +9,6 @@ import android.graphics.Color;
 import android.os.AsyncTask;
 import android.os.Handler;
 import android.os.Looper;
-import android.os.Message;
 import android.preference.PreferenceManager;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.widget.AppCompatImageButton;
@@ -50,7 +49,6 @@ import org.jsoup.select.Elements;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.MalformedURLException;
@@ -82,7 +80,8 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
     MainActivity main;
     ArrayList<SearchItem> list = new ArrayList<>();
 
-    ArrayList<DownloadImageTask> downloads = new ArrayList<>();
+    HashMap<SearchItem, DownloadImageTask> downloadsItems = new HashMap<>();
+    HashMap<ImageView, DownloadImageTask> downloadsImages = new HashMap<>();
 
     BrowserDialogFragment dialog;
 
@@ -171,15 +170,16 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
     }
 
     class DownloadImageTask extends AsyncTask<SearchItem, Void, Bitmap> {
-        ImageView bmImage;
+        SearchItem item;
+        public ArrayList<ImageView> ii = new ArrayList<>(); // one task can set two images
 
         public DownloadImageTask(ImageView bmImage) {
-            this.bmImage = bmImage;
+            this.ii.add(bmImage);
         }
 
         protected Bitmap doInBackground(SearchItem... items) {
-            SearchItem item = items[0];
-            for (int i = 0; i < 5; i++) {
+            item = items[0];
+            for (int i = 0; i < 3; i++) {
                 HttpClient.DownloadResponse w = httpImages.getResponse(item.image, item.image);
                 w.download();
                 if (w.getError() != null) {
@@ -193,16 +193,20 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
                     continue;
                 }
                 byte[] buf = w.getBuf();
-                item.imageBitmap = BitmapFactory.decodeByteArray(buf, 0, buf.length);
-                return item.imageBitmap;
+                return BitmapFactory.decodeByteArray(buf, 0, buf.length);
             }
             return null;
         }
 
         protected void onPostExecute(Bitmap result) {
-            downloads.remove(this);
-            if (result != null)
-                bmImage.setImageBitmap(result);
+            downloadsItems.remove(item);
+            for (ImageView i : ii)
+                downloadsImages.remove(i);
+            if (result != null) {
+                item.imageBitmap = result;
+                for (ImageView i : ii)
+                    i.setImageBitmap(result);
+            }
         }
     }
 
@@ -704,10 +708,16 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
     }
 
     void clearDownloads() {
-        for (DownloadImageTask t : downloads) {
+        for (ImageView item : downloadsImages.keySet()) {
+            DownloadImageTask t = downloadsImages.get(item);
             t.cancel(true);
         }
-        downloads.clear();
+        downloadsImages.clear();
+        for (SearchItem item : downloadsItems.keySet()) {
+            DownloadImageTask t = downloadsItems.get(item);
+            t.cancel(true);
+        }
+        downloadsItems.clear();
     }
 
     void clearList() {
@@ -860,9 +870,19 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         if (item.image != null) {
             if (item.imageBitmap == null) {
                 image.setImageDrawable(ContextCompat.getDrawable(getContext(), R.drawable.ic_crop_original_black_24dp));
-                DownloadImageTask task = new DownloadImageTask(image);
-                downloads.add(task);
-                task.execute(item);
+                DownloadImageTask task = downloadsImages.get(image);
+                if (task != null) {
+                    task.ii.remove(image);
+                }
+                task = downloadsItems.get(item);
+                if (task != null) {
+                    task.ii.add(image);
+                } else {
+                    task = new DownloadImageTask(image);
+                    task.execute(item);
+                }
+                downloadsItems.put(item, task);
+                downloadsImages.put(image, task);
             } else {
                 image.setImageBitmap(item.imageBitmap);
             }
@@ -1389,7 +1409,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         SearchItem item = new SearchItem();
         item.html = html;
         item.title = matcher(item.html, s.get("title"));
-        item.image = matcher(item.html, s.get("image"));
+        item.image = matcher(url, item.html, s.get("image"));
         item.magnet = matcher(item.html, s.get("magnet"));
         item.torrent = matcher(url, item.html, s.get("torrent"));
         item.date = matcher(item.html, s.get("date"));
