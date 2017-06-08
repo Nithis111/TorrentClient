@@ -534,6 +534,12 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
                     else
                         fab_play.setImageResource(R.drawable.ic_play_arrow_black_24dp);
                 }
+                if (a.equals(TorrentPlayer.PLAYER_NEXT)) {
+                    fab_panel.setVisibility(View.VISIBLE);
+                    playerTorrent = intent.getLongExtra("t", -1);
+                    fab_status.setText(TorrentPlayer.formatHeader(MainActivity.this, 0, 0));
+                    fab_play.setImageResource(R.drawable.ic_pause_24dp);
+                }
                 if (a.equals(TorrentPlayer.PLAYER_STOP)) {
                     fab_panel.setVisibility(View.GONE);
                 }
