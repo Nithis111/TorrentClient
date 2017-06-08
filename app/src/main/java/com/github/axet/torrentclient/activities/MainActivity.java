@@ -446,9 +446,7 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
                 shared.registerOnSharedPreferenceChangeListener(MainActivity.this);
 
                 torrents = new Torrents(MainActivity.this, list);
-                torrents.install(list);
-
-                drawer.setCheckedItem(R.id.nav_torrents);
+                show(torrents);
 
                 if (Storage.permitted(MainActivity.this, PERMISSIONS, 1)) {
                     try {
@@ -1119,6 +1117,8 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
     }
 
     public void openTorrents() {
+        if (torrents == null)
+            return; // delayed init
         show(torrents);
     }
 }

@@ -131,7 +131,7 @@ public class MainApplication extends com.github.axet.androidlibrary.app.MainAppl
                 TorrentPlayer.State state = new TorrentPlayer.State(uri);
                 Storage.Torrent t = storage.find(state.hash);
                 if (t != null) {
-                    TorrentPlayer player = new TorrentPlayer(this, storage, t.t);
+                    player = new TorrentPlayer(this, storage, t.t); // TorrentPlayer.open depends on global 'player'
                     if (player.open(state.uri))
                         player.seek(state.t);
                 }
