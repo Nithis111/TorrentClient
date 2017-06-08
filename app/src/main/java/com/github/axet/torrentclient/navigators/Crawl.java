@@ -2,6 +2,7 @@ package com.github.axet.torrentclient.navigators;
 
 import android.content.ContentValues;
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.database.DatabaseUtils;
 import android.database.sqlite.SQLiteDatabase;
@@ -718,5 +719,10 @@ public class Crawl extends Search {
     void crawlDelay() {
         handler.removeCallbacks(crawlNext);
         handler.postDelayed(crawlNext, CRAWL_DELAY);
+    }
+
+    @Override
+    public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
+        crawlHttp.update(context);
     }
 }
