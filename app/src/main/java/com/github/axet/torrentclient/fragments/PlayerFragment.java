@@ -363,17 +363,17 @@ public class PlayerFragment extends Fragment implements MainActivity.TorrentFrag
 
     @Override
     public void close() {
-        MainApplication app = ((MainApplication) getContext().getApplicationContext());
-        if (player != null) {
-            if (player == app.player) {
-                app.player = null;
-            }
-            player.close();
-            player = null;
-        }
         if (playerReceiver != null) {
             playerReceiver.close();
             playerReceiver = null;
+        }
+        MainApplication app = ((MainApplication) getContext().getApplicationContext());
+        if (player != null) {
+            if (player == app.player) {
+                return;
+            }
+            player.close();
+            player = null;
         }
     }
 }
