@@ -57,6 +57,7 @@ import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -171,7 +172,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
 
     class DownloadImageTask extends AsyncTask<SearchItem, Void, Bitmap> {
         SearchItem item;
-        public ArrayList<ImageView> ii = new ArrayList<>(); // one task can set two images
+        public HashSet<ImageView> ii = new HashSet<>(); // one task can set two images
 
         public DownloadImageTask(ImageView bmImage) {
             this.ii.add(bmImage);
