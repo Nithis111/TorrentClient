@@ -130,5 +130,11 @@ public class DetailsFragment extends Fragment implements MainActivity.TorrentFra
 
     @Override
     public void close() {
+        DetailsPagerAdapter a = (DetailsPagerAdapter) pager.getAdapter();
+        for (Integer i : a.map.keySet()) {
+            MainActivity.TorrentFragmentInterface f = (MainActivity.TorrentFragmentInterface) a.map.get(i);
+            f.close();
+        }
+        a.map.clear();
     }
 }

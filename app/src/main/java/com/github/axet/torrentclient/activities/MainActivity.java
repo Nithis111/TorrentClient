@@ -280,6 +280,8 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
                             }
                         });
 
+                        if (MainActivity.this.dialog != null)
+                            MainActivity.this.dialog.close();
                         MainActivity.this.dialog = new TorrentFragmentInterface() {
                             @Override
                             public void update() {
@@ -883,6 +885,8 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
                 updateUnread();
             }
         }
+        if (dialog != null)
+            dialog.close();
         dialog = null;
         ListAdapter a = list.getAdapter();
         if (a != null && a instanceof HeaderGridView.HeaderViewGridAdapter) {
