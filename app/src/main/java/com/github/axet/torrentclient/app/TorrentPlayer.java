@@ -285,6 +285,14 @@ public class TorrentPlayer {
             handler.postDelayed(progress, 1000);
         }
     };
+    Runnable saveDelay = new Runnable() {
+        @Override
+        public void run() {
+            save(context, TorrentPlayer.this);
+            handler.removeCallbacks(saveDelay);
+            handler.postDelayed(saveDelay, 60 * 1000);
+        }
+    };
     Handler handler;
 
     BroadcastReceiver receiver = new BroadcastReceiver() {
@@ -522,6 +530,7 @@ public class TorrentPlayer {
         PlayerFile f = get(i);
         if (!open(f))
             return;
+        saveDelay.run();
         player.start();
         progress.run();
     }
@@ -559,9 +568,11 @@ public class TorrentPlayer {
                 player.pause();
                 progress.run();
                 handler.removeCallbacks(progress);
+                handler.removeCallbacks(saveDelay);
             } else {
                 player.start();
                 progress.run();
+                saveDelay.run();
             }
         }
     }
@@ -574,6 +585,7 @@ public class TorrentPlayer {
         }
         handler.removeCallbacks(progress);
         handler.removeCallbacks(next);
+        handler.removeCallbacks(saveDelay);
         next = null;
         playingIndex = -1;
         playingUri = null;

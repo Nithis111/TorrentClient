@@ -1092,6 +1092,8 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
             list.setEmptyView(null);
         }
 
+        engies.save();
+
         nav.install(list);
     }
 
