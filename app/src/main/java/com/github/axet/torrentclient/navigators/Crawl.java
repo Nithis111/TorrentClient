@@ -526,25 +526,25 @@ public class Crawl extends Search {
 
         Document doc = Jsoup.parse(html);
         Elements list = doc.select(select);
+        int endDups = 0;
         for (int i = 0; i < list.size(); i++) {
             SearchItem item = searchItem(state.s, url, list.get(i).outerHtml());
             Cursor c = db.exist(item.title);
-            if (state.end) {
-                if (c != null) {
-                    state.next = null;
-                    c.close();
-                    state.last = System.currentTimeMillis();
-                    return;
-                }
-            } else {
-                if (c != null) {
-                    dropCrawl(c.getLong(0));
-                    c.close();
+            if (c != null) { // exists?
+                dropCrawl(c.getLong(0)); // drop exiting
+                c.close();
+                if (state.end) { // updating?
+                    endDups++; // inc dup index
                 }
             }
             long id = db.addCrawl(engine.getName(), item.title, item.image, item.details, item.magnet, item.torrent, item.date);
             String s = item.title.toLowerCase(EN);
             db.addWord(engine.getName(), s, id);
+            if (endDups >= list.size() || endDups > 20) { // all items are dups, stop. or dups more 20 for single refresh page
+                state.next = null;
+                state.last = System.currentTimeMillis();
+                return;
+            }
             Log.d(TAG, "item " + item.title);
             handler.post(new Runnable() {
                 @Override
@@ -552,7 +552,7 @@ public class Crawl extends Search {
                     progressUpdate();
                 }
             });
-            try {
+            try { // make thread low priority
                 Thread.sleep(100);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
