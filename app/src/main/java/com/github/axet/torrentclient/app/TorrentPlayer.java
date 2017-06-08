@@ -62,22 +62,6 @@ public class TorrentPlayer {
         return header;
     }
 
-    public static TorrentPlayer load(Context context, Storage storage) {
-        final SharedPreferences shared = PreferenceManager.getDefaultSharedPreferences(context);
-        String uri = shared.getString(MainApplication.PREFERENCE_PLAYER, "");
-        if (!uri.isEmpty()) {
-            State state = new State(uri);
-            Storage.Torrent t = storage.find(state.hash);
-            if (t != null) {
-                TorrentPlayer player = new TorrentPlayer(context, storage, t.t);
-                if (player.open(state.uri))
-                    player.seek(state.t);
-                return player;
-            }
-        }
-        return null;
-    }
-
     public static class State {
         public Uri state;
         public Uri uri;

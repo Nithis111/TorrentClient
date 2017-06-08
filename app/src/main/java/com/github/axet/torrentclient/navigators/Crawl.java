@@ -10,7 +10,6 @@ import android.database.sqlite.SQLiteQueryBuilder;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffColorFilter;
 import android.provider.BaseColumns;
-import android.support.v4.text.TextUtilsCompat;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -30,21 +29,16 @@ import com.github.axet.torrentclient.R;
 import com.github.axet.torrentclient.activities.MainActivity;
 import com.github.axet.torrentclient.app.SearchEngine;
 
-import org.apache.commons.codec.binary.StringUtils;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.jsoup.Jsoup;
-import org.jsoup.helper.StringUtil;
 import org.jsoup.nodes.Document;
 import org.jsoup.select.Elements;
 
 import java.util.Locale;
 import java.util.Map;
-import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class Crawl extends Search {
     public static final String TAG = Crawl.class.getSimpleName();
@@ -314,13 +308,6 @@ public class Crawl extends Search {
     ImageView progressRefresh;
     ProgressBar progressBar;
     TreeMap<String, State> crawls = new TreeMap<>();
-    Runnable crawlDelay = new Runnable() {
-        @Override
-        public void run() {
-            handler.removeCallbacks(crawlNext);
-            handler.postDelayed(crawlNext, CRAWL_DELAY);
-        }
-    };
     Runnable crawlNext = new Runnable() {
         @Override
         public void run() {
@@ -458,7 +445,7 @@ public class Crawl extends Search {
                 } catch (RuntimeException e) {
                     post(e);
                 }
-                crawlDelay.run();
+                crawlDelay();
             }
         });
         thread.start();
@@ -574,20 +561,11 @@ public class Crawl extends Search {
     }
 
     public void stop() {
+        super.stop();
         if (progressFrame != null) { // stop after remove();
             progressBar.setVisibility(View.GONE);
             progressRefresh.setVisibility(View.VISIBLE);
         }
-        if (thread != null) {
-            thread.interrupt();
-            try {
-                thread.join();
-                thread = null;
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-            }
-        }
-        handler.removeCallbacks(crawlDelay);
         handler.removeCallbacks(crawlNext);
     }
 
@@ -717,5 +695,10 @@ public class Crawl extends Search {
     void progressUpdate() {
         State s = getLast();
         progressStatus.setText("" + s.page + "\n" + db.count(engine.getName()));
+    }
+
+    void crawlDelay() {
+        handler.removeCallbacks(crawlNext);
+        handler.postDelayed(crawlNext, CRAWL_DELAY);
     }
 }

@@ -755,7 +755,21 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         notifyDataSetChanged();
     }
 
+    public void stop() {
+        if (thread != null) {
+            thread.interrupt();
+            http.abort();
+            try {
+                thread.join();
+                thread = null;
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }
+    }
+
     public void close() {
+        stop();
         final SharedPreferences shared = PreferenceManager.getDefaultSharedPreferences(context);
         shared.unregisterOnSharedPreferenceChangeListener(this);
         for (DownloadImageTask t : downloads) {
@@ -1485,7 +1499,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
     }
 
     public void Error(final Throwable e) {
-        if (main.active(Search.this)) {
+        if (main.active(this)) {
             main.Error(e);
         } else {
             Throwable t = e;
