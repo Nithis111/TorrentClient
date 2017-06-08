@@ -162,15 +162,15 @@ public class Crawl extends Search {
             onUpgrade(db, oldVersion, newVersion);
         }
 
-        public long addCrawl(String engine, String title, String image, String details, String date) {
+        public long addCrawl(String engine, String title, String image, String details, String magnet, String torrent, String date) {
             SQLiteDatabase db = getWritableDatabase();
             ContentValues initialValues = new ContentValues();
             initialValues.put(CrawlEntry.COLUMN_ENGINE, engine);
             initialValues.put(CrawlEntry.COLUMN_TITLE, title);
             initialValues.put(CrawlEntry.COLUMN_IMAGE, image);
             initialValues.put(CrawlEntry.COLUMN_DETAILS, details);
-            initialValues.put(CrawlEntry.COLUMN_MAGNET, "");
-            initialValues.put(CrawlEntry.COLUMN_TORRENT, "");
+            initialValues.put(CrawlEntry.COLUMN_MAGNET, magnet);
+            initialValues.put(CrawlEntry.COLUMN_TORRENT, torrent);
             initialValues.put(CrawlEntry.COLUMN_DATE, date);
             return db.insert(CrawlEntry.TABLE_NAME, null, initialValues);
         }
@@ -189,6 +189,8 @@ public class Crawl extends Search {
             s.title = getString(c, CrawlEntry.COLUMN_TITLE);
             s.image = getString(c, CrawlEntry.COLUMN_IMAGE);
             s.details = getString(c, CrawlEntry.COLUMN_DETAILS);
+            s.magnet = getString(c, CrawlEntry.COLUMN_MAGNET);
+            s.torrent = getString(c, CrawlEntry.COLUMN_TORRENT);
             s.date = getString(c, CrawlEntry.COLUMN_DATE);
             return s;
         }
@@ -540,7 +542,7 @@ public class Crawl extends Search {
                     c.close();
                 }
             }
-            long id = db.addCrawl(engine.getName(), item.title, item.image, item.details, item.date);
+            long id = db.addCrawl(engine.getName(), item.title, item.image, item.details, item.magnet, item.torrent, item.date);
             String s = item.title.toLowerCase(EN);
             db.addWord(engine.getName(), s, id);
             Log.d(TAG, "item " + item.title);

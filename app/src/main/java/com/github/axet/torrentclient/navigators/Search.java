@@ -917,7 +917,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
                     request(new Runnable() {
                         @Override
                         public void run() {
-                            final byte[] buf = http.getBytes(item.search.get(item.base), item.torrent);
+                            final byte[] buf = http.getBytes(item.torrent, item.torrent);
                             handler.post(new Runnable() {
                                 @Override
                                 public void run() {
