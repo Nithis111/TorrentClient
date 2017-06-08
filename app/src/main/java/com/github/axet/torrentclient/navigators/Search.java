@@ -657,19 +657,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         }
     }
 
-    void requestCancel() {
-        boolean i = false;
-        if (thread != null) {
-            thread.interrupt();
-            thread = null;
-            i = true;
-        }
-        if (threadLooper != null) {
-            threadLooper.quit();
-            threadLooper = null;
-            i = true;
-        }
-        final AbstractExecutionAwareRequest r = http.getRequest();
+    void requestCancel(final AbstractExecutionAwareRequest r) {
         if (r != null) {
             Thread thread = new Thread(new Runnable() {
                 @Override
@@ -684,15 +672,34 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
                 Thread.currentThread().interrupt();
             }
         }
+    }
+
+    void requestCancel() {
+        boolean i = false;
+        if (thread != null) {
+            thread.interrupt();
+            thread = null;
+            i = true;
+        }
+        if (threadLooper != null) {
+            threadLooper.quit();
+            threadLooper = null;
+            i = true;
+        }
+        requestCancel(http.getRequest());
         if (i)
             Log.d(TAG, "interrupt");
     }
 
-    void clearList() {
+    void clearDownloads() {
         for (DownloadImageTask t : downloads) {
             t.cancel(true);
         }
         downloads.clear();
+    }
+
+    void clearList() {
+        clearDownloads();
         Search.this.list.clear();
         Search.this.next = null;
         Search.this.nextLast.clear();
@@ -755,27 +762,11 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         notifyDataSetChanged();
     }
 
-    public void stop() {
-        if (thread != null) {
-            thread.interrupt();
-            http.abort();
-            try {
-                thread.join();
-                thread = null;
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-            }
-        }
-    }
-
     public void close() {
-        stop();
+        requestCancel();
         final SharedPreferences shared = PreferenceManager.getDefaultSharedPreferences(context);
         shared.unregisterOnSharedPreferenceChangeListener(this);
-        for (DownloadImageTask t : downloads) {
-            t.cancel(true);
-        }
-        downloads.clear();
+        clearDownloads();
     }
 
     @Override

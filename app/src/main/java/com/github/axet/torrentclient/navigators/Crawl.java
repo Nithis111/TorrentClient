@@ -28,6 +28,7 @@ import com.github.axet.androidlibrary.widgets.ThemeUtils;
 import com.github.axet.torrentclient.R;
 import com.github.axet.torrentclient.activities.MainActivity;
 import com.github.axet.torrentclient.app.SearchEngine;
+import com.github.axet.torrentclient.net.HttpProxyClient;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -39,6 +40,9 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.TreeSet;
+
+import cz.msebera.android.httpclient.impl.client.CloseableHttpClient;
+import cz.msebera.android.httpclient.impl.client.HttpClientBuilder;
 
 public class Crawl extends Search {
     public static final String TAG = Crawl.class.getSimpleName();
@@ -314,13 +318,23 @@ public class Crawl extends Search {
             crawlNextThread();
         }
     };
-    Thread thread;
+    Thread crawlThread;
+    HttpProxyClient crawlHttp;
 
     CrawlDbHelper db;
 
     public Crawl(MainActivity m) {
         super(m);
         db = new CrawlDbHelper(m);
+        crawlHttp = new HttpProxyClient() {
+            @Override
+            protected CloseableHttpClient build(HttpClientBuilder builder) {
+                builder.setUserAgent(Search.USER_AGENT); // search requests shold go from desktop browser
+                return super.build(builder);
+            }
+        };
+        crawlHttp.update(context);
+
     }
 
     public void install(final HeaderGridView list) {
@@ -350,7 +364,7 @@ public class Crawl extends Search {
         progressRefresh.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (thread == null) {
+                if (crawlThread == null) {
                     for (String key : crawls.keySet()) {
                         State next = crawls.get(key);
                         next.last = 0;
@@ -383,7 +397,7 @@ public class Crawl extends Search {
     @Override
     public void remove(HeaderGridView list) {
         super.remove(list);
-        stop();
+        crawlStop();
     }
 
     State getNextState() {
@@ -425,8 +439,8 @@ public class Crawl extends Search {
     void crawlNextThread() {
         State s = getNextState();
 
-        if (thread != null) {
-            stop();
+        if (crawlThread != null) {
+            crawlStop();
         }
 
         if (s == null)
@@ -437,7 +451,7 @@ public class Crawl extends Search {
         progressUpdate();
 
         final State ss = s;
-        thread = new Thread(new Runnable() {
+        crawlThread = new Thread(new Runnable() {
             @Override
             public void run() {
                 try {
@@ -448,7 +462,7 @@ public class Crawl extends Search {
                 crawlDelay();
             }
         });
-        thread.start();
+        crawlThread.start();
     }
 
     @Override
@@ -498,7 +512,7 @@ public class Crawl extends Search {
             url = state.url;
         HttpClient.DownloadResponse html = null;
         if (state.s.containsKey("get")) {
-            html = http.getResponse(null, url);
+            html = crawlHttp.getResponse(null, url);
             html.download();
         }
         if (html != null) {
@@ -560,8 +574,12 @@ public class Crawl extends Search {
         state.next = next;
     }
 
-    public void stop() {
-        super.stop();
+    public void crawlStop() {
+        if (crawlThread != null) {
+            crawlThread.interrupt();
+            crawlThread = null;
+        }
+        requestCancel(crawlHttp.getRequest());
         if (progressFrame != null) { // stop after remove();
             progressBar.setVisibility(View.GONE);
             progressRefresh.setVisibility(View.VISIBLE);
@@ -572,7 +590,7 @@ public class Crawl extends Search {
     @Override
     public void close() {
         super.close();
-        stop();
+        crawlStop();
         db.close();
     }
 
