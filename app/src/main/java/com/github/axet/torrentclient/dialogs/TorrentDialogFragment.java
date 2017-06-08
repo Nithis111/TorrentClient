@@ -143,6 +143,12 @@ public class TorrentDialogFragment extends DialogFragment implements MainActivit
 
     @Override
     public void close() {
+        TorrentPagerAdapter a = (TorrentPagerAdapter) pager.getAdapter();
+        for (Integer i : a.map.keySet()) {
+            MainActivity.TorrentFragmentInterface f = (MainActivity.TorrentFragmentInterface) a.map.get(i);
+            f.close();
+        }
+        a.map.clear();
     }
 
     @Override
