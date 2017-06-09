@@ -448,14 +448,14 @@ public class Crawl extends Search {
         if (s == null)
             return;
 
+        if (!Storage.connectionsAllowed(context) || error != null || message.size() >= 5) {
+            crawlDelay();
+            return;
+        }
+
         progressBar.setVisibility(View.VISIBLE);
         progressRefresh.setVisibility(View.GONE);
         progressUpdate();
-
-        if (!Storage.connectionsAllowed(context) || error != null || message.size() >= 5) {
-            crawlStop();
-            return;
-        }
 
         final State ss = s;
         crawlThread = new Thread(new Runnable() {
