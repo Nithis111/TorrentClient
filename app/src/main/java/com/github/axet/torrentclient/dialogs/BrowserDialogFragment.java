@@ -343,7 +343,7 @@ public class BrowserDialogFragment extends DialogFragment implements MainActivit
                             web.load(WebViewCustom.ABOUT_ERROR, new HttpClient.HttpError(url, e));
                         }
                     }
-                });
+                }, "Browser Download File");
                 thread.start();
             }
         });

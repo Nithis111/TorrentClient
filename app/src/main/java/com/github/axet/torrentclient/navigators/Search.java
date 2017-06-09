@@ -11,6 +11,7 @@ import android.os.Handler;
 import android.os.Looper;
 import android.preference.PreferenceManager;
 import android.support.v4.content.ContextCompat;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.widget.AppCompatImageButton;
 import android.text.Html;
 import android.util.Base64;
@@ -89,6 +90,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
     Thread thread;
     Looper threadLooper;
 
+    HttpProxyClient httpImages; // keep separated, to make requestCancel work
     HttpProxyClient http;
     WebViewCustom web;
     SearchEngine engine;
@@ -97,6 +99,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
     String lastSearch; // last search request
     String lastLogin;// last login user name
 
+    AlertDialog error;
     ArrayList<String> message = new ArrayList<>();
 
     // search header
@@ -170,20 +173,11 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
     }
 
     class DownloadImageTask extends AsyncTask<SearchItem, Void, Bitmap> {
-        HttpProxyClient httpImages; // keep separated, to make requestCancel work
         SearchItem item;
         public HashSet<ImageView> images = new HashSet<>(); // one task can set multiple ImageView's, except reused ones
 
         public DownloadImageTask(ImageView bmImage) {
-            httpImages = new HttpProxyClient() {
-                @Override
-                protected CloseableHttpClient build(HttpClientBuilder builder) {
-                    builder.setUserAgent(Search.USER_AGENT); // search requests shold go from desktop browser
-                    return super.build(builder);
-                }
-            };
             httpImages.update(context);
-
             this.images.add(bmImage);
         }
 
@@ -239,6 +233,14 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
             }
         };
         http.update(context);
+        httpImages = new HttpProxyClient() {
+            @Override
+            protected CloseableHttpClient build(HttpClientBuilder builder) {
+                builder.setUserAgent(Search.USER_AGENT); // search requests shold go from desktop browser
+                return super.build(builder);
+            }
+        };
+        httpImages.update(context);
 
         shared.registerOnSharedPreferenceChangeListener(this);
     }
@@ -256,6 +258,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         if (cookieStore == null) {
             cookieStore = new BasicCookieStore();
             http.setCookieStore(cookieStore);
+            httpImages.setCookieStore(cookieStore);
         }
         cookieStore.clear();
 
@@ -676,12 +679,12 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
 
     void requestCancel(final AbstractExecutionAwareRequest r) {
         if (r != null) {
-            Thread thread = new Thread(new Runnable() {
+            Thread thread = new Thread(new Runnable() { // network on main thread
                 @Override
                 public void run() {
                     r.abort();
                 }
-            });
+            }, "Abort Thread");
             thread.start();
             try {
                 thread.join();
@@ -773,7 +776,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
                     Log.d(TAG, "Thread Exit");
                 }
             }
-        });
+        }, "Search Request");
         thread.start();
     }
 
@@ -1524,7 +1527,13 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
 
     public void Error(final Throwable e) {
         if (main.active(this)) {
-            main.Error(e);
+            error = main.Error(e);
+            error.setOnDismissListener(new DialogInterface.OnDismissListener() {
+                @Override
+                public void onDismiss(DialogInterface dialog) {
+                    error = null;
+                }
+            });
         } else {
             Throwable t = e;
             while (t.getCause() != null)
@@ -1536,7 +1545,13 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
 
     public void Error(String msg) {
         if (main.active(this)) {
-            main.Error(msg);
+            error = main.Error(msg);
+            error.setOnDismissListener(new DialogInterface.OnDismissListener() {
+                @Override
+                public void onDismiss(DialogInterface dialog) {
+                    error = null;
+                }
+            });
         } else {
             message.add(msg);
             main.updateUnread();

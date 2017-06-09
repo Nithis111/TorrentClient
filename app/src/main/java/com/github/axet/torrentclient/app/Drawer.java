@@ -561,7 +561,7 @@ public class Drawer implements com.mikepenz.materialdrawer.Drawer.OnDrawerItemCl
                             }
                         });
                     }
-                });
+                }, "Port Check");
                 infoThread.start();
                 infoPort = false;
                 portIcon.setImageResource(R.drawable.port_no);

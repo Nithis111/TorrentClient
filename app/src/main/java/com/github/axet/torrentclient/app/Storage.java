@@ -419,7 +419,7 @@ public class Storage extends com.github.axet.androidlibrary.app.Storage {
 
         boolean wifi = shared.getBoolean(MainApplication.PREFERENCE_WIFI, true);
 
-        if (wifi && !isConnectedWifi()) {
+        if (!connectionsAllowed(context)) {
             pause();
         }
 
@@ -447,7 +447,7 @@ public class Storage extends com.github.axet.androidlibrary.app.Storage {
                             resume();
                             return;
                         }
-                        if (isConnectedWifi()) { // maybe 'state' have incorrect state. check system service additionaly.
+                        if (isConnectedWifi(context)) { // maybe 'state' have incorrect state. check system service additionaly.
                             resume();
                             return;
                         }
@@ -473,7 +473,7 @@ public class Storage extends com.github.axet.androidlibrary.app.Storage {
                     }
                     // if not state.isConnected() maybe it is not correct, check service information
                     if (wifi) {
-                        if (isConnectedWifi()) {
+                        if (isConnectedWifi(context)) {
                             resume();
                             return;
                         }
@@ -495,7 +495,7 @@ public class Storage extends com.github.axet.androidlibrary.app.Storage {
         if (active()) {
             saveDelay();
             if (wifi) {
-                if (isConnectedWifi()) {
+                if (isConnectedWifi(context)) {
                     resume();
                 }
             } else {
@@ -836,7 +836,7 @@ public class Storage extends com.github.axet.androidlibrary.app.Storage {
         add(new Storage.Torrent(context, t, s, true));
     }
 
-    public boolean isConnectedWifi() {
+    public static boolean isConnectedWifi(Context context) {
         ConnectivityManager cm = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
         NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
         if (activeNetwork != null) { // connected to the internet
@@ -845,6 +845,18 @@ public class Storage extends com.github.axet.androidlibrary.app.Storage {
             }
         }
         return false;
+    }
+
+    public static boolean connectionsAllowed(Context context) {
+        final SharedPreferences shared = PreferenceManager.getDefaultSharedPreferences(context);
+        Libtorrent.setDefaultAnnouncesList(shared.getString(MainApplication.PREFERENCE_ANNOUNCE, ""));
+
+        boolean wifi = shared.getBoolean(MainApplication.PREFERENCE_WIFI, true);
+
+        if (wifi && !isConnectedWifi(context)) {
+            return false;
+        }
+        return true;
     }
 
     public void start(Torrent t) {
