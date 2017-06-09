@@ -177,27 +177,28 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         public HashSet<ImageView> images = new HashSet<>(); // one task can set multiple ImageView's, except reused ones
 
         public DownloadImageTask(ImageView bmImage) {
-            httpImages.update(context);
             this.images.add(bmImage);
         }
 
         protected Bitmap doInBackground(SearchItem... items) {
             item = items[0];
             for (int i = 0; i < 3; i++) {
-                HttpClient.DownloadResponse w = httpImages.getResponse(item.image, item.image);
-                w.download();
-                if (w.getError() != null) {
-                    Log.e(TAG, "DownloadImageTask " + w.getError() + " : " + w.getUrl());
+                try {
+                    HttpClient.DownloadResponse w = httpImages.getResponse(item.image, item.image);
+                    w.download();
+                    if (w.getError() != null)
+                        throw new RuntimeException(w.getError() + " : " + w.getUrl());
+                    byte[] buf = w.getBuf();
+                    return BitmapFactory.decodeByteArray(buf, 0, buf.length);
+                } catch (RuntimeException e) {
+                    Log.e(TAG, "DownloadImageTask", e);
                     try {
                         Thread.sleep(1000);
                     } catch (InterruptedException ee) {
                         Thread.currentThread().interrupt();
                         return null;
                     }
-                    continue;
                 }
-                byte[] buf = w.getBuf();
-                return BitmapFactory.decodeByteArray(buf, 0, buf.length);
             }
             return null;
         }
@@ -883,7 +884,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
                     task.images.add(image);
                 } else {
                     task = new DownloadImageTask(image);
-                    task.execute(item);
+                    task.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, item);
                 }
                 downloadsItems.put(item, task);
                 downloadsImages.put(image, task);
@@ -1566,6 +1567,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
     @Override
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
         http.update(context);
+        httpImages.update(context);
     }
 
     public void hideKeyboard() {
