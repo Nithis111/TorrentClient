@@ -121,6 +121,8 @@ public class HttpProxyClient extends HttpClient {
                 .register("https", https)
                 .build();
         PoolingHttpClientConnectionManager conn = new PoolingHttpClientConnectionManager(socketFactoryRegistry);
+        conn.setDefaultMaxPerRoute(5);
+        conn.setMaxTotal(40);
         builder.setConnectionManager(conn);
         return super.build(builder);
     }

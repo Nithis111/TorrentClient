@@ -170,6 +170,8 @@ public class PlayerFragment extends Fragment implements MainActivity.TorrentFrag
 
         empty = v.findViewById(R.id.torrent_files_empty);
 
+        final MainApplication app = ((MainApplication) getContext().getApplicationContext());
+
         next = v.findViewById(R.id.player_next);
         next.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -200,9 +202,10 @@ public class PlayerFragment extends Fragment implements MainActivity.TorrentFrag
         play.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (player == null)
-                    return; // not yet open, no metadata
-                if (player.getPlaying() == -1 && files.selected == -1) {
+                if (app.player != null && app.player != player) {
+                    app.player.close();
+                    app.player = null;
+                } else if (player.getPlaying() == -1 && files.selected == -1) {
                     play(0);
                 } else if (player.isPlaying() || player.getPlaying() == files.selected || files.selected == -1) {
                     int i = player.getPlaying();
