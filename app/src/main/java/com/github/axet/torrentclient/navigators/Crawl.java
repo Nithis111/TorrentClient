@@ -55,6 +55,7 @@ public class Crawl extends Search {
     public static int CRAWL_SHOW = 20; // how many items to load per page
     public static int CRAWL_DELAY = 1 * 1000;
     public static int CRAWL_END = 5; // how many tries to confirm end
+    public static int CRAWL_DUPS = 20; // how many dups == end
 
     private static final String TEXT_TYPE = " TEXT";
     private static final String COMMA_SEP = ",";
@@ -552,7 +553,7 @@ public class Crawl extends Search {
             long id = db.addCrawl(engine.getName(), item.title, item.image, item.details, item.magnet, item.torrent, item.date);
             String s = item.title.toLowerCase(EN);
             db.addWord(engine.getName(), s, id);
-            if (endDups >= list.size() || endDups > 20) { // all items are dups, stop. or dups more 20 for single refresh page
+            if (endDups >= list.size() || endDups > CRAWL_DUPS) { // all items are dups, stop. or dups more 20 for single refresh page
                 state.next = null;
                 state.last = System.currentTimeMillis();
                 return;

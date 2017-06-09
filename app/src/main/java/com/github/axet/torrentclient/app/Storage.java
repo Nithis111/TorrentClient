@@ -856,7 +856,13 @@ public class Storage extends com.github.axet.androidlibrary.app.Storage {
         if (wifi && !isConnectedWifi(context)) {
             return false;
         }
-        return true;
+
+        ConnectivityManager cm = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
+        if (activeNetwork != null) { // connected to the internet
+            return true;
+        }
+        return false;
     }
 
     public void start(Torrent t) {
