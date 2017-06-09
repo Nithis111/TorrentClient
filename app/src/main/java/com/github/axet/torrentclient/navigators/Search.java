@@ -89,7 +89,6 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
     Thread thread;
     Looper threadLooper;
 
-    HttpProxyClient httpImages; // keep separated, to make requestCancel work
     HttpProxyClient http;
     WebViewCustom web;
     SearchEngine engine;
@@ -171,10 +170,20 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
     }
 
     class DownloadImageTask extends AsyncTask<SearchItem, Void, Bitmap> {
+        HttpProxyClient httpImages; // keep separated, to make requestCancel work
         SearchItem item;
         public HashSet<ImageView> images = new HashSet<>(); // one task can set multiple ImageView's, except reused ones
 
         public DownloadImageTask(ImageView bmImage) {
+            httpImages = new HttpProxyClient() {
+                @Override
+                protected CloseableHttpClient build(HttpClientBuilder builder) {
+                    builder.setUserAgent(Search.USER_AGENT); // search requests shold go from desktop browser
+                    return super.build(builder);
+                }
+            };
+            httpImages.update(context);
+
             this.images.add(bmImage);
         }
 
@@ -221,15 +230,6 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         this.handler = new Handler();
 
         final SharedPreferences shared = PreferenceManager.getDefaultSharedPreferences(context);
-
-        httpImages = new HttpProxyClient() {
-            @Override
-            protected CloseableHttpClient build(HttpClientBuilder builder) {
-                builder.setUserAgent(Search.USER_AGENT); // search requests shold go from desktop browser
-                return super.build(builder);
-            }
-        };
-        httpImages.update(context);
 
         http = new HttpProxyClient() {
             @Override
@@ -1551,7 +1551,6 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
     @Override
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
         http.update(context);
-        httpImages.update(context);
     }
 
     public void hideKeyboard() {
