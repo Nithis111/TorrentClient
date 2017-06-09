@@ -169,14 +169,12 @@ public class MainApplication extends com.github.axet.androidlibrary.app.MainAppl
     public void onTerminate() {
         super.onTerminate();
         Log.d(TAG, "onTerminate");
-        TorrentPlayer.save(this, player);
     }
 
     @Override
     public void onLowMemory() {
         super.onLowMemory();
         Log.d(TAG, "onLowMemory");
-        TorrentPlayer.save(this, player);
     }
 
     public static String onTrimString(int level) {
@@ -203,7 +201,6 @@ public class MainApplication extends com.github.axet.androidlibrary.app.MainAppl
     public void onTrimMemory(int level) {
         super.onTrimMemory(level);
         Log.d(TAG, "onTrimMemory: " + onTrimString(level));
-        TorrentPlayer.save(this, player);
     }
 
     public static int getTheme(Context context, int light, int dark) {
