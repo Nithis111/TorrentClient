@@ -54,6 +54,7 @@ public class Crawl extends Search {
     public static int REFRESH_CRAWL = 24 * 60 * 60 * 1000; // 1 day
     public static int CRAWL_SHOW = 20; // how many items to load per page
     public static int CRAWL_DELAY = 1 * 1000;
+    public static int CRAWL_END = 5; // how many tries to confirm end
 
     private static final String TEXT_TYPE = " TEXT";
     private static final String COMMA_SEP = ",";
@@ -273,7 +274,7 @@ public class Crawl extends Search {
     public static class State {
         public String name; // json 'crawls' name
         public int page;
-        public boolean end; // have end reached? is it full loaded?
+        public int end; // have end reached? is it full loaded? try end several times
         public long last; // last time page were loaded
         public String url;
         public Map<String, String> s; // json 'crawl'
@@ -299,7 +300,7 @@ public class Crawl extends Search {
                 JSONObject o = new JSONObject(state);
                 name = o.getString("name");
                 page = o.getInt("page");
-                end = o.getBoolean("end");
+                end = o.optInt("end", 0);
                 last = o.getLong("last");
                 url = o.getString("url");
                 next = o.optString("next", null);
@@ -408,7 +409,7 @@ public class Crawl extends Search {
         long now = System.currentTimeMillis();
         for (String key : crawls.keySet()) {
             State next = crawls.get(key);
-            if (next.end) {
+            if (next.end > CRAWL_END) {
                 if (next.last + REFRESH_CRAWL > now) {
                     continue;
                 } else {
@@ -544,7 +545,7 @@ public class Crawl extends Search {
             if (c != null) { // exists?
                 dropCrawl(c.getLong(0)); // drop exiting
                 c.close();
-                if (state.end) { // updating?
+                if (state.end > CRAWL_END) { // updating?
                     endDups++; // inc dup index
                 }
             }
@@ -573,12 +574,13 @@ public class Crawl extends Search {
 
         String next = matcher(url, html, state.s.get("next"));
         if (next == null) {
-            state.end = true;
+            state.end++;
+        } else {
+            state.next = next;
+            state.page++;
         }
 
         state.last = System.currentTimeMillis();
-        state.page++;
-        state.next = next;
     }
 
     public void crawlStop() {
