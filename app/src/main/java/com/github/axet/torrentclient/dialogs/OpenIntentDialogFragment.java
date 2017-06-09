@@ -57,7 +57,7 @@ public class OpenIntentDialogFragment extends DialogFragment {
                     }
                 });
             }
-        });
+        }, "Delayed Intent");
         t.start();
     }
 

@@ -278,7 +278,7 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
                                     }
                                 });
                             }
-                        });
+                        }, "Create Torrent Thread");
 
                         if (MainActivity.this.dialog != null)
                             MainActivity.this.dialog.close();
@@ -554,7 +554,7 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
             if (!sharedPreferences.getBoolean(MainApplication.PREFERENCE_WIFI, true)) {
                 getStorage().resume(); // wifi only disabled
             } else { // wifi only enabed
-                if (!getStorage().isConnectedWifi()) // are we on wifi?
+                if (!Storage.isConnectedWifi(this)) // are we on wifi?
                     getStorage().pause(); // no, pause all
             }
         }
@@ -666,18 +666,18 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
         });
     }
 
-    public void Error(Throwable e) {
+    public AlertDialog Error(Throwable e) {
         Log.e(TAG, "Exception", e);
         Throwable t = e;
         while (t.getCause() != null)
             t = t.getCause();
-        Error(t.getClass().getCanonicalName() + ": " + t.getMessage());
+        return Error(t.getClass().getCanonicalName() + ": " + t.getMessage());
     }
 
-    public void Error(String err) {
+    public AlertDialog Error(String err) {
         Log.e(TAG, Libtorrent.error());
 
-        new AlertDialog.Builder(MainActivity.this)
+        return new AlertDialog.Builder(MainActivity.this)
                 .setTitle(R.string.error)
                 .setMessage(err)
                 .setNeutralButton(android.R.string.ok, new DialogInterface.OnClickListener() {

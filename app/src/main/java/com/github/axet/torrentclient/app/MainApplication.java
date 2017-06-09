@@ -102,7 +102,7 @@ public class MainApplication extends com.github.axet.androidlibrary.app.MainAppl
                     initThread = null;
                 }
             }
-        });
+        }, "Main Init Thread");
         initThread.start();
     }
 

@@ -29,6 +29,7 @@ import com.github.axet.androidlibrary.widgets.ThemeUtils;
 import com.github.axet.torrentclient.R;
 import com.github.axet.torrentclient.activities.MainActivity;
 import com.github.axet.torrentclient.app.SearchEngine;
+import com.github.axet.torrentclient.app.Storage;
 import com.github.axet.torrentclient.net.HttpProxyClient;
 
 import org.json.JSONException;
@@ -451,6 +452,11 @@ public class Crawl extends Search {
         progressRefresh.setVisibility(View.GONE);
         progressUpdate();
 
+        if (!Storage.connectionsAllowed(context) || error != null || message.size() >= 5) {
+            crawlStop();
+            return;
+        }
+
         final State ss = s;
         crawlThread = new Thread(new Runnable() {
             @Override
@@ -462,7 +468,7 @@ public class Crawl extends Search {
                 }
                 crawlDelay();
             }
-        });
+        }, "Crawl Thread");
         crawlThread.start();
     }
 
