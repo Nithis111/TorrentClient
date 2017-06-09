@@ -307,6 +307,8 @@ public class TorrentPlayer {
                 final Archive archive = new Archive(local);
                 List<FileHeader> list = archive.getFileHeaders();
                 for (FileHeader h : list) {
+                    if (h.isDirectory())
+                        continue;
                     final FileHeader header = h;
                     ArchiveFile a = new ArchiveFile() {
 
