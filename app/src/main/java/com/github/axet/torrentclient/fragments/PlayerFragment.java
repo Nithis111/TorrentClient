@@ -223,6 +223,28 @@ public class PlayerFragment extends Fragment implements MainActivity.TorrentFrag
             }
         });
         seek = (SeekBar) v.findViewById(R.id.player_seek);
+        seek.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                if (fromUser) {
+                    if (player == null)
+                        return;
+                    player.seek(progress);
+                    player.notifyProgress();
+                }
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+
+            }
+        });
+
         playerPos = (TextView) v.findViewById(R.id.player_pos);
         playerDur = (TextView) v.findViewById(R.id.player_dur);
 
