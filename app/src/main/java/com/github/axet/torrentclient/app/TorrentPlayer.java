@@ -264,7 +264,7 @@ public class TorrentPlayer {
     Runnable progress = new Runnable() {
         @Override
         public void run() {
-            notifyPlayer();
+            notifyProgress();
             handler.removeCallbacks(progress);
             handler.postDelayed(progress, 1000);
         }
@@ -532,6 +532,7 @@ public class TorrentPlayer {
                 int n = next;
                 if (n >= ff.size()) {
                     stop();
+                    notifyStop();
                     return; // n = 0;
                 }
                 play(n);
@@ -572,8 +573,6 @@ public class TorrentPlayer {
     public void stop() {
         if (player != null) {
             player.stop();
-            Intent intent = new Intent(PLAYER_STOP);
-            context.sendBroadcast(intent);
         }
         handler.removeCallbacks(progress);
         handler.removeCallbacks(next);
@@ -599,7 +598,7 @@ public class TorrentPlayer {
         return torrent.t;
     }
 
-    public void notifyPlayer() {
+    public void notifyProgress() {
         if (player == null)
             return;
         Intent intent = new Intent(PLAYER_PROGRESS);
@@ -607,6 +606,11 @@ public class TorrentPlayer {
         intent.putExtra("pos", player.getCurrentPosition());
         intent.putExtra("dur", player.getDuration());
         intent.putExtra("play", player.isPlaying() || next != null);
+        context.sendBroadcast(intent);
+    }
+
+    public void notifyStop() {
+        Intent intent = new Intent(PLAYER_STOP);
         context.sendBroadcast(intent);
     }
 
