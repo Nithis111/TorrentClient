@@ -5,7 +5,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
-import android.net.Uri;
 import android.os.Environment;
 import android.os.Handler;
 import android.support.v7.preference.PreferenceManager;
@@ -19,7 +18,6 @@ import com.github.axet.torrentclient.R;
 import com.github.axet.torrentclient.services.TorrentService;
 
 import java.io.File;
-import java.lang.reflect.Array;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -134,7 +132,7 @@ public class MainApplication extends com.github.axet.androidlibrary.app.MainAppl
                     player = new TorrentPlayer(this, storage, t.t); // TorrentPlayer.open depends on global 'player'
                     if (player.open(state.uri))
                         player.seek(state.t);
-                    player.notifyPlayer();
+                    player.notifyProgress();
                 }
             }
         }
