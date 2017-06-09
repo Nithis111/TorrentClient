@@ -568,10 +568,10 @@ public class TorrentPlayer {
     }
 
     public void stop() {
-        Intent intent = new Intent(PLAYER_STOP);
-        context.sendBroadcast(intent);
         if (player != null) {
             player.stop();
+            Intent intent = new Intent(PLAYER_STOP);
+            context.sendBroadcast(intent);
         }
         handler.removeCallbacks(progress);
         handler.removeCallbacks(next);
