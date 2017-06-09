@@ -134,6 +134,7 @@ public class MainApplication extends com.github.axet.androidlibrary.app.MainAppl
                     player = new TorrentPlayer(this, storage, t.t); // TorrentPlayer.open depends on global 'player'
                     if (player.open(state.uri))
                         player.seek(state.t);
+                    player.notifyPlayer();
                 }
             }
         }

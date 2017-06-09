@@ -494,11 +494,12 @@ public class TorrentPlayer {
         }
         playingIndex = i;
         playingUri = f.uri;
-        Intent intent = new Intent(PLAYER_NEXT);
-        context.sendBroadcast(intent);
         if (f.tor.file.getBytesCompleted() == f.tor.file.getLength())
             player = MediaPlayer.create(context, f.uri);
         if (player == null) {
+            Intent intent = new Intent(PLAYER_NEXT);
+            intent.putExtra("t", torrent.t);
+            context.sendBroadcast(intent);
             next(i + 1);
             return false;
         }
@@ -508,7 +509,6 @@ public class TorrentPlayer {
                 next(i + 1);
             }
         });
-        notifyPlayer();
         return true;
     }
 
@@ -620,7 +620,6 @@ public class TorrentPlayer {
 
     public void seek(long i) {
         player.seekTo((int) i);
-        notifyPlayer();
     }
 
     public String formatHeader() {
