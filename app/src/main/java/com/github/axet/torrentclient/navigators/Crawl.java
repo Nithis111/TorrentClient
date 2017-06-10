@@ -276,6 +276,7 @@ public class Crawl extends Search {
         public String name; // json 'crawls' name
         public int page;
         public int end; // have end reached? is it full loaded? try end several times
+        public int endPage; // page where end happens. to clear 'end'.
         public long last; // last time page were loaded
         public String url;
         public Map<String, String> s; // json 'crawl'
@@ -287,6 +288,7 @@ public class Crawl extends Search {
                 o.put("name", name);
                 o.put("page", page);
                 o.put("end", end);
+                o.put("endpage", endPage);
                 o.put("last", last);
                 o.put("url", url);
                 o.put("next", next);
@@ -302,6 +304,7 @@ public class Crawl extends Search {
                 name = o.getString("name");
                 page = o.getInt("page");
                 end = o.optInt("end", 0);
+                endPage = o.optInt("endpage", 0);
                 last = o.getLong("last");
                 url = o.getString("url");
                 next = o.optString("next", null);
@@ -576,9 +579,16 @@ public class Crawl extends Search {
         String next = matcher(url, html, state.s.get("next"));
         if (next == null) {
             state.end++;
+            if (state.endPage != state.page)
+                state.end = 0;
+            state.endPage = state.page;
         } else {
             state.next = next;
             state.page++;
+            if (state.page > state.endPage) {
+                state.end = 0;
+                state.endPage = 0;
+            }
         }
 
         state.last = System.currentTimeMillis();
