@@ -499,9 +499,7 @@ public class TorrentPlayer {
         if (f.tor.file.getBytesCompleted() == f.tor.file.getLength())
             player = MediaPlayer.create(context, f.uri);
         if (player == null) {
-            Intent intent = new Intent(PLAYER_NEXT);
-            intent.putExtra("t", torrent.t);
-            context.sendBroadcast(intent);
+            notifyNext();
             next(i + 1);
             return false;
         }
@@ -521,6 +519,12 @@ public class TorrentPlayer {
         saveDelay();
         player.start();
         progress.run();
+    }
+
+    public void notifyNext() {
+        Intent intent = new Intent(PLAYER_NEXT);
+        intent.putExtra("t", torrent.t);
+        context.sendBroadcast(intent);
     }
 
     public void next(final int next) {
