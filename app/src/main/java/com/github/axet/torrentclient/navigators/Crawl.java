@@ -567,7 +567,6 @@ public class Crawl extends Search {
                 return;
             }
             final State t = crawlsTop.get(crawlsTopIndex);
-            crawlsTopIndex++;
             crawlThread = new Thread(new Runnable() {
                 @Override
                 public void run() {
@@ -576,6 +575,9 @@ public class Crawl extends Search {
                     } catch (RuntimeException e) {
                         post(e);
                     }
+                    if (Thread.currentThread().isInterrupted())
+                        return;
+                    crawlsTopIndex++;
                     crawlDelay();
                 }
             }, "Crawl Update Thread");
@@ -743,7 +745,7 @@ public class Crawl extends Search {
                 }
             });
             try { // make thread low priority
-                Thread.sleep(100);
+                Thread.sleep(10);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 return;
