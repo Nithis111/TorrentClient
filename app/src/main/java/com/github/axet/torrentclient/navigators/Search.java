@@ -16,9 +16,11 @@ import android.support.v7.widget.AppCompatImageButton;
 import android.text.Html;
 import android.util.Base64;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
 import android.webkit.JavascriptInterface;
 import android.webkit.JsResult;
@@ -131,6 +133,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
     View gridView;
 
     public static class SearchItem {
+        public long last; // last update ms
         public String title;
         public String image;
         public Bitmap imageBitmap;
@@ -140,9 +143,11 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         public String magnet;
         public String date;
         public String size;
-        public String seed;
-        public String leech;
+        public Long seed;
+        public Long leech;
         public String torrent;
+        public Long downloads; // downloads from last update / month (pepend on site)
+        public Long downloads_total; // total downloads
         public Map<String, String> search;
         public String base;
     }
@@ -380,6 +385,16 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         header_stop = header.findViewById(R.id.search_header_stop);
 
         searchText.setText(lastSearch);
+        searchText.setOnEditorActionListener(new TextView.OnEditorActionListener() {
+            @Override
+            public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
+                if (actionId == EditorInfo.IME_ACTION_DONE) {
+                    header_search.performClick();
+                    return true;
+                }
+                return false;
+            }
+        });
 
         header_progress.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -702,12 +717,12 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
             thread = null;
             i = true;
         }
+        requestCancel(http.getRequest());
         if (threadLooper != null) {
             threadLooper.quit();
             threadLooper = null;
             i = true;
         }
-        requestCancel(http.getRequest());
         if (i)
             Log.d(TAG, "interrupt");
     }
@@ -912,7 +927,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         }
 
         TextView seed = (TextView) convertView.findViewById(R.id.search_item_seed);
-        if (item.seed == null || item.seed.isEmpty()) {
+        if (item.seed == null) {
             seed.setVisibility(View.GONE);
         } else {
             seed.setVisibility(View.VISIBLE);
@@ -920,7 +935,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         }
 
         TextView leech = (TextView) convertView.findViewById(R.id.search_item_leech);
-        if (item.leech == null || item.leech.isEmpty()) {
+        if (item.leech == null) {
             leech.setVisibility(View.GONE);
         } else {
             leech.setVisibility(View.VISIBLE);
@@ -1419,13 +1434,26 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         item.torrent = matcher(url, item.html, s.get("torrent"));
         item.date = matcher(item.html, s.get("date"));
         item.size = matcher(item.html, s.get("size"));
-        item.seed = matcher(item.html, s.get("seed"));
-        item.leech = matcher(item.html, s.get("leech"));
+        item.seed = matcherLong(item.html, s.get("seed"));
+        item.leech = matcherLong(item.html, s.get("leech"));
+        item.downloads = matcherLong(item.html, s.get("downloads"));
+        item.downloads_total = matcherLong(item.html, s.get("downloads_total"));
         item.details = matcher(url, item.html, s.get("details"));
         item.details_html = matcherHtml(item.html, s.get("details_html"));
         item.search = s;
         item.base = url;
         return item;
+    }
+
+    Long matcherLong(String html, String q) {
+        String s = matcher(html, q);
+        if (s == null || s.isEmpty())
+            return null;
+        try {
+            return Long.valueOf(s);
+        } catch (NumberFormatException ignore) {
+            return null;
+        }
     }
 
     String matcher(String url, String html, String q) {

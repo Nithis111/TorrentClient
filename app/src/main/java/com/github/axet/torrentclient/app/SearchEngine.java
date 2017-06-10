@@ -16,6 +16,7 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class SearchEngine {
     public static final String TAG = SearchEngine.class.getSimpleName();
@@ -108,6 +109,10 @@ public class SearchEngine {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public Set<String> keySet() {
+        return map.keySet();
     }
 
     public Map<String, String> getMap(String key) {

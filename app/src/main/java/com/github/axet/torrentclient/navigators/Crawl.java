@@ -11,6 +11,7 @@ import android.database.sqlite.SQLiteQueryBuilder;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffColorFilter;
 import android.provider.BaseColumns;
+import android.support.annotation.NonNull;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -38,6 +39,7 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.select.Elements;
 
+import java.util.ArrayList;
 import java.util.Locale;
 import java.util.Map;
 import java.util.TreeMap;
@@ -57,21 +59,23 @@ public class Crawl extends Search {
     public static int CRAWL_END = 3; // how many tries to confirm end
     public static int CRAWL_DUPS = 20; // how many dups == end
 
-    private static final String TEXT_TYPE = " TEXT";
-    private static final String COMMA_SEP = ",";
-    private static final String SQL_CREATE_ENTRIES =
-            "CREATE TABLE " + CrawlEntry.TABLE_NAME + " (" +
-                    CrawlEntry._ID + " INTEGER PRIMARY KEY AUTOINCREMENT" + COMMA_SEP +
-                    CrawlEntry.COLUMN_ENGINE + TEXT_TYPE + COMMA_SEP +
-                    CrawlEntry.COLUMN_TITLE + TEXT_TYPE + COMMA_SEP +
-                    CrawlEntry.COLUMN_IMAGE + TEXT_TYPE + COMMA_SEP +
-                    CrawlEntry.COLUMN_DETAILS + TEXT_TYPE + COMMA_SEP +
-                    CrawlEntry.COLUMN_MAGNET + TEXT_TYPE + COMMA_SEP +
-                    CrawlEntry.COLUMN_TORRENT + TEXT_TYPE + COMMA_SEP +
-                    CrawlEntry.COLUMN_DATE + TEXT_TYPE +
-                    " )";
+    FrameLayout progressFrame;
+    TextView progressStatus;
+    ImageView progressRefresh;
+    ProgressBar progressBar;
+    TreeMap<String, State> crawls = new TreeMap<>();
+    ArrayList<State> crawlsTop = new ArrayList<>();
+    int crawlsTopIndex = 0;
+    Runnable crawlNext = new Runnable() {
+        @Override
+        public void run() {
+            crawlNextThread();
+        }
+    };
+    Thread crawlThread;
+    HttpProxyClient crawlHttp;
 
-    private static final String SQL_DELETE_ENTRIES = "DROP TABLE IF EXISTS " + CrawlEntry.TABLE_NAME;
+    CrawlDbHelper db;
 
     public static boolean isString(String s) {
         if (s.length() < 2)
@@ -90,6 +94,8 @@ public class Crawl extends Search {
         int i = c.getColumnIndex(name);
         if (i == -1)
             return null;
+        if (c.isNull(i))
+            return null;
         String s = c.getString(i);
         if (s == null || s.isEmpty())
             return null;
@@ -99,6 +105,8 @@ public class Crawl extends Search {
     public static Long getLong(Cursor c, String name) {
         int i = c.getColumnIndex(name);
         if (i == -1)
+            return null;
+        if (c.isNull(i))
             return null;
         return c.getLong(i);
     }
@@ -115,6 +123,14 @@ public class Crawl extends Search {
         return s;
     }
 
+    public static class CrawlSort implements Comparable<State> {
+
+        @Override
+        public int compareTo(@NonNull State o) {
+            return 0;
+        }
+    }
+
     public static class CrawlEntry implements BaseColumns {
         public static final String TABLE_NAME = "crawl";
         public static final String COLUMN_ENGINE = "engine";
@@ -124,60 +140,132 @@ public class Crawl extends Search {
         public static final String COLUMN_MAGNET = "magnet";
         public static final String COLUMN_TORRENT = "torrent";
         public static final String COLUMN_DATE = "date";
+        public static final String COLUMN_LAST = "last"; // last update timestamp
+        public static final String COLUMN_DOWNLOADS = "downloads"; // downloads from last update
+        public static final String COLUMN_DOWNLOADS_TOTAL = "downloads_total";
+        public static final String COLUMN_SEED = "seed"; // seed from last update
+        public static final String COLUMN_LEECH = "leech"; // leech from last update
     }
 
-    public static class CrawlDbHelper extends SQLiteOpenHelper {
-        // If you change the database schema, you must increment the database version.
-        public static final int DATABASE_VERSION = 1;
-        public static final String DATABASE_NAME = "crawl.db";
-
-        public static final String FTS_VIRTUAL_TABLE = "FTS";
+    public static class IndexEntry {
+        public static final String TABLE_NAME = "FTS";
         public static final String COL_ENGINE = "ENGINE";
         public static final String COL_WORD = "WORD";
         public static final String COL_CRAWL = "CRAWL_ID";
+    }
+
+    public static class CrawlDbHelper extends SQLiteOpenHelper {
+        public static final int DATABASE_VERSION = 2;
+        public static final String DATABASE_NAME = "crawl.db";
 
         public static final String FTS_TABLE_CREATE =
-                "CREATE VIRTUAL TABLE " + FTS_VIRTUAL_TABLE +
+                "CREATE VIRTUAL TABLE " + IndexEntry.TABLE_NAME +
                         " USING fts3 (" +
-                        COL_ENGINE + ", " +
-                        COL_WORD + ", " +
-                        COL_CRAWL + ")";
+                        IndexEntry.COL_ENGINE + ", " +
+                        IndexEntry.COL_WORD + ", " +
+                        IndexEntry.COL_CRAWL + ")";
 
-        private SQLiteDatabase mDatabase;
+        private static final String TEXT_TYPE = " TEXT";
+        public static String LONG_TYPE = " INTEGER";
+        private static final String COMMA_SEP = ",";
+        private static final String SQL_CREATE_ENTRIES =
+                "CREATE TABLE " + CrawlEntry.TABLE_NAME + " (" +
+                        CrawlEntry._ID + " INTEGER PRIMARY KEY AUTOINCREMENT" + COMMA_SEP +
+                        CrawlEntry.COLUMN_ENGINE + TEXT_TYPE + COMMA_SEP +
+                        CrawlEntry.COLUMN_TITLE + TEXT_TYPE + COMMA_SEP +
+                        CrawlEntry.COLUMN_IMAGE + TEXT_TYPE + COMMA_SEP +
+                        CrawlEntry.COLUMN_DETAILS + TEXT_TYPE + COMMA_SEP +
+                        CrawlEntry.COLUMN_MAGNET + TEXT_TYPE + COMMA_SEP +
+                        CrawlEntry.COLUMN_TORRENT + TEXT_TYPE + COMMA_SEP +
+                        CrawlEntry.COLUMN_DATE + TEXT_TYPE + COMMA_SEP +
+                        CrawlEntry.COLUMN_LAST + LONG_TYPE + COMMA_SEP +
+                        CrawlEntry.COLUMN_SEED + LONG_TYPE + COMMA_SEP +
+                        CrawlEntry.COLUMN_LEECH + LONG_TYPE + COMMA_SEP +
+                        CrawlEntry.COLUMN_DOWNLOADS + LONG_TYPE + COMMA_SEP +
+                        CrawlEntry.COLUMN_DOWNLOADS_TOTAL + LONG_TYPE +
+                        " )";
+
+        private static final String SQL_DELETE_ENTRIES = "DROP TABLE IF EXISTS " + CrawlEntry.TABLE_NAME;
 
         public CrawlDbHelper(Context context) {
             super(context, DATABASE_NAME, null, DATABASE_VERSION);
         }
 
         public void onCreate(SQLiteDatabase db) {
-            this.mDatabase = db;
             db.execSQL(SQL_CREATE_ENTRIES);
             db.execSQL(FTS_TABLE_CREATE);
         }
 
         public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-            // This database is only a cache for online data, so its upgrade policy is
-            // to simply to discard the data and start over
-            db.execSQL(SQL_DELETE_ENTRIES);
-            db.execSQL("DROP TABLE IF EXISTS " + FTS_VIRTUAL_TABLE);
-            onCreate(db);
+            int cur = oldVersion;
+            if (cur == 1) { // 1 --> 2
+                db.execSQL("ALTER TABLE " + CrawlEntry.TABLE_NAME + " ADD COLUMN " + CrawlEntry.COLUMN_LAST + " " + LONG_TYPE + " ;");
+                db.execSQL("ALTER TABLE " + CrawlEntry.TABLE_NAME + " ADD COLUMN " + CrawlEntry.COLUMN_SEED + " " + LONG_TYPE + " ;");
+                db.execSQL("ALTER TABLE " + CrawlEntry.TABLE_NAME + " ADD COLUMN " + CrawlEntry.COLUMN_LEECH + " " + LONG_TYPE + " ;");
+                db.execSQL("ALTER TABLE " + CrawlEntry.TABLE_NAME + " ADD COLUMN " + CrawlEntry.COLUMN_DOWNLOADS + " " + LONG_TYPE + " ;");
+                db.execSQL("ALTER TABLE " + CrawlEntry.TABLE_NAME + " ADD COLUMN " + CrawlEntry.COLUMN_DOWNLOADS_TOTAL + " " + LONG_TYPE + " ;");
+                cur = 2;
+            }
+//            db.execSQL(SQL_DELETE_ENTRIES);
+//            db.execSQL("DROP TABLE IF EXISTS " + IndexEntry.TABLE_NAME);
+//            onCreate(db);
         }
 
         public void onDowngrade(SQLiteDatabase db, int oldVersion, int newVersion) {
             onUpgrade(db, oldVersion, newVersion);
         }
 
-        public long addCrawl(String engine, String title, String image, String details, String magnet, String torrent, String date) {
+        void dropCrawl(long id) {
+            SQLiteDatabase db = getWritableDatabase();
+            db.delete(CrawlEntry.TABLE_NAME, CrawlEntry._ID + " == ?", new String[]{"" + id});
+            db.delete(IndexEntry.TABLE_NAME, IndexEntry.COL_CRAWL + " == ?", new String[]{"" + id});
+        }
+
+        public long addCrawl(String engine, SearchItem item) {
+            long now = System.currentTimeMillis();
             SQLiteDatabase db = getWritableDatabase();
             ContentValues initialValues = new ContentValues();
             initialValues.put(CrawlEntry.COLUMN_ENGINE, engine);
-            initialValues.put(CrawlEntry.COLUMN_TITLE, title);
-            initialValues.put(CrawlEntry.COLUMN_IMAGE, image);
-            initialValues.put(CrawlEntry.COLUMN_DETAILS, details);
-            initialValues.put(CrawlEntry.COLUMN_MAGNET, magnet);
-            initialValues.put(CrawlEntry.COLUMN_TORRENT, torrent);
-            initialValues.put(CrawlEntry.COLUMN_DATE, date);
+            initialValues.put(CrawlEntry.COLUMN_TITLE, item.title);
+            initialValues.put(CrawlEntry.COLUMN_IMAGE, item.image);
+            initialValues.put(CrawlEntry.COLUMN_DETAILS, item.details);
+            initialValues.put(CrawlEntry.COLUMN_MAGNET, item.magnet);
+            initialValues.put(CrawlEntry.COLUMN_TORRENT, item.torrent);
+            initialValues.put(CrawlEntry.COLUMN_DATE, item.date);
+            initialValues.put(CrawlEntry.COLUMN_LAST, now);
+            initialValues.put(CrawlEntry.COLUMN_SEED, item.seed);
+            initialValues.put(CrawlEntry.COLUMN_LEECH, item.leech);
+            initialValues.put(CrawlEntry.COLUMN_DOWNLOADS, item.downloads);
+            initialValues.put(CrawlEntry.COLUMN_DOWNLOADS_TOTAL, item.downloads_total);
             return db.insert(CrawlEntry.TABLE_NAME, null, initialValues);
+        }
+
+        public long updateCrawl(long id, SearchItem item) {
+            long now = System.currentTimeMillis();
+            SQLiteDatabase db = getWritableDatabase();
+            ContentValues initialValues = new ContentValues();
+            if (item.image != null)
+                initialValues.put(CrawlEntry.COLUMN_IMAGE, item.image);
+            if (item.details != null)
+                initialValues.put(CrawlEntry.COLUMN_DETAILS, item.details);
+            if (item.magnet != null)
+                initialValues.put(CrawlEntry.COLUMN_MAGNET, item.magnet);
+            if (item.torrent != null)
+                initialValues.put(CrawlEntry.COLUMN_TORRENT, item.torrent);
+            if (item.date != null)
+                initialValues.put(CrawlEntry.COLUMN_DATE, item.date);
+            initialValues.put(CrawlEntry.COLUMN_LAST, now);
+            if (item.seed != null)
+                initialValues.put(CrawlEntry.COLUMN_SEED, item.seed);
+            if (item.leech != null)
+                initialValues.put(CrawlEntry.COLUMN_LEECH, item.leech);
+            if (item.downloads != null)
+                initialValues.put(CrawlEntry.COLUMN_DOWNLOADS, item.downloads);
+            if (item.downloads_total != null)
+                initialValues.put(CrawlEntry.COLUMN_DOWNLOADS_TOTAL, item.downloads_total);
+            String where = CrawlEntry._ID + " = ?";
+            String[] args = new String[]{"" + id};
+            return db.update(CrawlEntry.TABLE_NAME, initialValues, where, args);
         }
 
         public SearchItem get(long id) {
@@ -197,6 +285,11 @@ public class Crawl extends Search {
             s.magnet = getString(c, CrawlEntry.COLUMN_MAGNET);
             s.torrent = getString(c, CrawlEntry.COLUMN_TORRENT);
             s.date = getString(c, CrawlEntry.COLUMN_DATE);
+            s.last = getLong(c, CrawlEntry.COLUMN_LAST);
+            s.seed = getLong(c, CrawlEntry.COLUMN_SEED);
+            s.leech = getLong(c, CrawlEntry.COLUMN_LEECH);
+            s.downloads = getLong(c, CrawlEntry.COLUMN_DOWNLOADS);
+            s.downloads_total = getLong(c, CrawlEntry.COLUMN_DOWNLOADS_TOTAL);
             return s;
         }
 
@@ -205,9 +298,9 @@ public class Crawl extends Search {
             return c;
         }
 
-        public Cursor exist(String title) {
-            String selection = CrawlEntry.COLUMN_TITLE + " = ?";
-            String[] selectionArgs = new String[]{title};
+        public Cursor exist(String engine, String title) {
+            String selection = CrawlEntry.COLUMN_ENGINE + " = ? AND " + CrawlEntry.COLUMN_TITLE + " = ?";
+            String[] selectionArgs = new String[]{engine, title};
             Cursor c = query(selection, selectionArgs, null, null, null);
             return c;
         }
@@ -236,10 +329,10 @@ public class Crawl extends Search {
         public long addWord(String engine, String words, long definition) {
             SQLiteDatabase db = getWritableDatabase();
             ContentValues initialValues = new ContentValues();
-            initialValues.put(COL_ENGINE, engine);
-            initialValues.put(COL_WORD, words);
-            initialValues.put(COL_CRAWL, definition);
-            return db.insert(FTS_VIRTUAL_TABLE, null, initialValues);
+            initialValues.put(IndexEntry.COL_ENGINE, engine);
+            initialValues.put(IndexEntry.COL_WORD, words);
+            initialValues.put(IndexEntry.COL_CRAWL, definition);
+            return db.insert(IndexEntry.TABLE_NAME, null, initialValues);
         }
 
         public Cursor getWordMatches(String engine, String query, String[] columns, String order, int offset, int limit) {
@@ -250,14 +343,14 @@ public class Crawl extends Search {
                 s += q + "*" + " ";
             }
 
-            String selection = FTS_VIRTUAL_TABLE + "." + COL_ENGINE + " = ? AND " + COL_WORD + " MATCH ?";
+            String selection = IndexEntry.TABLE_NAME + "." + IndexEntry.COL_ENGINE + " = ? AND " + IndexEntry.COL_WORD + " MATCH ?";
             String[] selectionArgs = new String[]{engine, s};
             return queryIndex(selection, selectionArgs, columns, order, offset + ", " + limit);
         }
 
         private Cursor queryIndex(String selection, String[] selectionArgs, String[] columns, String order, String limit) {
             SQLiteQueryBuilder builder = new SQLiteQueryBuilder();
-            builder.setTables(FTS_VIRTUAL_TABLE + " INNER JOIN " + CrawlEntry.TABLE_NAME + " ON " + FTS_VIRTUAL_TABLE + "." + COL_CRAWL + "=" + CrawlEntry.TABLE_NAME + "." + CrawlEntry._ID);
+            builder.setTables(IndexEntry.TABLE_NAME + " INNER JOIN " + CrawlEntry.TABLE_NAME + " ON " + IndexEntry.TABLE_NAME + "." + IndexEntry.COL_CRAWL + "=" + CrawlEntry.TABLE_NAME + "." + CrawlEntry._ID);
 
             Cursor cursor = builder.query(getReadableDatabase(),
                     columns, selection, selectionArgs, null, null, order, limit);
@@ -314,22 +407,6 @@ public class Crawl extends Search {
         }
     }
 
-    FrameLayout progressFrame;
-    TextView progressStatus;
-    ImageView progressRefresh;
-    ProgressBar progressBar;
-    TreeMap<String, State> crawls = new TreeMap<>();
-    Runnable crawlNext = new Runnable() {
-        @Override
-        public void run() {
-            crawlNextThread();
-        }
-    };
-    Thread crawlThread;
-    HttpProxyClient crawlHttp;
-
-    CrawlDbHelper db;
-
     public Crawl(MainActivity m) {
         super(m);
         db = new CrawlDbHelper(m);
@@ -376,6 +453,7 @@ public class Crawl extends Search {
                         State next = crawls.get(key);
                         next.last = 0;
                     }
+                    crawlsTopIndex = 0;
                     crawlNextThread();
                 }
             }
@@ -394,6 +472,21 @@ public class Crawl extends Search {
         for (String key : new TreeSet<>(this.crawls.keySet())) { // drop old engines
             if (!crawls.containsKey(key))
                 this.crawls.remove(key);
+        }
+        // load 'crawl_top's
+        for (String key : engine.keySet()) {
+            if (key.startsWith("crawl_")) {
+                Map<String, String> crawl = engine.getMap(key);
+                String get = crawl.get("get");
+                Map<String, String> tops = engine.getMap(get);
+                for (String k : tops.keySet()) {
+                    String url = tops.get(k);
+                    State s = new State();
+                    s.url = url;
+                    s.s = crawl;
+                    this.crawlsTop.add(s);
+                }
+            }
         }
 
         progressUpdate();
@@ -429,7 +522,6 @@ public class Crawl extends Search {
         return s;
     }
 
-
     State getLast() {
         State s = null;
         long last = Long.MIN_VALUE;
@@ -444,36 +536,55 @@ public class Crawl extends Search {
     }
 
     void crawlNextThread() {
-        State s = getNextState();
+        final State s = getNextState();
 
         if (crawlThread != null) {
             crawlStop();
         }
 
-        if (s == null)
-            return;
-
-        if (!Storage.connectionsAllowed(context) || error != null || message.size() >= 5) {
+        if (!Storage.connectionsAllowed(context) || error != null || message.size() >= 3) {
             crawlDelay();
             return;
+        }
+
+        if (s != null) {
+            crawlsTopIndex = 0;
+            crawlThread = new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        crawlLoad(s);
+                    } catch (RuntimeException e) {
+                        post(e);
+                    }
+                    if (Thread.currentThread().isInterrupted())
+                        return;
+                    crawlDelay();
+                }
+            }, "Crawl Thread");
+        } else {
+            if (crawlsTopIndex >= crawlsTop.size()) {
+                return;
+            }
+            final State t = crawlsTop.get(crawlsTopIndex);
+            crawlsTopIndex++;
+            crawlThread = new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        crawlTopsLoad(t);
+                    } catch (RuntimeException e) {
+                        post(e);
+                    }
+                    crawlDelay();
+                }
+            }, "Crawl Update Thread");
         }
 
         progressBar.setVisibility(View.VISIBLE);
         progressRefresh.setVisibility(View.GONE);
         progressUpdate();
 
-        final State ss = s;
-        crawlThread = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    crawlLoad(ss);
-                } catch (RuntimeException e) {
-                    post(e);
-                }
-                crawlDelay();
-            }
-        }, "Crawl Thread");
         crawlThread.start();
     }
 
@@ -544,18 +655,21 @@ public class Crawl extends Search {
         Elements list = doc.select(select);
         int endDups = 0;
         for (int i = 0; i < list.size(); i++) {
+            long id;
             SearchItem item = searchItem(state.s, url, list.get(i).outerHtml());
-            Cursor c = db.exist(item.title);
+            Cursor c = db.exist(engine.getName(), item.title);
             if (c != null) { // exists?
-                dropCrawl(c.getLong(0)); // drop exiting
+                id = getLong(c, CrawlEntry._ID);
                 c.close();
                 if (state.end > CRAWL_END) { // updating?
                     endDups++; // inc dup index
                 }
+                db.updateCrawl(id, item);
+            } else {
+                id = db.addCrawl(engine.getName(), item);
+                String s = item.title.toLowerCase(EN);
+                db.addWord(engine.getName(), s, id);
             }
-            long id = db.addCrawl(engine.getName(), item.title, item.image, item.details, item.magnet, item.torrent, item.date);
-            String s = item.title.toLowerCase(EN);
-            db.addWord(engine.getName(), s, id);
             if (endDups >= list.size() || endDups > CRAWL_DUPS) { // all items are dups, stop. or dups more 20 for single refresh page
                 state.next = null;
                 state.last = System.currentTimeMillis();
@@ -569,7 +683,7 @@ public class Crawl extends Search {
                 }
             });
             try { // make thread low priority
-                Thread.sleep(100);
+                Thread.sleep(10);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 return;
@@ -579,8 +693,6 @@ public class Crawl extends Search {
         String next = matcher(url, html, state.s.get("next"));
         if (next == null) {
             state.end++;
-            if (state.endPage != state.page)
-                state.end = 0;
             state.endPage = state.page;
         } else {
             state.next = next;
@@ -592,6 +704,51 @@ public class Crawl extends Search {
         }
 
         state.last = System.currentTimeMillis();
+    }
+
+    void crawlTopsLoad(State s) {
+        HttpClient.DownloadResponse html = null;
+        if (s.s.containsKey("get")) {
+            html = crawlHttp.getResponse(null, s.url);
+            html.download();
+        }
+        if (html != null) {
+            crawlTopsHtml(s.s, s.url, html);
+            return;
+        }
+    }
+
+    void crawlTopsHtml(Map<String, String> s, String url, final HttpClient.DownloadResponse html) {
+        crawlTops(s, url, html.getHtml());
+    }
+
+    void crawlTops(final Map<String, String> s, String url, String html) {
+        String select = s.get("list");
+
+        Document doc = Jsoup.parse(html);
+        Elements list = doc.select(select);
+        for (int i = 0; i < list.size(); i++) {
+            SearchItem item = searchItem(s, url, list.get(i).outerHtml());
+            Cursor c = db.exist(engine.getName(), item.title);
+            if (c != null) {
+                long id = getLong(c, CrawlEntry._ID);
+                c.close();
+                db.updateCrawl(id, item);
+            }
+            Log.d(TAG, "update " + item.title);
+            handler.post(new Runnable() {
+                @Override
+                public void run() {
+                    progressUpdate();
+                }
+            });
+            try { // make thread low priority
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                return;
+            }
+        }
     }
 
     public void crawlStop() {
@@ -718,16 +875,11 @@ public class Crawl extends Search {
             done.run();
     }
 
-    void dropCrawl(long id) {
-        db.getWritableDatabase().delete(CrawlEntry.TABLE_NAME, CrawlEntry._ID + " == ?", new String[]{"" + id});
-        db.getWritableDatabase().delete(CrawlDbHelper.FTS_VIRTUAL_TABLE, CrawlDbHelper.COL_CRAWL + " == ?", new String[]{"" + id});
-    }
-
     @Override
     public void delete() {
         super.delete();
         db.getWritableDatabase().delete(CrawlEntry.TABLE_NAME, CrawlEntry.COLUMN_ENGINE + " == ?", new String[]{engine.getName()});
-        db.getWritableDatabase().delete(CrawlDbHelper.FTS_VIRTUAL_TABLE, CrawlDbHelper.COL_ENGINE + " == ?", new String[]{engine.getName()});
+        db.getWritableDatabase().delete(IndexEntry.TABLE_NAME, IndexEntry.COL_ENGINE + " == ?", new String[]{engine.getName()});
     }
 
     void progressUpdate() {
