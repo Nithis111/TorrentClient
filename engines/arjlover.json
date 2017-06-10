@@ -1,5 +1,5 @@
 {
-  "version": 3,
+  "version": 5,
   "name": "arjlover.net",
   "home": {
     "get": "http://multiki.arjlover.net/"
@@ -25,12 +25,25 @@
     "Flm": "http://film.arjlover.net/film/indext.html",
     "Fls": "http://filmiki.arjlover.net/filmiki/indext.html"
   },
+  "crawl_tops": {
+    "get": "crawls_top",
+    "list": "tbody tr.o, tr.e",
+    "title": "td.l",
+    "downloads": "td:eq(2)",
+    "torrent": "a[href*=torrent]:regex(.*href=\"([^\"]*)\".*)"
+  },
+  "crawls_top": {
+    "Mlt": "http://multiki.arjlover.net/multiki/indexp.html",
+    "Flm": "http://film.arjlover.net/film/indexp.html",
+    "Fls": "http://filmiki.arjlover.net/filmiki/indexp.html"
+  },
   "top": {
     "get": "tops",
     "list": "crawl"
   },
   "tops": {
-    "Recent": "substr(date,-4,4)||case substr(date,-8,3) when 'Jan' then '01' when 'Feb' then '02' when 'Mar' then '03' when 'Apr' then '04' when 'May' then '05' when 'Jun' then '06' when 'Jul' then '07' when 'Aug' then '08' when 'Sep' then '09' when 'Oct' then '10' when 'Nov' then '11' when 'Dec' then '12' end ||substr('00'||trim(substr(date,1,2)),-2,2) desc"
+    "Recent": "substr(date,-4,4)||case substr(date,-8,3) when 'Jan' then '01' when 'Feb' then '02' when 'Mar' then '03' when 'Apr' then '04' when 'May' then '05' when 'Jun' then '06' when 'Jul' then '07' when 'Aug' then '08' when 'Sep' then '09' when 'Oct' then '10' when 'Nov' then '11' when 'Dec' then '12' end ||substr('00'||trim(substr(date,1,2)),-2,2) desc",
+    "Top": "last/3600000 desc, downloads desc"
   },
   "search": {
     "get": "substr(date,-4,4)||case substr(date,-8,3) when 'Jan' then '01' when 'Feb' then '02' when 'Mar' then '03' when 'Apr' then '04' when 'May' then '05' when 'Jun' then '06' when 'Jul' then '07' when 'Aug' then '08' when 'Sep' then '09' when 'Oct' then '10' when 'Nov' then '11' when 'Dec' then '12' end ||substr('00'||trim(substr(date,1,2)),-2,2) desc",

@@ -146,7 +146,8 @@ public class EnginesManager {
         for (int i = 0; i < list.size(); i++) {
             Item m = list.get(i);
             if (m.url.equals(url)) {
-                list.set(i, item);
+                Item old = list.set(i, item);
+                old.search.close();
                 return search;
             }
         }
