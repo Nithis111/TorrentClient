@@ -54,7 +54,7 @@ public class Crawl extends Search {
     public static int REFRESH_CRAWL = 24 * 60 * 60 * 1000; // 1 day
     public static int CRAWL_SHOW = 20; // how many items to load per page
     public static int CRAWL_DELAY = 1 * 1000;
-    public static int CRAWL_END = 5; // how many tries to confirm end
+    public static int CRAWL_END = 3; // how many tries to confirm end
     public static int CRAWL_DUPS = 20; // how many dups == end
 
     private static final String TEXT_TYPE = " TEXT";
