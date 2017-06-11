@@ -8,4 +8,6 @@
     <color name="secondBackgroundDark">#151515</color>
     <color name="unreadLight">#ffeea3</color>
     <color name="unreadDark">#5e5320</color>
+
+    <color name="black_overlay">#66000000</color>
 </resources>

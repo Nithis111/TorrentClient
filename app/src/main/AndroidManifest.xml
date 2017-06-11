@@ -21,6 +21,7 @@
         <service
             android:name=".services.TorrentService"
             android:stopWithTask="false" />
+
         <provider
             android:name=".services.TorrentContentProvider"
             android:authorities="com.github.axet.torrentclient"
@@ -136,6 +137,11 @@
                 <data android:pathPattern=".*\\..*\\..*\\..*\\..*\\..*\\..*\\..*\\.torrent.*" />
             </intent-filter>
         </activity>
+        <activity
+            android:name=".activities.PlayerActivity"
+            android:configChanges="orientation|keyboardHidden|screenSize"
+            android:label="@string/title_activity_player"
+            android:theme="@style/FullscreenTheme"></activity>
     </application>
 
 </manifest>

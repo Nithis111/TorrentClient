@@ -727,6 +727,11 @@ public class Crawl extends Search {
     void crawlTops(final Map<String, String> s, String url, String html) {
         String select = s.get("list");
 
+        String max = s.get("max");
+        Integer m = null;
+        if (max != null && !max.isEmpty())
+            m = Integer.valueOf(max);
+
         Document doc = Jsoup.parse(html);
         Elements list = doc.select(select);
         for (int i = 0; i < list.size(); i++) {
@@ -737,6 +742,8 @@ public class Crawl extends Search {
                 c.close();
                 db.updateCrawl(id, item);
             }
+            if (m != null && i >= m)
+                break;
             Log.d(TAG, "update " + item.title);
             handler.post(new Runnable() {
                 @Override

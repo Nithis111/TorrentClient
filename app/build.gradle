@@ -10,8 +10,8 @@ android {
         applicationId "com.github.axet.torrentclient"
         minSdkVersion 15
         targetSdkVersion 23 // 24+ unable to share 'resource/folder'
-        versionCode 334
-        versionName "2.7.35"
+        versionCode 335
+        versionName "2.7.36"
     }
     signingConfigs {
         release {
@@ -50,20 +50,25 @@ android {
 
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
-    testCompile 'junit:junit:4.12'
-    compile 'com.android.support:design:25.3.1'
-    compile 'org.apache.commons:commons-math3:3.6.1'
-    compile 'com.getbase:floatingactionbutton:1.10.1' // API 14+
-    compile 'org.apmem.tools:layouts:1.10@aar' // API 14+
+    // API 14+
+    // API 14+
     compile('com.mikepenz:materialdrawer:5.4.0@aar') { transitive = true } // API 10+
     compile('com.github.axet:wget:1.4.2') {
         exclude group: 'com.thoughtworks.xstream', module: 'xstream'
     }
-    compile 'com.github.axet:android-library:1.12.20' // compile project(':android-library')
-    compile 'com.github.axet:libtorrent:0.7.6@aar' // compile project(":libtorrent") // API 15+
-    compile ('com.github.axet:java-unrar:1.7.0-1') {
+    // compile project(':android-library')
+    // compile project(":libtorrent") // API 15+
+    compile('com.github.axet:java-unrar:1.7.0-1') {
         exclude group: 'commons-logging', module: 'commons-logging'
     }
 //    compile 'com.subgraph.orchid:orchid:0.9.1'
 //    compile 'com.madgag.spongycastle:prov:1.54.0.0'
+    compile 'com.android.support:design:25.3.1'
+    compile 'org.apache.commons:commons-math3:3.6.1'
+    compile 'com.getbase:floatingactionbutton:1.10.1'
+    compile 'org.apmem.tools:layouts:1.10@aar'
+    compile 'com.github.axet:android-library:1.12.20'
+    compile 'com.github.axet:libtorrent:0.7.6@aar'
+    compile 'com.android.support:support-v4:25.3.1'
+    testCompile 'junit:junit:4.12'
 }

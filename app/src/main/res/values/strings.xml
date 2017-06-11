@@ -125,4 +125,8 @@
     <string name="storage_path">Storage Path</string>
     <string name="stop">Stop Torrent</string>
     <string name="start">Start Torrent</string>
+
+    <string name="title_activity_player">PlayerActivity</string>
+    <string name="dummy_button">Dummy Button</string>
+    <string name="dummy_content">DUMMY\nCONTENT</string>
 </resources>
