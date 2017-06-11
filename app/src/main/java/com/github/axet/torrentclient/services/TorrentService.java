@@ -9,6 +9,9 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
+import android.graphics.Color;
+import android.media.RingtoneManager;
+import android.net.Uri;
 import android.os.Build;
 import android.os.IBinder;
 import android.support.annotation.Nullable;
@@ -23,12 +26,14 @@ import com.github.axet.torrentclient.R;
 import com.github.axet.torrentclient.activities.BootActivity;
 import com.github.axet.torrentclient.activities.MainActivity;
 import com.github.axet.torrentclient.app.MainApplication;
+import com.github.axet.torrentclient.app.Storage;
 import com.github.axet.torrentclient.app.TorrentPlayer;
 
 public class TorrentService extends Service {
     public static final String TAG = TorrentService.class.getSimpleName();
 
     public static final int NOTIFICATION_TORRENT_ICON = 1;
+    public static final int NOTIFICATION_DOWNLOAD_ICON = 10; // 10+ number of torrent
 
     public static String TITLE = "TITLE";
 
@@ -78,6 +83,34 @@ public class TorrentService extends Service {
         edit.putBoolean(MainApplication.PREFERENCE_RUN, false);
         edit.commit();
         context.stopService(new Intent(context, TorrentService.class));
+    }
+
+    public static void notifyDone(Context context, Storage.Torrent t, int i) {
+        String title = context.getString(R.string.app_name);
+        String text = t.name();
+
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(context)
+                .setSmallIcon(R.drawable.ic_stat_downloaded)
+                .setContentTitle(title)
+                .setContentText(text);
+
+        PendingIntent main = PendingIntent.getService(context, 0,
+                new Intent(context, TorrentService.class).setAction(TorrentService.SHOW_ACTIVITY),
+                PendingIntent.FLAG_UPDATE_CURRENT);
+
+        NotificationCompat.BigTextStyle style = new NotificationCompat.BigTextStyle();
+        style.setBigContentTitle(title);
+        style.bigText(text);
+
+        builder.setContentIntent(main);
+        builder.setAutoCancel(true);
+        builder.setLights(Color.BLUE, 500, 500);
+        builder.setStyle(style);
+        Uri alarmSound = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
+        builder.setSound(alarmSound);
+
+        NotificationManager manager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+        manager.notify(NOTIFICATION_DOWNLOAD_ICON + i, builder.build());
     }
 
     public TorrentService() {
