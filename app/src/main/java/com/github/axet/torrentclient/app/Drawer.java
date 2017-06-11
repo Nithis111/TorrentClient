@@ -51,9 +51,9 @@ import libtorrent.Libtorrent;
 public class Drawer implements com.mikepenz.materialdrawer.Drawer.OnDrawerItemClickListener, UnreadCountDrawable.UnreadCount {
     public static final String TAG = Drawer.class.getSimpleName();
 
-    static final long INFO_MANUAL_REFRESH = 5 * 1000;
-    static final long INFO_AUTO_REFRESH = 5 * 60 * 1000;
-    static final long ENGINES_AUTO_REFRESH = 24 * 60 * 60 * 1000;
+    static final long INFO_MANUAL_REFRESH = 5 * 1000; // prevent refresh if button hit often then 5 seconds
+    static final long INFO_AUTO_REFRESH = 5 * 60 * 1000; // ping external port on drawer open not often then 5 minutes
+    static final long ENGINES_AUTO_REFRESH = 12 * 60 * 60 * 1000; // ato refresh engines every 12 hours
 
     Context context;
     MainActivity main;
