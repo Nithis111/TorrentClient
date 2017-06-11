@@ -9,7 +9,9 @@ import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Handler;
 import android.support.v7.preference.PreferenceManager;
+import android.view.SurfaceHolder;
 
+import com.github.axet.torrentclient.activities.PlayerActivity;
 import com.github.axet.torrentclient.services.TorrentContentProvider;
 
 import java.io.File;
@@ -260,6 +262,7 @@ public class TorrentPlayer {
     MediaPlayer player;
     int playingIndex = -1;
     Uri playingUri;
+    PlayerFile playingFile;
     Runnable next;
     Runnable progress = new Runnable() {
         @Override
@@ -277,6 +280,7 @@ public class TorrentPlayer {
         }
     };
     Handler handler;
+    boolean video;
 
     BroadcastReceiver receiver = new BroadcastReceiver() {
         @Override
@@ -496,6 +500,7 @@ public class TorrentPlayer {
         }
         playingIndex = i;
         playingUri = f.uri;
+        playingFile = f;
         if (f.tor.file.getBytesCompleted() == f.tor.file.getLength())
             player = MediaPlayer.create(context, f.uri);
         if (player == null) {
@@ -516,9 +521,40 @@ public class TorrentPlayer {
         PlayerFile f = get(i);
         if (!open(f))
             return;
+        play();
+    }
+
+    public void play() {
+        if (!video) { // already playing video? just call start()
+//            String type = TorrentContentProvider.getType(playingFile.getName());
+//            if (type.startsWith("video")) {
+//                PlayerActivity.startActivity(context);
+//                return;
+//            } else {
+//                if (video) {
+//                    PlayerActivity.closeActivity(context);
+//                    video = false;
+//                }
+//            }
+        }
         saveDelay();
         player.start();
         progress.run();
+    }
+
+    public void play(SurfaceHolder holder) {
+        video = true;
+        Integer seek = null;
+        if (player != null) {
+            seek = player.getCurrentPosition();
+            player.release();
+        }
+        player = MediaPlayer.create(context, playingUri, holder);
+        if (seek != null)
+            player.seekTo(seek);
+        player.start();
+        progress.run();
+        saveDelay();
     }
 
     public void notifyNext() {
@@ -567,9 +603,7 @@ public class TorrentPlayer {
                 handler.removeCallbacks(progress);
                 handler.removeCallbacks(saveDelay);
             } else {
-                player.start();
-                progress.run();
-                saveDelay();
+                play();
             }
         }
     }
@@ -584,6 +618,7 @@ public class TorrentPlayer {
         next = null;
         playingIndex = -1;
         playingUri = null;
+        playingFile = null;
     }
 
     public void close() {

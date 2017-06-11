@@ -80,4 +80,10 @@
         <item name="android:background">@drawable/roundlabel_dark</item>
     </style>
 
+    <style name="FullscreenTheme" parent="AppThemeLight">
+        <item name="android:windowActionBarOverlay">true</item>
+        <item name="android:windowBackground">@null</item>
+        <item name="windowNoTitle">true</item>
+    </style>
+
 </resources>
