@@ -529,13 +529,15 @@ public class Storage extends com.github.axet.androidlibrary.app.Storage {
 
     void updateDone() {
         for (Torrent t : torrents) {
-            if (Libtorrent.torrentPendingBytesLength(t.t) == Libtorrent.torrentPendingBytesCompleted(t.t)) {
-                if (!t.done) {
-                    TorrentService.notifyDone(context, t, torrents.indexOf(t));
+            if (Libtorrent.metaTorrent(t.t)) {
+                if (Libtorrent.torrentPendingBytesLength(t.t) == Libtorrent.torrentPendingBytesCompleted(t.t)) {
+                    if (!t.done) {
+                        TorrentService.notifyDone(context, t, torrents.indexOf(t));
+                    }
+                    t.done = true;
+                } else {
+                    t.done = false;
                 }
-                t.done = true;
-            } else {
-                t.done = false;
             }
         }
     }
