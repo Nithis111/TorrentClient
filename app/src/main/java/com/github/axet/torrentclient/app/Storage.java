@@ -1,6 +1,8 @@
 package com.github.axet.torrentclient.app;
 
 import android.Manifest;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -8,12 +10,16 @@ import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
+import android.media.RingtoneManager;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
+import android.net.Uri;
 import android.net.wifi.SupplicantState;
 import android.net.wifi.WifiManager;
 import android.os.Handler;
 import android.preference.PreferenceManager;
+import android.support.v4.app.NotificationCompat;
 import android.util.Base64;
 import android.util.Log;
 
@@ -73,16 +79,17 @@ public class Storage extends com.github.axet.androidlibrary.app.Storage {
     BroadcastReceiver wifiReciver;
 
     WifiManager.MulticastLock mcastLock;
-    private static MulticastSocket socket;
+    protected static MulticastSocket socket;
 
     public static class Torrent {
         Context context;
 
         public long t; // libtorrent handler
         public String path; // path to where torrent data located
-        public boolean message;
+        public boolean message; // highlight torrent
         public boolean check; // force check required, files were altered
         public boolean readonly; // readonly files or target path, show warning
+        public boolean done; // done notification
 
         SpeedInfo downloaded = new SpeedInfo();
         SpeedInfo uploaded = new SpeedInfo();
@@ -338,6 +345,7 @@ public class Storage extends com.github.axet.androidlibrary.app.Storage {
                 Torrent tt = new Torrent(context, t, o.getString("path"), o.getBoolean("message"));
                 torrents.add(tt);
 
+                tt.done = o.optBoolean("done", false);
                 if (tt.altered()) {
                     tt.check = true;
                 }
@@ -390,6 +398,7 @@ public class Storage extends com.github.axet.androidlibrary.app.Storage {
             o.put("state", state);
             o.put("path", t.path);
             o.put("message", t.message);
+            o.put("done", t.done);
             edit.putString("torrent_" + i, o.toString());
         } catch (JSONException e) {
             throw new RuntimeException(e);
@@ -507,15 +516,28 @@ public class Storage extends com.github.axet.androidlibrary.app.Storage {
     void refresh() {
         if (refresh != null)
             handler.removeCallbacks(refresh);
-
         refresh = new Runnable() {
             @Override
             public void run() {
                 updateHeader();
+                updateDone();
                 handler.postDelayed(refresh, 1000);
             }
         };
         refresh.run();
+    }
+
+    void updateDone() {
+        for (Torrent t : torrents) {
+            if (Libtorrent.torrentPendingBytesLength(t.t) == Libtorrent.torrentPendingBytesCompleted(t.t)) {
+                if (!t.done) {
+                    TorrentService.notifyDone(context, t, torrents.indexOf(t));
+                }
+                t.done = true;
+            } else {
+                t.done = false;
+            }
+        }
     }
 
     boolean active() {
@@ -562,7 +584,6 @@ public class Storage extends com.github.axet.androidlibrary.app.Storage {
 
     public void add(Torrent t) {
         torrents.add(t);
-
         save();
     }
 

@@ -511,7 +511,7 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
         fab_stop.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if(getApp().player!=null) {
+                if (getApp().player != null) {
                     getApp().player.notifyStop();
                     getApp().player.close();
                     getApp().player = null;
@@ -583,11 +583,19 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
             menu.findItem(R.id.action_show_folder).setVisible(false);
         }
 
-        File path = getStorage().getStoragePath();
-        Intent intent = openFolderIntent(path);
-        if (intent.resolveActivityInfo(getPackageManager(), 0) == null) {
-            menu.findItem(R.id.action_show_folder).setVisible(false);
+        boolean folder = true;
+        Storage s = getStorage();
+        if (s != null) {
+            File path = s.getStoragePath();
+            Intent intent = openFolderIntent(path);
+            if (intent.resolveActivityInfo(getPackageManager(), 0) == null) {
+                folder = false;
+            }
+        } else {
+            folder = false;
         }
+        if (!folder)
+            menu.findItem(R.id.action_show_folder).setVisible(false);
 
         return true;
     }
