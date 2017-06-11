@@ -231,10 +231,10 @@ public class PlayerFragment extends Fragment implements MainActivity.TorrentFrag
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
                 if (fromUser) {
-                    if (player == null)
+                    if (app.player == null)
                         return;
-                    player.seek(progress);
-                    player.notifyProgress();
+                    app.player.seek(progress);
+                    app.player.notifyProgress();
                 }
             }
 
