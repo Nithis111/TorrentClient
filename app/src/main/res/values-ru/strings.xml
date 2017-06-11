@@ -76,7 +76,7 @@
     <string name="peers_tab">Пиры:</string>
     <string name="ok">OK</string>
     <string name="cancel">Отмена</string>
-    <string name="tab_player">Плеер</string>
+    <string name="tab_player">Аудио Плеер</string>
     <string name="tab_details">Подробно</string>
     <string name="tab_info">Инфо</string>
     <string name="tab_files">Файлы</string>

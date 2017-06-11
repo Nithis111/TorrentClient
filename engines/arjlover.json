@@ -25,14 +25,15 @@
     "Flm": "http://film.arjlover.net/film/indext.html",
     "Fls": "http://filmiki.arjlover.net/filmiki/indext.html"
   },
-  "crawl_tops": {
-    "get": "crawls_top",
+  "crawl_update": {
+    "get": "crawls_update",
+    "max": "30",
     "list": "tbody tr.o, tr.e",
     "title": "td.l",
     "downloads": "td:eq(2)",
     "torrent": "a[href*=torrent]:regex(.*href=\"([^\"]*)\".*)"
   },
-  "crawls_top": {
+  "crawls_update": {
     "Mlt": "http://multiki.arjlover.net/multiki/indexp.html",
     "Flm": "http://film.arjlover.net/film/indexp.html",
     "Fls": "http://filmiki.arjlover.net/filmiki/indexp.html"

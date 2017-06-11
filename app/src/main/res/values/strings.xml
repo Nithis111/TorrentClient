@@ -81,7 +81,7 @@
     <string name="peers_tab">Peers:</string>
     <string name="ok">OK</string>
     <string name="cancel">Cancel</string>
-    <string name="tab_player">PLAYER</string>
+    <string name="tab_player">AUDIO PLAYER</string>
     <string name="tab_details">DETAILS</string>
     <string name="tab_info">INFO</string>
     <string name="tab_files">FILES</string>
