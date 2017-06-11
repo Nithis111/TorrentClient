@@ -39,6 +39,18 @@ public class TorrentPlayer {
     public static final String PLAYER_STOP = TorrentPlayer.class.getCanonicalName() + ".PLAYER_STOP";
     public static final String PLAYER_PAUSE = TorrentPlayer.class.getCanonicalName() + ".PLAYER_PAUSE";
 
+    public static boolean skipType(PlayerFile f) { // MediaPlayer will open jpg and wait forever
+        String type = TorrentContentProvider.getType(f.getName());
+        if (type == null || type.isEmpty())
+            return false;
+        String[] skip = new String[]{"image"};
+        for (String s : skip) {
+            if (type.startsWith(s))
+                return true;
+        }
+        return false;
+    }
+
     public static void save(Context context, TorrentPlayer player) {
         final SharedPreferences shared = PreferenceManager.getDefaultSharedPreferences(context);
         SharedPreferences.Editor edit = shared.edit();
@@ -501,8 +513,10 @@ public class TorrentPlayer {
         playingIndex = i;
         playingUri = f.uri;
         playingFile = f;
-        if (f.tor.file.getBytesCompleted() == f.tor.file.getLength())
-            player = MediaPlayer.create(context, f.uri);
+        if (f.tor.file.getBytesCompleted() == f.tor.file.getLength()) {
+            if (!skipType(f))
+                player = MediaPlayer.create(context, f.uri);
+        }
         if (player == null) {
             notifyNext();
             next(i + 1);
@@ -525,7 +539,7 @@ public class TorrentPlayer {
     }
 
     public void play() {
-        if (!video) { // already playing video? just call start()
+//        if (!video) { // already playing video? just call start()
 //            String type = TorrentContentProvider.getType(playingFile.getName());
 //            if (type.startsWith("video")) {
 //                PlayerActivity.startActivity(context);
@@ -536,7 +550,7 @@ public class TorrentPlayer {
 //                    video = false;
 //                }
 //            }
-        }
+//        }
         saveDelay();
         player.start();
         progress.run();
