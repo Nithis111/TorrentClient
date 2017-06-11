@@ -314,6 +314,9 @@ public class PlayerFragment extends Fragment implements MainActivity.TorrentFrag
             }
         };
 
+        if (app.player != null)
+            app.player.notifyProgress(playerReceiver);
+
         update();
         if (player != null)
             list.setSelection(player.getPlaying());

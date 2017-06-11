@@ -637,15 +637,29 @@ public class TorrentPlayer {
         return torrent.t;
     }
 
-    public void notifyProgress() {
+    Intent notifyProgressIntent() {
         if (player == null)
-            return;
+            return null;
         Intent intent = new Intent(PLAYER_PROGRESS);
         intent.putExtra("t", torrent.t);
         intent.putExtra("pos", player.getCurrentPosition());
         intent.putExtra("dur", player.getDuration());
         intent.putExtra("play", player.isPlaying() || next != null);
+        return intent;
+    }
+
+    public void notifyProgress() {
+        Intent intent = notifyProgressIntent();
+        if (intent == null)
+            return;
         context.sendBroadcast(intent);
+    }
+
+    public void notifyProgress(Receiver receiver) {
+        Intent intent = notifyProgressIntent();
+        if (intent == null)
+            return;
+        receiver.onReceive(context, intent);
     }
 
     public void notifyStop() {
