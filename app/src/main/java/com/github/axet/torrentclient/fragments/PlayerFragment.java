@@ -203,10 +203,14 @@ public class PlayerFragment extends Fragment implements MainActivity.TorrentFrag
             @Override
             public void onClick(View v) {
                 if (app.player != null && app.player != player) {
+                    boolean p = app.player.isPlaying();
                     app.player.notifyStop();
                     app.player.close();
                     app.player = null;
-                } else if (player.getPlaying() == -1 && files.selected == -1) {
+                    if (p) // if were playing show play button; else start playing current
+                        return;
+                }
+                if (player.getPlaying() == -1 && files.selected == -1) {
                     play(0);
                 } else if (player.isPlaying() || player.getPlaying() == files.selected || files.selected == -1) {
                     int i = player.getPlaying();
@@ -309,6 +313,9 @@ public class PlayerFragment extends Fragment implements MainActivity.TorrentFrag
                 }
             }
         };
+
+        if (app.player != null)
+            app.player.notifyProgress(playerReceiver);
 
         update();
         if (player != null)
