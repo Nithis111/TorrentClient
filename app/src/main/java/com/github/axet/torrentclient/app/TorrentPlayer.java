@@ -9,7 +9,10 @@ import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Handler;
 import android.support.v7.preference.PreferenceManager;
+import android.view.Surface;
+import android.view.SurfaceHolder;
 
+import com.github.axet.torrentclient.activities.PlayerActivity;
 import com.github.axet.torrentclient.services.TorrentContentProvider;
 
 import java.io.File;
@@ -36,6 +39,168 @@ public class TorrentPlayer {
     public static final String PLAYER_PROGRESS = TorrentPlayer.class.getCanonicalName() + ".PLAYER_PROGRESS";
     public static final String PLAYER_STOP = TorrentPlayer.class.getCanonicalName() + ".PLAYER_STOP";
     public static final String PLAYER_PAUSE = TorrentPlayer.class.getCanonicalName() + ".PLAYER_PAUSE";
+
+    Context context;
+    Storage.Torrent torrent;
+    ArrayList<PlayerFile> ff = new ArrayList<>();
+    public String torrentHash;
+    public String torrentName;
+    Storage storage;
+    MediaPlayer player;
+    int playingIndex = -1;
+    Uri playingUri;
+    Runnable next;
+    Runnable progress = new Runnable() {
+        @Override
+        public void run() {
+            notifyProgress();
+            handler.removeCallbacks(progress);
+            handler.postDelayed(progress, 1000);
+        }
+    };
+    Runnable saveDelay = new Runnable() {
+        @Override
+        public void run() {
+            save(context, TorrentPlayer.this);
+            saveDelay();
+        }
+    };
+    Handler handler;
+
+    BroadcastReceiver receiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            String a = intent.getAction();
+            if (a.equals(PLAYER_PAUSE)) {
+                pause();
+            }
+        }
+    };
+
+    public Decoder RAR = new Decoder() {
+        @Override
+        public boolean supported(TorFile f) {
+            File local = new File(torrent.path, f.file.getPath());
+            if (!local.exists())
+                return false;
+            if (!local.isFile())
+                return false;
+            return local.getName().toLowerCase().endsWith(".rar");
+        }
+
+        @Override
+        public ArrayList<ArchiveFile> list(TorFile f) {
+            try {
+                ArrayList<ArchiveFile> ff = new ArrayList<>();
+                File local = new File(torrent.path, f.file.getPath());
+                final Archive archive = new Archive(local);
+                List<FileHeader> list = archive.getFileHeaders();
+                for (FileHeader h : list) {
+                    if (h.isDirectory())
+                        continue;
+                    final FileHeader header = h;
+                    ArchiveFile a = new ArchiveFile() {
+
+                        @Override
+                        public String getPath() {
+                            String s = header.getFileNameW();
+                            if (s == null || s.isEmpty())
+                                s = header.getFileNameString();
+                            return s;
+                        }
+
+                        @Override
+                        public InputStream open() {
+                            try {
+                                final PipedInputStream is = new PipedInputStream();
+                                final PipedOutputStream os = new PipedOutputStream(is);
+                                Thread thread = new Thread(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        try {
+                                            archive.extractFile(header, os);
+                                            os.flush();
+                                            os.close();
+                                        } catch (Exception e) {
+                                            throw new RuntimeException(e);
+                                        }
+                                    }
+                                }, "Write Archive File");
+                                thread.start();
+                                return is;
+                            } catch (Exception e) {
+                                throw new RuntimeException(e);
+                            }
+                        }
+
+                        @Override
+                        public long getLength() {
+                            return header.getFullUnpackSize();
+                        }
+                    };
+                    ff.add(a);
+                }
+                return ff;
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
+    };
+
+    public Decoder ZIP = new Decoder() {
+        @Override
+        public boolean supported(TorFile f) {
+            File local = new File(torrent.path, f.file.getPath());
+            if (!local.exists())
+                return false;
+            if (!local.isFile())
+                return false;
+            return local.getName().toLowerCase().endsWith(".zip");
+        }
+
+        @Override
+        public ArrayList<ArchiveFile> list(TorFile f) {
+            try {
+                ArrayList<ArchiveFile> ff = new ArrayList<>();
+                File local = new File(torrent.path, f.file.getPath());
+                final ZipFile zip = new ZipFile(local);
+                Enumeration<?> enu = zip.entries();
+                while (enu.hasMoreElements()) {
+                    final ZipEntry zipEntry = (ZipEntry) enu.nextElement();
+                    if (zipEntry.isDirectory())
+                        continue;
+                    ArchiveFile a = new ArchiveFile() {
+
+                        @Override
+                        public String getPath() {
+                            return zipEntry.getName();
+                        }
+
+                        @Override
+                        public InputStream open() {
+                            try {
+                                return zip.getInputStream(zipEntry);
+                            } catch (Exception e) {
+                                throw new RuntimeException(e);
+                            }
+                        }
+
+                        @Override
+                        public long getLength() {
+                            return zipEntry.getSize();
+                        }
+                    };
+                    ff.add(a);
+                }
+                return ff;
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
+    };
+
+    Decoder[] DECODERS = new Decoder[]{RAR, ZIP};
+
 
     public static void save(Context context, TorrentPlayer player) {
         final SharedPreferences shared = PreferenceManager.getDefaultSharedPreferences(context);
@@ -251,167 +416,6 @@ public class TorrentPlayer {
         }
     }
 
-    Context context;
-    Storage.Torrent torrent;
-    ArrayList<PlayerFile> ff = new ArrayList<>();
-    public String torrentHash;
-    public String torrentName;
-    Storage storage;
-    MediaPlayer player;
-    int playingIndex = -1;
-    Uri playingUri;
-    Runnable next;
-    Runnable progress = new Runnable() {
-        @Override
-        public void run() {
-            notifyProgress();
-            handler.removeCallbacks(progress);
-            handler.postDelayed(progress, 1000);
-        }
-    };
-    Runnable saveDelay = new Runnable() {
-        @Override
-        public void run() {
-            save(context, TorrentPlayer.this);
-            saveDelay();
-        }
-    };
-    Handler handler;
-
-    BroadcastReceiver receiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            String a = intent.getAction();
-            if (a.equals(PLAYER_PAUSE)) {
-                pause();
-            }
-        }
-    };
-
-    public Decoder RAR = new Decoder() {
-        @Override
-        public boolean supported(TorFile f) {
-            File local = new File(torrent.path, f.file.getPath());
-            if (!local.exists())
-                return false;
-            if (!local.isFile())
-                return false;
-            return local.getName().toLowerCase().endsWith(".rar");
-        }
-
-        @Override
-        public ArrayList<ArchiveFile> list(TorFile f) {
-            try {
-                ArrayList<ArchiveFile> ff = new ArrayList<>();
-                File local = new File(torrent.path, f.file.getPath());
-                final Archive archive = new Archive(local);
-                List<FileHeader> list = archive.getFileHeaders();
-                for (FileHeader h : list) {
-                    if (h.isDirectory())
-                        continue;
-                    final FileHeader header = h;
-                    ArchiveFile a = new ArchiveFile() {
-
-                        @Override
-                        public String getPath() {
-                            String s = header.getFileNameW();
-                            if (s == null || s.isEmpty())
-                                s = header.getFileNameString();
-                            return s;
-                        }
-
-                        @Override
-                        public InputStream open() {
-                            try {
-                                final PipedInputStream is = new PipedInputStream();
-                                final PipedOutputStream os = new PipedOutputStream(is);
-                                Thread thread = new Thread(new Runnable() {
-                                    @Override
-                                    public void run() {
-                                        try {
-                                            archive.extractFile(header, os);
-                                            os.flush();
-                                            os.close();
-                                        } catch (Exception e) {
-                                            throw new RuntimeException(e);
-                                        }
-                                    }
-                                }, "Write Archive File");
-                                thread.start();
-                                return is;
-                            } catch (Exception e) {
-                                throw new RuntimeException(e);
-                            }
-                        }
-
-                        @Override
-                        public long getLength() {
-                            return header.getFullUnpackSize();
-                        }
-                    };
-                    ff.add(a);
-                }
-                return ff;
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-        }
-    };
-
-    public Decoder ZIP = new Decoder() {
-        @Override
-        public boolean supported(TorFile f) {
-            File local = new File(torrent.path, f.file.getPath());
-            if (!local.exists())
-                return false;
-            if (!local.isFile())
-                return false;
-            return local.getName().toLowerCase().endsWith(".zip");
-        }
-
-        @Override
-        public ArrayList<ArchiveFile> list(TorFile f) {
-            try {
-                ArrayList<ArchiveFile> ff = new ArrayList<>();
-                File local = new File(torrent.path, f.file.getPath());
-                final ZipFile zip = new ZipFile(local);
-                Enumeration<?> enu = zip.entries();
-                while (enu.hasMoreElements()) {
-                    final ZipEntry zipEntry = (ZipEntry) enu.nextElement();
-                    if (zipEntry.isDirectory())
-                        continue;
-                    ArchiveFile a = new ArchiveFile() {
-
-                        @Override
-                        public String getPath() {
-                            return zipEntry.getName();
-                        }
-
-                        @Override
-                        public InputStream open() {
-                            try {
-                                return zip.getInputStream(zipEntry);
-                            } catch (Exception e) {
-                                throw new RuntimeException(e);
-                            }
-                        }
-
-                        @Override
-                        public long getLength() {
-                            return zipEntry.getSize();
-                        }
-                    };
-                    ff.add(a);
-                }
-                return ff;
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-        }
-    };
-
-    Decoder[] DECODERS = new Decoder[]{RAR, ZIP};
-
     public TorrentPlayer(Context context, Storage storage, long t) {
         this.handler = new Handler(context.getMainLooper());
         this.context = context;
@@ -516,9 +520,22 @@ public class TorrentPlayer {
         PlayerFile f = get(i);
         if (!open(f))
             return;
+        String type = TorrentContentProvider.getType(f.getFile().getPath());
+        if (type.startsWith("video")) {
+            PlayerActivity.startActivity(context);
+            return;
+        }
+        play();
+    }
+
+    public void play() {
         saveDelay();
         player.start();
         progress.run();
+    }
+
+    public void setSurface(SurfaceHolder surface) {
+        player.setDisplay(surface);
     }
 
     public void notifyNext() {

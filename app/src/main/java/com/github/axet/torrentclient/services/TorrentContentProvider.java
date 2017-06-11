@@ -164,7 +164,7 @@ public class TorrentContentProvider extends ContentProvider {
         if (f == null)
             return null;
 
-        return getType(f.getName());
+        return getType(f.getFile().getPath());
     }
 
     @Nullable

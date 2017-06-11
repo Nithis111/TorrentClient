@@ -60,7 +60,8 @@
         <item name="material_drawer_selected">?attr/colorAccent</item>
         <item name="material_drawer_primary_icon">@color/material_drawer_dark_primary_text</item>
         <item name="material_drawer_primary_text">@color/material_drawer_dark_primary_text</item>
-        <item name="material_drawer_secondary_text">@color/material_drawer_dark_secondary_text</item>
+        <item name="material_drawer_secondary_text">@color/material_drawer_dark_secondary_text
+        </item>
         <item name="material_drawer_divider">@color/material_drawer_dark_divider</item>
         <item name="preferenceTheme">@style/PreferenceThemeOverlay</item>
         <item name="round_corners">@drawable/round_conrners_dark</item>
@@ -78,6 +79,18 @@
     <style name="menu_labels_style_dark">
         <item name="android:padding">5dp</item>
         <item name="android:background">@drawable/roundlabel_dark</item>
+    </style>
+
+    <style name="FullscreenTheme" parent="AppThemeLight">
+        <item name="android:actionBarStyle">@style/FullscreenActionBarStyle</item>
+        <item name="android:windowActionBarOverlay">true</item>
+        <item name="android:windowBackground">@null</item>
+        <item name="metaButtonBarStyle">?android:attr/buttonBarStyle</item>
+        <item name="metaButtonBarButtonStyle">?android:attr/buttonBarButtonStyle</item>
+    </style>
+
+    <style name="FullscreenActionBarStyle" parent="Widget.AppCompat.ActionBar">
+        <item name="android:background">@color/black_overlay</item>
     </style>
 
 </resources>
