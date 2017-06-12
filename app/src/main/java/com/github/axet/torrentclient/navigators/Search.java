@@ -299,34 +299,50 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
             this.images.add(bmImage);
         }
 
+        void loadImage() {
+            for (int i = 0; i < 3; i++) {
+                try {
+                    HttpClient.DownloadResponse w = httpImages.getResponse(null, item.image);
+                    w.download();
+                    if (w.getError() != null)
+                        throw new RuntimeException(w.getError() + " : " + w.getUrl());
+                    byte[] buf = w.getBuf();
+                    result = BitmapFactory.decodeByteArray(buf, 0, buf.length);
+                } catch (RuntimeException e) {
+                    Log.e(TAG, "DownloadImageTask", e);
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException ee) {
+                        Thread.currentThread().interrupt();
+                        return;
+                    }
+                }
+            }
+        }
+
         protected Bitmap doInBackground(SearchItem... items) {
             item = items[0];
+
+            final String old = item.image;
 
             Runnable done = new Runnable() {
                 @Override
                 public void run() {
-                    if (item.image == null)
+                    if (item.image == null || old.equals(item.image)) // image url hasn't udates return
                         return;
-                    for (int i = 0; i < 3; i++) {
-                        try {
-                            HttpClient.DownloadResponse w = httpImages.getResponse(null, item.image);
-                            w.download();
-                            if (w.getError() != null)
-                                throw new RuntimeException(w.getError() + " : " + w.getUrl());
-                            byte[] buf = w.getBuf();
-                            result = BitmapFactory.decodeByteArray(buf, 0, buf.length);
-                        } catch (RuntimeException e) {
-                            Log.e(TAG, "DownloadImageTask", e);
-                            try {
-                                Thread.sleep(1000);
-                            } catch (InterruptedException ee) {
-                                Thread.currentThread().interrupt();
-                                return;
-                            }
-                        }
-                    }
+                    loadImage();
                 }
             };
+
+            if (old != null) { // load image first
+                loadImage();
+                handler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        setImage();
+                    }
+                });
+            }
 
             try {
                 detailsLoad(item, done);
@@ -338,15 +354,19 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
             return result;
         }
 
-        protected void onPostExecute(Bitmap result) {
-            downloadsItems.remove(item);
-            for (View i : images)
-                downloadsImages.remove(i);
+        void setImage() {
             if (result != null) {
                 item.imageBitmap = result;
                 for (View i : images)
                     updateView(item, i);
             }
+        }
+
+        protected void onPostExecute(Bitmap result) {
+            downloadsItems.remove(item);
+            for (View i : images)
+                downloadsImages.remove(i);
+            setImage();
         }
     }
 
@@ -1051,15 +1071,25 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
     }
 
     void updateView(final SearchItem item, View convertView) {
+        View frame = convertView.findViewById(R.id.search_item_frame);
+        View updateProgress = convertView.findViewById(R.id.update_progress);
         ImageView image = (ImageView) convertView.findViewById(R.id.search_item_image);
+
+        if (downloadsItems.containsKey(item)) {
+            updateProgress.setVisibility(View.VISIBLE);
+        } else {
+            updateProgress.setVisibility(View.GONE);
+        }
+
         if (item.image != null || updateImage(item)) {
+            frame.setVisibility(View.VISIBLE);
             if (item.imageBitmap == null) { // downloading
                 image.setImageDrawable(ContextCompat.getDrawable(getContext(), R.drawable.ic_crop_original_black_24dp));
             } else {
                 image.setImageBitmap(item.imageBitmap);
             }
         } else {
-            image.setVisibility(View.GONE);
+            frame.setVisibility(View.GONE);
         }
 
         TextView date = (TextView) convertView.findViewById(R.id.search_item_date);
