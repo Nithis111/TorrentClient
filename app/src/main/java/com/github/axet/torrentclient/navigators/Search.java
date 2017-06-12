@@ -3,6 +3,7 @@ package com.github.axet.torrentclient.navigators;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.SharedPreferences;
+import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
@@ -85,7 +86,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
     ArrayList<SearchItem> list = new ArrayList<>();
 
     HashMap<SearchItem, DownloadImageTask> downloadsItems = new HashMap<>();
-    HashMap<ImageView, DownloadImageTask> downloadsImages = new HashMap<>();
+    HashMap<View, DownloadImageTask> downloadsImages = new HashMap<>();
 
     BrowserDialogFragment dialog;
 
@@ -132,14 +133,100 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
     HeaderGridView grid;
     View gridView;
 
+    static Long matcherLong(String html, String q, Long d) {
+        String s = matcher(html, q, null);
+        if (s == null || s.isEmpty())
+            return d;
+        try {
+            return Long.valueOf(s);
+        } catch (NumberFormatException ignore) {
+            return d;
+        }
+    }
+
+    static String matcherUrl(String url, String html, String q, String d) {
+        String m = matcher(html, q, null);
+
+        if (m == null || m.isEmpty())
+            return d;
+
+        try {
+            URL u = new URL(url);
+            u = new URL(u, m);
+            m = u.toString();
+            return m;
+        } catch (MalformedURLException e) {
+        }
+
+        return d;
+    }
+
+    static String matcherHtml(String html, String q, String d) {
+        if (q == null)
+            return d;
+
+        String all = "(.*)";
+        String regex = "regex\\((.*)\\)";
+
+        String r = null;
+        Pattern p = Pattern.compile(all + ":" + regex, Pattern.DOTALL);
+        Matcher m = p.matcher(q);
+        if (m.matches()) {
+            q = m.group(1);
+            r = m.group(2);
+        } else { // then for regex only
+            p = Pattern.compile(regex, Pattern.DOTALL);
+            m = p.matcher(q);
+            if (m.matches()) {
+                q = null;
+                r = m.group(1);
+            }
+        }
+
+        String a = "";
+
+        if (q == null || q.isEmpty()) {
+            a = html;
+        } else {
+            Document doc1 = Jsoup.parse(html, "", Parser.xmlParser());
+            Elements list1 = doc1.select(q);
+            if (list1.size() > 0) {
+                a = list1.get(0).outerHtml();
+            }
+        }
+
+        if (r != null) {
+            Pattern p1 = Pattern.compile(r, Pattern.DOTALL);
+            Matcher m1 = p1.matcher(a);
+            if (m1.matches()) {
+                for (int i = 1; i <= m1.groupCount(); i++) { // optional groups support
+                    a = m1.group(i);
+                    if (a != null)
+                        return a;
+                }
+            } else {
+                a = ""; // tell we did not find any regex match
+            }
+        }
+        return a;
+    }
+
+    static String matcher(String html, String q, String d) {
+        String a = matcherHtml(html, q, null);
+        if (a == null)
+            return d;
+        return Html.fromHtml(a).toString().trim();
+    }
+
     public static class SearchItem {
+        public long id; // database id
         public long last; // last update ms
+        public String html; // source html
         public String title;
         public String image;
-        public Bitmap imageBitmap;
+        public Bitmap imageBitmap; // bitmap image
         public String details;
         public String details_html;
-        public String html;
         public String magnet;
         public String date;
         public String size;
@@ -148,8 +235,34 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         public String torrent;
         public Long downloads; // downloads from last update / month (pepend on site)
         public Long downloads_total; // total downloads
-        public Map<String, String> search;
-        public String base;
+        public Map<String, String> search; // search engine entry
+        public String base; // source url
+
+        public SearchItem() {
+        }
+
+        public SearchItem(Map<String, String> s, String url, String html) {
+            this.search = s;
+            this.base = url;
+            this.html = html;
+            update(s, url, html);
+        }
+
+        public void update(Map<String, String> s, String url, String html) {
+            SearchItem item = this;
+            item.title = matcher(html, s.get("title"), item.title);
+            item.image = matcherUrl(url, html, s.get("image"), item.image);
+            item.magnet = matcher(html, s.get("magnet"), item.magnet);
+            item.torrent = matcherUrl(url, html, s.get("torrent"), item.torrent);
+            item.date = matcher(html, s.get("date"), item.date);
+            item.size = matcher(html, s.get("size"), item.size);
+            item.seed = matcherLong(html, s.get("seed"), item.seed);
+            item.leech = matcherLong(html, s.get("leech"), item.leech);
+            item.downloads = matcherLong(html, s.get("downloads"), item.downloads);
+            item.downloads_total = matcherLong(html, s.get("downloads_total"), item.downloads_total);
+            item.details = matcherUrl(url, html, s.get("details"), item.details);
+            item.details_html = matcherHtml(html, s.get("details_html"), item.details_html);
+        }
     }
 
     public class Inject {
@@ -179,43 +292,60 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
 
     class DownloadImageTask extends AsyncTask<SearchItem, Void, Bitmap> {
         SearchItem item;
-        public HashSet<ImageView> images = new HashSet<>(); // one task can set multiple ImageView's, except reused ones
+        public HashSet<View> images = new HashSet<>(); // one task can set multiple ImageView's, except reused ones
+        Bitmap result;
 
-        public DownloadImageTask(ImageView bmImage) {
+        public DownloadImageTask(View bmImage) {
             this.images.add(bmImage);
         }
 
         protected Bitmap doInBackground(SearchItem... items) {
             item = items[0];
-            for (int i = 0; i < 3; i++) {
-                try {
-                    HttpClient.DownloadResponse w = httpImages.getResponse(item.image, item.image);
-                    w.download();
-                    if (w.getError() != null)
-                        throw new RuntimeException(w.getError() + " : " + w.getUrl());
-                    byte[] buf = w.getBuf();
-                    return BitmapFactory.decodeByteArray(buf, 0, buf.length);
-                } catch (RuntimeException e) {
-                    Log.e(TAG, "DownloadImageTask", e);
-                    try {
-                        Thread.sleep(1000);
-                    } catch (InterruptedException ee) {
-                        Thread.currentThread().interrupt();
-                        return null;
+
+            Runnable done = new Runnable() {
+                @Override
+                public void run() {
+                    if (item.image == null)
+                        return;
+                    for (int i = 0; i < 3; i++) {
+                        try {
+                            HttpClient.DownloadResponse w = httpImages.getResponse(null, item.image);
+                            w.download();
+                            if (w.getError() != null)
+                                throw new RuntimeException(w.getError() + " : " + w.getUrl());
+                            byte[] buf = w.getBuf();
+                            result = BitmapFactory.decodeByteArray(buf, 0, buf.length);
+                        } catch (RuntimeException e) {
+                            Log.e(TAG, "DownloadImageTask", e);
+                            try {
+                                Thread.sleep(1000);
+                            } catch (InterruptedException ee) {
+                                Thread.currentThread().interrupt();
+                                return;
+                            }
+                        }
                     }
                 }
+            };
+
+            try {
+                detailsLoad(item, done);
+            } catch (RuntimeException e) {
+                post(e);
+                return null;
             }
-            return null;
+
+            return result;
         }
 
         protected void onPostExecute(Bitmap result) {
             downloadsItems.remove(item);
-            for (ImageView i : images)
+            for (View i : images)
                 downloadsImages.remove(i);
             if (result != null) {
                 item.imageBitmap = result;
-                for (ImageView i : images)
-                    i.setImageBitmap(result);
+                for (View i : images)
+                    updateView(item, i);
             }
         }
     }
@@ -728,7 +858,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
     }
 
     void clearDownloads() {
-        for (ImageView item : downloadsImages.keySet()) {
+        for (View item : downloadsImages.keySet()) {
             DownloadImageTask t = downloadsImages.get(item);
             t.cancel(true);
         }
@@ -886,23 +1016,45 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
 
         final SearchItem item = getItem(position);
 
-        ImageView image = (ImageView) convertView.findViewById(R.id.search_item_image);
-        if (item.image != null) {
-            DownloadImageTask task = downloadsImages.get(image);
+        boolean needDownloadImage = item.image != null && item.imageBitmap == null;
+        boolean needCallUpdate = item.search.get("update") != null;
+        if (needDownloadImage || needCallUpdate) {
+            DownloadImageTask task = downloadsImages.get(convertView);
             if (task != null) { // reuse imageview
-                task.images.remove(image);
+                task.images.remove(convertView);
             }
-            if (item.imageBitmap == null) {
+            task = downloadsItems.get(item);
+            if (task != null) { // add new ImageView to populate on finish
+                task.images.add(convertView);
+            } else {
+                task = new DownloadImageTask(convertView);
+                task.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, item);
+            }
+            downloadsItems.put(item, task);
+            downloadsImages.put(convertView, task);
+        }
+
+        updateView(item, convertView);
+
+        return convertView;
+    }
+
+    boolean updateImage(SearchItem item) { // pending image extraction?
+        String update = item.search.get("update");
+        if (update == null || update.isEmpty())
+            return false;
+        Map<String, String> s = engine.getMap(update);
+        String image = s.get("image");
+        if (image == null || image.isEmpty())
+            return false;
+        return true;
+    }
+
+    void updateView(final SearchItem item, View convertView) {
+        ImageView image = (ImageView) convertView.findViewById(R.id.search_item_image);
+        if (item.image != null || updateImage(item)) {
+            if (item.imageBitmap == null) { // downloading
                 image.setImageDrawable(ContextCompat.getDrawable(getContext(), R.drawable.ic_crop_original_black_24dp));
-                task = downloadsItems.get(item);
-                if (task != null) { // add new ImageView to populate on finish
-                    task.images.add(image);
-                } else {
-                    task = new DownloadImageTask(image);
-                    task.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, item);
-                }
-                downloadsItems.put(item, task);
-                downloadsImages.put(image, task);
             } else {
                 image.setImageBitmap(item.imageBitmap);
             }
@@ -974,7 +1126,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
                     request(new Runnable() {
                         @Override
                         public void run() {
-                            final HttpClient.DownloadResponse w = http.getResponse(item.torrent, item.torrent);
+                            final HttpClient.DownloadResponse w = http.getResponse(item.base, item.torrent);
                             w.download();
                             handler.post(new Runnable() {
                                 @Override
@@ -1031,11 +1183,16 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
                 }
             });
         }
-
-        return convertView;
     }
 
     public void inject(final String url, final HttpClient.DownloadResponse html, String js, String js_post, final Inject exec) {
+        if (web != null) {
+            web.destroy();
+        }
+        web = inject(http, url, html, js, js_post, exec);
+    }
+
+    public WebViewCustom inject(HttpProxyClient http, final String url, final HttpClient.DownloadResponse html, String js, String js_post, final Inject exec) {
         Log.d(TAG, "inject()");
 
         String result = ";\n\ntorrentclient.result(document.documentElement.outerHTML);";
@@ -1053,11 +1210,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
             script = result;
         }
 
-        if (web != null) {
-            web.destroy();
-        }
-
-        web = new WebViewCustom(context) {
+        final WebViewCustom web = new WebViewCustom(context) {
             @Override
             public boolean onConsoleMessage(String msg, int lineNumber, String sourceID) {
                 if (BrowserDialogFragment.logIgnore(msg))
@@ -1065,7 +1218,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
                 if (sourceID == null || sourceID.isEmpty() || sourceID.startsWith(INJECTS_URL)) {
                     Error(msg + "\nLine:" + lineNumber + "\n" + formatInjectError(sourceID, lineNumber));
                 } else if (exec.json != null) { // we uploaded json, then html errors is our responsability
-                    String[] lines = web.getHtml().split("\n");
+                    String[] lines = this.getHtml().split("\n");
                     int t = lineNumber - 1;
                     String line = "";
                     if (t > 0 && t < lines.length)
@@ -1102,6 +1255,8 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
             web.loadHtmlWithBaseURL(url, "", url);
         else
             web.loadHtmlWithBaseURL(url, html, url);
+
+        return web;
     }
 
     public void login(String login, String pass, final Runnable done) throws IOException {
@@ -1393,7 +1548,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         Document doc = Jsoup.parse(html);
         Elements list = doc.select(select);
         for (int i = 0; i < list.size(); i++) {
-            SearchItem item = searchItem(s, url, list.get(i).outerHtml());
+            SearchItem item = new SearchItem(s, url, list.get(i).outerHtml());
 
             // do not empty items
             if (isEmpty(item.title) && isEmpty(item.magnet) && isEmpty(item.torrent) && isEmpty(item.details))
@@ -1402,7 +1557,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
             this.list.add(item);
         }
 
-        String next = matcher(url, html, s.get("next"));
+        String next = matcherUrl(url, html, s.get("next"), null);
         if (next != null) {
             for (String last : nextLast) {
                 if (next.equals(last)) {
@@ -1423,113 +1578,6 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         }
 
         notifyDataSetChanged();
-    }
-
-    SearchItem searchItem(Map<String, String> s, String url, String html) {
-        SearchItem item = new SearchItem();
-        item.html = html;
-        item.title = matcher(item.html, s.get("title"));
-        item.image = matcher(url, item.html, s.get("image"));
-        item.magnet = matcher(item.html, s.get("magnet"));
-        item.torrent = matcher(url, item.html, s.get("torrent"));
-        item.date = matcher(item.html, s.get("date"));
-        item.size = matcher(item.html, s.get("size"));
-        item.seed = matcherLong(item.html, s.get("seed"));
-        item.leech = matcherLong(item.html, s.get("leech"));
-        item.downloads = matcherLong(item.html, s.get("downloads"));
-        item.downloads_total = matcherLong(item.html, s.get("downloads_total"));
-        item.details = matcher(url, item.html, s.get("details"));
-        item.details_html = matcherHtml(item.html, s.get("details_html"));
-        item.search = s;
-        item.base = url;
-        return item;
-    }
-
-    Long matcherLong(String html, String q) {
-        String s = matcher(html, q);
-        if (s == null || s.isEmpty())
-            return null;
-        try {
-            return Long.valueOf(s);
-        } catch (NumberFormatException ignore) {
-            return null;
-        }
-    }
-
-    String matcher(String url, String html, String q) {
-        String m = matcher(html, q);
-
-        if (m != null) {
-            if (m.isEmpty()) {
-                return null;
-            } else {
-                try {
-                    URL u = new URL(url);
-                    u = new URL(u, m);
-                    m = u.toString();
-                } catch (MalformedURLException e) {
-                }
-            }
-        }
-
-        return m;
-    }
-
-    String matcherHtml(String html, String q) {
-        if (q == null)
-            return null;
-
-        String all = "(.*)";
-        String regex = "regex\\((.*)\\)";
-
-        String r = null;
-        Pattern p = Pattern.compile(all + ":" + regex, Pattern.DOTALL);
-        Matcher m = p.matcher(q);
-        if (m.matches()) {
-            q = m.group(1);
-            r = m.group(2);
-        } else { // then for regex only
-            p = Pattern.compile(regex, Pattern.DOTALL);
-            m = p.matcher(q);
-            if (m.matches()) {
-                q = null;
-                r = m.group(1);
-            }
-        }
-
-        String a = "";
-
-        if (q == null || q.isEmpty()) {
-            a = html;
-        } else {
-            Document doc1 = Jsoup.parse(html, "", Parser.xmlParser());
-            Elements list1 = doc1.select(q);
-            if (list1.size() > 0) {
-                a = list1.get(0).outerHtml();
-            }
-        }
-
-        if (r != null) {
-            Pattern p1 = Pattern.compile(r, Pattern.DOTALL);
-            Matcher m1 = p1.matcher(a);
-            if (m1.matches()) {
-                for (int i = 1; i <= m1.groupCount(); i++) { // optional groups support
-                    a = m1.group(i);
-                    if (a != null)
-                        return a;
-                }
-            } else {
-                a = ""; // tell we did not find any regex match
-            }
-        }
-        return a;
-    }
-
-    String matcher(String html, String q) {
-        String a = matcherHtml(html, q);
-        if (a == null)
-            return null;
-        return Html.fromHtml(a).toString().trim();
     }
 
     public void post(final Throwable e) {
@@ -1603,7 +1651,80 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         imm.hideSoftInputFromWindow(searchText.getWindowToken(), 0);
     }
 
+    // delete entry from EngineManager, 'trash' icon
     public void delete() {
         ;
     }
+
+    void detailsLoad(final SearchItem item, final Runnable done) {
+        final HttpClient.DownloadResponse html;
+
+        final String url = item.details;
+        if (url == null || url.isEmpty())
+            return;
+
+        final String update = item.search.get("update");
+        if (update == null || update.isEmpty())
+            return;
+
+        html = httpImages.getResponse(null, url);
+        html.download();
+
+        final String js = item.search.get("details_js");
+        final String js_post = item.search.get("details_js_post");
+
+        if (js != null || js_post != null) {
+            final Object lock = new Object();
+            final ArrayList<WebViewCustom> ww = new ArrayList<>();
+            Runnable request = new Runnable() {
+                @Override
+                public void run() {
+                    WebViewCustom web = inject(httpImages, url, html, js, js_post, new Inject() {
+                        @JavascriptInterface
+                        public void result(final String html) {
+                            super.result(html);
+                            detailsList(item, engine.getMap(update), url, html);
+                            if (done != null)
+                                done.run();
+                            synchronized (lock) {
+                                lock.notifyAll();
+                            }
+                        }
+
+                        @JavascriptInterface
+                        public String json() {
+                            return super.json();
+                        }
+                    });
+                    ww.add(web);
+                }
+            };
+            handler.post(request); // web must run on UI thread
+            synchronized (lock) {
+                try {
+                    lock.wait();
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+            }
+            request = new Runnable() {
+                @Override
+                public void run() {
+                    for (WebViewCustom w : ww)
+                        w.destroy();
+                }
+            };
+            handler.post(request); // web must run on UI thread
+        } else {
+            detailsList(item, engine.getMap(update), url, html.getHtml());
+            if (done != null)
+                done.run();
+        }
+    }
+
+    void detailsList(SearchItem item, Map<String, String> s, String url, String html) { // not UI thread
+        item.update(s, url, html);
+        item.base = url;
+    }
+
 }
