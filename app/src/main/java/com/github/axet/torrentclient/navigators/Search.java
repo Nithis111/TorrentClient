@@ -328,7 +328,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
             Runnable done = new Runnable() {
                 @Override
                 public void run() {
-                    if (item.image == null || old.equals(item.image)) // image url hasn't udates return
+                    if (item.image == null || (old != null && old.equals(item.image))) // image url hasn't udates return
                         return;
                     loadImage();
                 }
