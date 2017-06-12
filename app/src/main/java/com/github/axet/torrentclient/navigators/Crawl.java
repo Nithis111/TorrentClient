@@ -834,10 +834,14 @@ public class Crawl extends Search {
     }
 
     void searchCrawl(Map<String, String> s, String search, String order, final Runnable done) {
+        String next = null;
+        String nextText = null;
+
+        int count = 0;
+
         if (search != null) {
             search = search.toLowerCase(EN);
             Cursor c = db.getWordMatches(engine.getName(), search, null, order, this.list.size(), CRAWL_SHOW + 1);
-            int count = 0;
             while (c != null) {
                 count++;
                 if (count > CRAWL_SHOW) {
@@ -853,7 +857,6 @@ public class Crawl extends Search {
             }
         } else {
             Cursor c = db.search(engine.getName(), order, this.list.size(), CRAWL_SHOW + 1);
-            int count = 0;
             while (c != null) {
                 count++;
                 if (count > CRAWL_SHOW) {
@@ -869,11 +872,14 @@ public class Crawl extends Search {
             }
         }
 
-        nextSearch = s;
+        this.next = next;
+        this.nextText = nextText;
+        this.nextSearch = s;
 
         notifyDataSetChanged();
 
-        hideKeyboard();
+        if (count > 0)
+            hideKeyboard();
 
         if (done != null)
             done.run();
