@@ -9,8 +9,8 @@ Additional file from 'android-library'
   * [https://gitlab.com/axet/android-library/.../strings.xml](https://gitlab.com/axet/android-library/blob/master/src/main/res/values/strings.xml)
 
 Also, add Google Play translation for:
-  * Title
-  * Short Description
-  * Full description
+  * Title (50 symbols max)
+  * Short Description (80 symbols max)
+  * Full description (4000 symbols max)
 
 Then add those files to the repository using "New Issue" or create pull request against 'dev' branch.
