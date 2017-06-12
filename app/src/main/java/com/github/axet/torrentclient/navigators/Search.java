@@ -357,9 +357,9 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         void setImage() {
             if (result != null) {
                 item.imageBitmap = result;
-                for (View i : images)
-                    updateView(item, i);
             }
+            for (View i : images)
+                updateView(item, i);
         }
 
         protected void onPostExecute(Bitmap result) {
