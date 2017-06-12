@@ -6,8 +6,9 @@
     android:padding="5dp">
 
     <FrameLayout
+        android:id="@+id/search_item_frame"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="0dp"
         android:layout_weight="1"
         android:background="#b1b1b1">
 
@@ -17,6 +18,14 @@
             android:layout_height="wrap_content"
             android:layout_gravity="center"
             android:src="@drawable/ic_crop_original_black_24dp" />
+
+        <ProgressBar
+            android:id="@+id/update_progress"
+            android:layout_width="15dp"
+            android:layout_height="15dp"
+            android:layout_gravity="right|bottom"
+            android:indeterminate="true"
+            android:layout_margin="5dp" />
     </FrameLayout>
 
     <com.github.axet.androidlibrary.widgets.PathMax
