@@ -48,13 +48,15 @@ public class BrowserDialogFragment extends DialogFragment implements MainActivit
     Thread thread;
     int load;
 
-    public static boolean logIgnore(String msg) {
+    public static boolean logIgnore(String msg) { // ignore alert dialogs, which should not shown to regular users
         msg = msg.toLowerCase();
         if (msg.contains("insecure content")) // some pages old phones gives: The page at https://www... ran insecure content from inject://0...
             return true;
         if (msg.contains("insecure script")) // Mixed Content: The page at 'https://...' was loaded over HTTPS, but requested an insecure script 'inject://0...'. This content should also be served over HTTPS.
             return true;
         if (msg.contains("unsafe javascript attempt to access frame")) // old phones
+            return true;
+        if (msg.contains("chromestatus.com")) // Resource requests whose URLs contain raw newline characters are deprecated, and may be blocked in M60, around August 2017. Please remove newlines from places like element attribute values in order to continue loading those resources. See https://www.chromestatus.com/features/5735596811091968 for more details.
             return true;
         return false;
     }

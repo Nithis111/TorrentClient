@@ -1,5 +1,5 @@
 {
-  "version": 16,
+  "version": 17,
   "name": "rutracker.org",
   "home": {
     "get": "http://rutracker.org"
@@ -32,18 +32,23 @@
     "post_params": "login=вход",
     "js": "if(document.querySelectorAll('a.logged-in-as-uname').length==0) {\n  alert('Not Logged In');\n}"
   },
+  "details": {
+    "image": ".postImg:regex(.*title=\"([^\"]*)\".*)",
+    "magnet": "a[href*=magnet]:regex(.*href=\"([^\"]*)\".*)"
+  },
   "search": {
     "post": "http://rutracker.org/forum/tracker.php",
     "post_search": "nm",
     "post_params": "o=10",
     "js": "if(document.querySelectorAll('a.logged-in-as-uname').length==0) {\n  alert('Not Logged In');\n}",
-    "list": ".forumline.tablesorter tbody tr",
+    "grid": ".forumline.tablesorter tbody tr",
     "title": "a.tLink",
     "details": "a.tLink:regex(.*href=\"([^\"]*)\".*)",
     "date": "td:eq(9):regex(.*<p>(.*)</p>.*)",
     "size": "a.dl-stub",
     "seed": "b.seedmed",
     "leech": "td.leechmed b",
-    "next": ".nav b+a:regex(.*href=\"([^\"]*)\".*)"
+    "next": ".nav b+a:regex(.*href=\"([^\"]*)\".*)",
+    "update": "details"
   }
 }

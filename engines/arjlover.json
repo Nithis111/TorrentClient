@@ -1,5 +1,5 @@
 {
-  "version": 5,
+  "version": 6,
   "name": "arjlover.net",
   "home": {
     "get": "http://multiki.arjlover.net/"
@@ -8,6 +8,7 @@
     "get": "http://multiki.arjlover.net/",
     "list": "tbody tr td b",
     "title": "",
+    "details_head": "<meta name=\"viewport\" content=\"width=device-width,user-scalable=no,maximum-scale=1,initial-scale=1\">",
     "details_html": "",
     "date": "b"
   },
@@ -40,14 +41,21 @@
   },
   "top": {
     "get": "tops",
-    "list": "crawl"
+    "grid": "crawl",
+    "update": "details"
   },
   "tops": {
     "Recent": "substr(date,-4,4)||case substr(date,-8,3) when 'Jan' then '01' when 'Feb' then '02' when 'Mar' then '03' when 'Apr' then '04' when 'May' then '05' when 'Jun' then '06' when 'Jul' then '07' when 'Aug' then '08' when 'Sep' then '09' when 'Oct' then '10' when 'Nov' then '11' when 'Dec' then '12' end ||substr('00'||trim(substr(date,1,2)),-2,2) desc",
     "Top": "last/3600000 desc, downloads desc"
   },
+  "details": {
+    "image": "tr > td > a > img:regex(.*src=\"([^\"]*)\".*)",
+    "_seed": "tr:nth-child(2) > td:nth-child(2):regex(.*Seeders:([0-9]+).*)",
+    "_leech": "tr:nth-child(2) > td:nth-child(2):regex(.*Leechers:([0-9]+).*)"
+  },
   "search": {
     "get": "substr(date,-4,4)||case substr(date,-8,3) when 'Jan' then '01' when 'Feb' then '02' when 'Mar' then '03' when 'Apr' then '04' when 'May' then '05' when 'Jun' then '06' when 'Jul' then '07' when 'Aug' then '08' when 'Sep' then '09' when 'Oct' then '10' when 'Nov' then '11' when 'Dec' then '12' end ||substr('00'||trim(substr(date,1,2)),-2,2) desc",
-    "list": "crawl"
+    "grid": "crawl",
+    "update": "details"
   }
 }

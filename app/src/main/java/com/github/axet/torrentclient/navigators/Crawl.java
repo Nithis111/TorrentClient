@@ -237,7 +237,9 @@ public class Crawl extends Search {
             initialValues.put(CrawlEntry.COLUMN_LEECH, item.leech);
             initialValues.put(CrawlEntry.COLUMN_DOWNLOADS, item.downloads);
             initialValues.put(CrawlEntry.COLUMN_DOWNLOADS_TOTAL, item.downloads_total);
-            return db.insert(CrawlEntry.TABLE_NAME, null, initialValues);
+            long id = db.insert(CrawlEntry.TABLE_NAME, null, initialValues);
+            item.id = id;
+            return id;
         }
 
         public long updateCrawl(long id, SearchItem item) {
@@ -268,17 +270,10 @@ public class Crawl extends Search {
             return db.update(CrawlEntry.TABLE_NAME, initialValues, where, args);
         }
 
-        public SearchItem get(long id) {
-            String selection = CrawlEntry._ID + " = ?";
-            String[] selectionArgs = new String[]{"" + id};
-            Cursor c = query(selection, selectionArgs, null, null, null);
-            if (c == null)
-                return null;
-            return getSearchItem(c);
-        }
-
-        public SearchItem getSearchItem(Cursor c) {
+        public SearchItem getSearchItem(Map<String, String> ss, Cursor c) {
             SearchItem s = new SearchItem();
+            s.search = ss;
+            s.id = getLong(c, CrawlEntry._ID);
             s.title = getString(c, CrawlEntry.COLUMN_TITLE);
             s.image = getString(c, CrawlEntry.COLUMN_IMAGE);
             s.details = getString(c, CrawlEntry.COLUMN_DETAILS);
@@ -658,7 +653,7 @@ public class Crawl extends Search {
         int endDups = 0;
         for (int i = 0; i < list.size(); i++) {
             long id;
-            SearchItem item = searchItem(state.s, url, list.get(i).outerHtml());
+            SearchItem item = new SearchItem(state.s, url, list.get(i).outerHtml());
             Cursor c = db.exist(engine.getName(), item.title);
             if (c != null) { // exists?
                 id = getLong(c, CrawlEntry._ID);
@@ -692,7 +687,7 @@ public class Crawl extends Search {
             }
         }
 
-        String next = matcher(url, html, state.s.get("next"));
+        String next = matcherUrl(url, html, state.s.get("next"), null);
         if (next == null) {
             state.end++;
             state.endPage = state.page;
@@ -735,7 +730,7 @@ public class Crawl extends Search {
         Document doc = Jsoup.parse(html);
         Elements list = doc.select(select);
         for (int i = 0; i < list.size(); i++) {
-            SearchItem item = searchItem(s, url, list.get(i).outerHtml());
+            SearchItem item = new SearchItem(s, url, list.get(i).outerHtml());
             Cursor c = db.exist(engine.getName(), item.title);
             if (c != null) {
                 long id = getLong(c, CrawlEntry._ID);
@@ -850,7 +845,7 @@ public class Crawl extends Search {
                     nextText = search;
                     break;
                 }
-                SearchItem item = db.getSearchItem(c);
+                SearchItem item = db.getSearchItem(s, c);
                 if (item != null)
                     this.list.add(item);
                 if (!c.moveToNext())
@@ -866,7 +861,7 @@ public class Crawl extends Search {
                     nextText = null;
                     break;
                 }
-                SearchItem item = db.getSearchItem(c);
+                SearchItem item = db.getSearchItem(s, c);
                 if (item != null)
                     this.list.add(item);
                 if (!c.moveToNext())
@@ -905,5 +900,11 @@ public class Crawl extends Search {
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
         super.onSharedPreferenceChanged(sharedPreferences, key);
         crawlHttp.update(context);
+    }
+
+    @Override
+    void detailsList(SearchItem item, Map<String, String> s, String url, String html) {
+        super.detailsList(item, s, url, html);
+        db.updateCrawl(item.id, item);
     }
 }
