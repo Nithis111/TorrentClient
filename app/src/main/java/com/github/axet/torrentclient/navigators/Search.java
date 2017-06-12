@@ -323,26 +323,14 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         protected Bitmap doInBackground(SearchItem... items) {
             item = items[0];
 
-            final String old = item.image;
-
             Runnable done = new Runnable() {
                 @Override
                 public void run() {
-                    if (item.image == null || (old != null && old.equals(item.image))) // image url hasn't udates return
+                    if (item.image == null)
                         return;
                     loadImage();
                 }
             };
-
-            if (old != null) { // load image first
-                loadImage();
-                handler.post(new Runnable() {
-                    @Override
-                    public void run() {
-                        setImage();
-                    }
-                });
-            }
 
             try {
                 detailsLoad(item, done);
