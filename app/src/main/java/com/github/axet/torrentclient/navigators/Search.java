@@ -85,7 +85,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
     ArrayList<SearchItem> list = new ArrayList<>();
 
     HashMap<SearchItem, DownloadImageTask> downloadsItems = new HashMap<>();
-    HashMap<View, DownloadImageTask> downloadsImages = new HashMap<>();
+    HashMap<View, DownloadImageTask> downloadsViews = new HashMap<>();
 
     BrowserDialogFragment dialog;
 
@@ -358,7 +358,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
             item.update = true;
             downloadsItems.remove(item);
             for (View i : views)
-                downloadsImages.remove(i);
+                downloadsViews.remove(i);
             setImage();
         }
     }
@@ -871,11 +871,11 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
     }
 
     void clearDownloads() {
-        for (View item : downloadsImages.keySet()) {
-            DownloadImageTask t = downloadsImages.get(item);
+        for (View item : downloadsViews.keySet()) {
+            DownloadImageTask t = downloadsViews.get(item);
             t.cancel(true);
         }
-        downloadsImages.clear();
+        downloadsViews.clear();
         for (SearchItem item : downloadsItems.keySet()) {
             DownloadImageTask t = downloadsItems.get(item);
             t.cancel(true);
@@ -1029,22 +1029,25 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
 
         final SearchItem item = getItem(position);
 
-        boolean needDownloadImage = item.image != null && item.imageBitmap == null;
-        boolean needCallUpdate = !item.update && item.search.get("update") != null;
-        DownloadImageTask task = downloadsImages.get(convertView);
+        DownloadImageTask task = downloadsViews.get(convertView);
         if (task != null) { // reuse imageview
             task.views.remove(convertView);
         }
-        if (needDownloadImage || needCallUpdate) {
-            task = downloadsItems.get(item);
-            if (task != null) { // add new ImageView to populate on finish
-                task.views.add(convertView);
-            } else {
-                task = new DownloadImageTask(convertView);
-                task.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, item);
+        task = downloadsItems.get(item);
+        if (task != null) { // add new ImageView to populate on finish
+            task.views.add(convertView);
+        }
+        if (!item.update) {
+            boolean needDownloadImage = item.image != null && item.imageBitmap == null;
+            boolean needCallUpdate = item.search.get("update") != null;
+            if (needDownloadImage || needCallUpdate) {
+                if (task == null) {
+                    task = new DownloadImageTask(convertView);
+                    task.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, item);
+                }
+                downloadsItems.put(item, task);
+                downloadsViews.put(convertView, task);
             }
-            downloadsItems.put(item, task);
-            downloadsImages.put(convertView, task);
         }
 
         updateView(item, convertView);
@@ -1688,12 +1691,18 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         final HttpClient.DownloadResponse html;
 
         final String url = item.details;
-        if (url == null || url.isEmpty())
+        if (url == null || url.isEmpty()) {
+            if (done != null)
+                done.run();
             return;
+        }
 
         final String update = item.search.get("update");
-        if (update == null || update.isEmpty())
+        if (update == null || update.isEmpty()) {
+            if (done != null)
+                done.run();
             return;
+        }
 
         html = httpImages.getResponse(null, url);
         html.download();
