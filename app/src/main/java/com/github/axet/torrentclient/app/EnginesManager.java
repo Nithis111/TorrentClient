@@ -57,8 +57,6 @@ public class EnginesManager {
     public EnginesManager(MainActivity main) {
         this.context = main;
         this.main = main;
-
-        load();
     }
 
     public int getCount() {

@@ -447,6 +447,7 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
 
                 torrents = new Torrents(MainActivity.this, list);
                 show(torrents);
+                engies.load();
 
                 if (Storage.permitted(MainActivity.this, PERMISSIONS, 1)) {
                     try {
@@ -688,7 +689,6 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
 
     public AlertDialog Error(String err) {
         Log.e(TAG, Libtorrent.error());
-
         return new AlertDialog.Builder(MainActivity.this)
                 .setTitle(R.string.error)
                 .setMessage(err)
@@ -1111,8 +1111,6 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
         } else {
             list.setEmptyView(null);
         }
-
-        engies.save();
 
         nav.install(list);
     }

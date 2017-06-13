@@ -327,21 +327,17 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         protected Bitmap doInBackground(SearchItem... items) {
             item = items[0];
 
-            Runnable done = new Runnable() {
-                @Override
-                public void run() {
-                    if (item.image == null)
-                        return;
-                    loadImage();
-                }
-            };
-
             try {
-                detailsLoad(item, done);
+                detailsLoad(item);
             } catch (RuntimeException e) {
                 post(e);
                 return null;
             }
+
+            if (item.image == null || item.image.isEmpty())
+                return null;
+
+            loadImage();
 
             return result;
         }
@@ -1610,8 +1606,6 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         handler.post(new Runnable() {
             @Override
             public void run() {
-                if (main.isFinishing())
-                    return;
                 Error(e);
             }
         });
@@ -1621,16 +1615,14 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         handler.post(new Runnable() {
             @Override
             public void run() {
-                if (main.isFinishing())
-                    return;
                 Error(msg);
             }
         });
     }
 
     public void Error(final Throwable e) {
-        if (main.active(this)) {
-            error = main.Error(e);
+        if (!main.isFinishing() && main.active(this)) {
+            error = main.Error(e); // log exception
             error.setOnDismissListener(new DialogInterface.OnDismissListener() {
                 @Override
                 public void onDismiss(DialogInterface dialog) {
@@ -1638,6 +1630,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
                 }
             });
         } else {
+            Log.d(TAG, "Exception", e);
             Throwable t = e;
             while (t.getCause() != null)
                 t = t.getCause();
@@ -1647,7 +1640,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
     }
 
     public void Error(String msg) {
-        if (main.active(this)) {
+        if (!main.isFinishing() && main.active(this)) {
             error = main.Error(msg);
             error.setOnDismissListener(new DialogInterface.OnDismissListener() {
                 @Override
@@ -1673,7 +1666,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
     }
 
     public void hideKeyboard() {
-        handler.post(new Runnable() { // not allways works on first call
+        handler.post(new Runnable() { // not always works on first call, use 'handler'
             @Override
             public void run() {
                 InputMethodManager imm = (InputMethodManager) context.getSystemService(Context.INPUT_METHOD_SERVICE);
@@ -1684,23 +1677,18 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
 
     // delete entry from EngineManager, 'trash' icon
     public void delete() {
-        ;
     }
 
-    void detailsLoad(final SearchItem item, final Runnable done) {
+    void detailsLoad(final SearchItem item) {
         final HttpClient.DownloadResponse html;
 
         final String url = item.details;
         if (url == null || url.isEmpty()) {
-            if (done != null)
-                done.run();
             return;
         }
 
         final String update = item.search.get("update");
         if (update == null || update.isEmpty()) {
-            if (done != null)
-                done.run();
             return;
         }
 
@@ -1721,8 +1709,6 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
                         public void result(final String html) {
                             super.result(html);
                             detailsList(item, engine.getMap(update), url, html);
-                            if (done != null)
-                                done.run();
                             synchronized (lock) {
                                 lock.notifyAll();
                             }
@@ -1754,8 +1740,6 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
             handler.post(request); // web must run on UI thread
         } else {
             detailsList(item, engine.getMap(update), url, html.getHtml());
-            if (done != null)
-                done.run();
         }
     }
 

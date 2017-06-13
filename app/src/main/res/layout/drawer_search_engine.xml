@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
               xmlns:tools="http://schemas.android.com/tools"
-              android:id="@+id/search_proxy"
+              android:id="@+id/drawer_search_engine"
               android:layout_width="match_parent"
               android:layout_height="@dimen/material_drawer_item_primary"
               android:orientation="horizontal"
@@ -64,11 +64,36 @@
         android:paddingRight="0dp"
         android:paddingStart="@dimen/material_drawer_padding">
 
-
-        <Switch
-            android:id="@+id/proxy_switch"
+        <FrameLayout
+            android:id="@+id/search_engine_panel"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_gravity="center"/>
+            android:layout_gravity="center">
+
+            <ImageView
+                android:id="@+id/search_engine_new"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:layout_margin="5dp"
+                android:src="@drawable/ic_new_releases_black_24dp"
+                android:tint="?attr/colorAccent"/>
+
+            <ProgressBar
+                android:id="@+id/search_engine_progress"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:indeterminateOnly="true"/>
+        </FrameLayout>
+
+        <ImageView
+            android:id="@+id/search_engine_trash"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_margin="5dp"
+            android:src="@drawable/ic_delete_black_24dp"
+            android:tint="?attr/colorAccent"/>
     </LinearLayout>
 </LinearLayout>

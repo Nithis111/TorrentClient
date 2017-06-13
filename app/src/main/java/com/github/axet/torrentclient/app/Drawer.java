@@ -7,7 +7,6 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
-import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Handler;
 import android.preference.PreferenceManager;
@@ -30,6 +29,7 @@ import com.github.axet.torrentclient.navigators.Search;
 import com.github.axet.torrentclient.navigators.Torrents;
 import com.github.axet.torrentclient.net.GoogleProxy;
 import com.github.axet.torrentclient.widgets.AddDrawerItem;
+import com.github.axet.torrentclient.widgets.ProgressDrawerItem;
 import com.github.axet.torrentclient.widgets.ProxyDrawerItem;
 import com.github.axet.torrentclient.widgets.SearchDrawerItem;
 import com.github.axet.torrentclient.widgets.SectionPlusDrawerItem;
@@ -195,6 +195,12 @@ public class Drawer implements com.mikepenz.materialdrawer.Drawer.OnDrawerItemCl
             item.withIconTintingEnabled(true);
             item.withSelectable(true);
             item.withSetSelected(main.active(torrents));
+            list.add(item);
+        } else {
+            ProgressDrawerItem item = new ProgressDrawerItem();
+            item.withIdentifier(R.id.progress);
+            item.withSelectable(true);
+            item.withSetSelected(false);
             list.add(item);
         }
 
@@ -445,7 +451,7 @@ public class Drawer implements com.mikepenz.materialdrawer.Drawer.OnDrawerItemCl
     void updateProxies(List<IDrawerItem> list) {
         LayoutInflater inflater = LayoutInflater.from(context);
 
-        View up = inflater.inflate(R.layout.search_plus, null);
+        View up = inflater.inflate(R.layout.drawer_search_plus, null);
         list.add(new SectionPlusDrawerItem(up)
                 .withIdentifier(R.string.web_proxy_s)
                 .withName(R.string.web_proxy_s));
@@ -591,7 +597,7 @@ public class Drawer implements com.mikepenz.materialdrawer.Drawer.OnDrawerItemCl
         // here only two types of adapters, so setup empty view manually here.
 
         if (id == R.id.nav_torrents) {
-            main.show(main.getTorrents());
+            main.openTorrents();
             closeDrawer();
             return true;
         }
@@ -599,6 +605,7 @@ public class Drawer implements com.mikepenz.materialdrawer.Drawer.OnDrawerItemCl
         if (drawerItem.getTag() != null) {
             Search search = (Search) drawerItem.getTag();
             main.show(search);
+            engies.save();
             closeDrawer();
             return true;
         }

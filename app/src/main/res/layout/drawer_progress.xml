@@ -1,19 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-              android:id="@+id/search_plus"
-              android:layout_width="match_parent"
-              android:layout_height="wrap_content"
-              android:orientation="vertical"
-              android:paddingEnd="@dimen/material_drawer_vertical_padding"
-              android:paddingLeft="@dimen/material_drawer_vertical_padding"
-              android:paddingRight="@dimen/material_drawer_vertical_padding"
-              android:paddingStart="@dimen/material_drawer_vertical_padding">
+    android:id="@+id/drawer_progress"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:paddingEnd="@dimen/material_drawer_vertical_padding"
+    android:paddingLeft="@dimen/material_drawer_vertical_padding"
+    android:paddingRight="@dimen/material_drawer_vertical_padding"
+    android:paddingStart="@dimen/material_drawer_vertical_padding">
 
     <View
         android:id="@+id/material_drawer_divider"
         android:layout_width="match_parent"
         android:layout_height="1dp"
-        android:layout_marginTop="@dimen/material_drawer_padding"/>
+        android:layout_marginTop="@dimen/material_drawer_padding" />
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -25,6 +25,17 @@
         android:paddingRight="@dimen/material_drawer_padding"
         android:paddingStart="@dimen/material_drawer_padding">
 
+        <View
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:layout_weight="1" />
+
+        <ProgressBar
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:indeterminate="true" />
+
         <TextView
             android:id="@+id/material_drawer_name"
             android:layout_width="wrap_content"
@@ -33,16 +44,13 @@
             android:fontFamily="sans-serif-medium"
             android:lines="1"
             android:singleLine="true"
-            android:textSize="@dimen/material_drawer_item_section_text"/>
+            android:textSize="@dimen/material_drawer_item_section_text"
+            android:visibility="gone" />
 
-        <ImageView
-            android:visibility="gone"
-            android:id="@+id/search_update_refresh"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:paddingLeft="16dp"
-            android:src="@drawable/ic_add_black_24dp"
-            android:tint="?attr/colorAccent"/>
+        <View
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:layout_weight="1" />
+
     </LinearLayout>
 </LinearLayout>
