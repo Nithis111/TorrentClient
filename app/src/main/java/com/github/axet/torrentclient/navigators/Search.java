@@ -355,6 +355,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         }
 
         protected void onPostExecute(Bitmap result) {
+            item.update = true;
             downloadsItems.remove(item);
             for (View i : views)
                 downloadsImages.remove(i);
@@ -1044,7 +1045,6 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
             }
             downloadsItems.put(item, task);
             downloadsImages.put(convertView, task);
-            item.update = true;
         }
 
         updateView(item, convertView);
@@ -1670,8 +1670,13 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
     }
 
     public void hideKeyboard() {
-        InputMethodManager imm = (InputMethodManager) context.getSystemService(Context.INPUT_METHOD_SERVICE);
-        imm.hideSoftInputFromWindow(searchText.getWindowToken(), 0);
+        handler.post(new Runnable() { // not allways works on first call
+            @Override
+            public void run() {
+                InputMethodManager imm = (InputMethodManager) context.getSystemService(Context.INPUT_METHOD_SERVICE);
+                imm.hideSoftInputFromWindow(searchText.getWindowToken(), 0);
+            }
+        });
     }
 
     // delete entry from EngineManager, 'trash' icon
