@@ -215,6 +215,11 @@ public class Crawl extends Search {
             onUpgrade(db, oldVersion, newVersion);
         }
 
+        void dropDup(long id) {
+            SQLiteDatabase db = getWritableDatabase();
+            db.delete(CrawlEntry.TABLE_NAME, CrawlEntry._ID + " == ?", new String[]{"" + id});
+        }
+
         void dropCrawl(long id) {
             SQLiteDatabase db = getWritableDatabase();
             db.delete(CrawlEntry.TABLE_NAME, CrawlEntry._ID + " == ?", new String[]{"" + id});
@@ -293,11 +298,17 @@ public class Crawl extends Search {
             return c;
         }
 
-        public Cursor exist(String engine, String title) {
-            String selection = CrawlEntry.COLUMN_ENGINE + " = ? AND " + CrawlEntry.COLUMN_TITLE + " = ?";
-            String[] selectionArgs = new String[]{engine, title};
-            Cursor c = query(selection, selectionArgs, null, null, null);
-            return c;
+        public Cursor exist(String engine, SearchItem item) {
+            String selection;
+            String[] selectionArgs;
+            if (item.details == null || item.details.isEmpty()) {
+                selection = CrawlEntry.COLUMN_ENGINE + " = ? AND " + CrawlEntry.COLUMN_TITLE + " = ?";
+                selectionArgs = new String[]{engine, item.title};
+            } else {
+                selection = CrawlEntry.COLUMN_ENGINE + " = ? AND " + CrawlEntry.COLUMN_DETAILS + " = ?";
+                selectionArgs = new String[]{engine, item.details};
+            }
+            return query(selection, selectionArgs, null, null, null);
         }
 
         public long count(String engine) {
@@ -654,9 +665,13 @@ public class Crawl extends Search {
         for (int i = 0; i < list.size(); i++) {
             long id;
             SearchItem item = new SearchItem(state.s, url, list.get(i).outerHtml());
-            Cursor c = db.exist(engine.getName(), item.title);
+            Cursor c = db.exist(engine.getName(), item);
             if (c != null) { // exists?
                 id = getLong(c, CrawlEntry._ID);
+                while (c.moveToNext()) { // remove dups
+                    long dup = getLong(c, CrawlEntry._ID);
+                    db.dropDup(dup);
+                }
                 c.close();
                 if (state.end > CRAWL_END) { // updating?
                     endDups++; // inc dup index
@@ -731,9 +746,13 @@ public class Crawl extends Search {
         Elements list = doc.select(select);
         for (int i = 0; i < list.size(); i++) {
             SearchItem item = new SearchItem(s, url, list.get(i).outerHtml());
-            Cursor c = db.exist(engine.getName(), item.title);
+            Cursor c = db.exist(engine.getName(), item);
             if (c != null) {
                 long id = getLong(c, CrawlEntry._ID);
+                while (c.moveToNext()) { // remove dups
+                    long dup = getLong(c, CrawlEntry._ID);
+                    db.dropDup(dup);
+                }
                 c.close();
                 db.updateCrawl(id, item);
             }

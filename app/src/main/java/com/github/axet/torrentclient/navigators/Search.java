@@ -237,6 +237,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         public Long downloads_total; // total downloads
         public Map<String, String> search; // search engine entry
         public String base; // source url
+        public boolean update; // did we called update?
 
         public SearchItem() {
         }
@@ -262,6 +263,10 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
             item.downloads_total = matcherLong(html, s.get("downloads_total"), item.downloads_total);
             item.details = matcherUrl(url, html, s.get("details"), item.details);
             item.details_html = matcherHtml(html, s.get("details_html"), item.details_html);
+        }
+
+        public String toString() {
+            return title;
         }
     }
 
@@ -1025,7 +1030,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         final SearchItem item = getItem(position);
 
         boolean needDownloadImage = item.image != null && item.imageBitmap == null;
-        boolean needCallUpdate = item.search.get("update") != null;
+        boolean needCallUpdate = !item.update && item.search.get("update") != null;
         if (needDownloadImage || needCallUpdate) {
             DownloadImageTask task = downloadsImages.get(convertView);
             if (task != null) { // reuse imageview
@@ -1040,6 +1045,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
             }
             downloadsItems.put(item, task);
             downloadsImages.put(convertView, task);
+            item.update = true;
         }
 
         updateView(item, convertView);
