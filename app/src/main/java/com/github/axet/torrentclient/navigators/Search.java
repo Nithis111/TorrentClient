@@ -1721,8 +1721,6 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
                         public void result(final String html) {
                             super.result(html);
                             detailsList(item, engine.getMap(update), url, html);
-                            if (done != null)
-                                done.run();
                             synchronized (lock) {
                                 lock.notifyAll();
                             }
@@ -1754,9 +1752,9 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
             handler.post(request); // web must run on UI thread
         } else {
             detailsList(item, engine.getMap(update), url, html.getHtml());
-            if (done != null)
-                done.run();
         }
+        if (done != null)
+            done.run();
     }
 
     void detailsList(SearchItem item, Map<String, String> s, String url, String html) { // not UI thread
