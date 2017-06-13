@@ -3,27 +3,32 @@ package com.github.axet.torrentclient.widgets;
 import android.content.Context;
 import android.support.annotation.LayoutRes;
 import android.view.View;
-import android.widget.Switch;
+import android.widget.ImageView;
 
 import com.github.axet.torrentclient.R;
 import com.mikepenz.fastadapter.utils.ViewHolderFactory;
 import com.mikepenz.materialdrawer.model.BasePrimaryDrawerItem;
 import com.mikepenz.materialdrawer.model.BaseViewHolder;
 
-public class ProxyDrawerItem extends BasePrimaryDrawerItem<ProxyDrawerItem, ProxyDrawerItem.ViewHolder> {
+public class ProgressDrawerItem extends BasePrimaryDrawerItem<ProgressDrawerItem, ProgressDrawerItem.ViewHolder> {
+    public View v;
 
-    public ProxyDrawerItem() {
+    public ProgressDrawerItem() {
+    }
+
+    public ProgressDrawerItem(View view) {
+        this.v = view;
     }
 
     @Override
     public int getType() {
-        return R.id.drawer_search_proxy;
+        return R.id.drawer_progress;
     }
 
     @Override
     @LayoutRes
     public int getLayoutRes() {
-        return R.layout.drawer_search_proxy;
+        return R.layout.drawer_progress;
     }
 
     @Override
@@ -48,11 +53,8 @@ public class ProxyDrawerItem extends BasePrimaryDrawerItem<ProxyDrawerItem, Prox
     }
 
     public static class ViewHolder extends BaseViewHolder {
-        public Switch w;
-
         public ViewHolder(View view) {
             super(view);
-            w = (Switch) view.findViewById(R.id.proxy_switch);
         }
     }
 }

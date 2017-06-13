@@ -17,12 +17,12 @@ public class SectionPlusDrawerItem extends com.mikepenz.materialdrawer.model.Sec
 
     @Override
     public int getType() {
-        return R.id.search_plus;
+        return R.id.drawer_search_plus;
     }
 
     @Override
     @LayoutRes
     public int getLayoutRes() {
-        return R.layout.search_plus;
+        return R.layout.drawer_search_plus;
     }
 }

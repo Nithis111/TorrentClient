@@ -22,13 +22,13 @@ public class SearchDrawerItem extends BasePrimaryDrawerItem<SearchDrawerItem, Se
 
     @Override
     public int getType() {
-        return R.id.search_engine;
+        return R.id.drawer_search_engine;
     }
 
     @Override
     @LayoutRes
     public int getLayoutRes() {
-        return R.layout.search_engine;
+        return R.layout.drawer_search_engine;
     }
 
     @Override

@@ -518,7 +518,6 @@ public class TorrentPlayer {
                 player = MediaPlayer.create(context, f.uri);
         }
         if (player == null) {
-            notifyNext();
             next(i + 1);
             return false;
         }
@@ -590,6 +589,7 @@ public class TorrentPlayer {
                     return; // n = 0;
                 }
                 play(n);
+                notifyNext();
             }
         };
         handler.postDelayed(this.next, 1000);
