@@ -3,7 +3,6 @@ package com.github.axet.torrentclient.navigators;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.SharedPreferences;
-import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
@@ -297,11 +296,11 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
 
     class DownloadImageTask extends AsyncTask<SearchItem, Void, Bitmap> {
         SearchItem item;
-        public HashSet<View> images = new HashSet<>(); // one task can set multiple ImageView's, except reused ones
+        public HashSet<View> views = new HashSet<>(); // one task can set multiple ImageView's, except reused ones
         Bitmap result;
 
-        public DownloadImageTask(View bmImage) {
-            this.images.add(bmImage);
+        public DownloadImageTask(View v) {
+            views.add(v);
         }
 
         void loadImage() {
@@ -351,13 +350,13 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
             if (result != null) {
                 item.imageBitmap = result;
             }
-            for (View i : images)
+            for (View i : views)
                 updateView(item, i);
         }
 
         protected void onPostExecute(Bitmap result) {
             downloadsItems.remove(item);
-            for (View i : images)
+            for (View i : views)
                 downloadsImages.remove(i);
             setImage();
         }
@@ -1031,14 +1030,14 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
 
         boolean needDownloadImage = item.image != null && item.imageBitmap == null;
         boolean needCallUpdate = !item.update && item.search.get("update") != null;
+        DownloadImageTask task = downloadsImages.get(convertView);
+        if (task != null) { // reuse imageview
+            task.views.remove(convertView);
+        }
         if (needDownloadImage || needCallUpdate) {
-            DownloadImageTask task = downloadsImages.get(convertView);
-            if (task != null) { // reuse imageview
-                task.images.remove(convertView);
-            }
             task = downloadsItems.get(item);
             if (task != null) { // add new ImageView to populate on finish
-                task.images.add(convertView);
+                task.views.add(convertView);
             } else {
                 task = new DownloadImageTask(convertView);
                 task.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, item);
