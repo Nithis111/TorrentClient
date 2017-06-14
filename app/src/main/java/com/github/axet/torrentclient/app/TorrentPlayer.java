@@ -571,11 +571,6 @@ public class TorrentPlayer {
         saveDelay();
     }
 
-    public void notifyNext() {
-        Intent intent = notify(PLAYER_NEXT);
-        context.sendBroadcast(intent);
-    }
-
     public void next(final int next) {
         handler.removeCallbacks(this.progress);
         handler.removeCallbacks(this.next);
@@ -616,7 +611,7 @@ public class TorrentPlayer {
             }
             if (player.isPlaying()) {
                 player.pause();
-                progress.run();
+                notifyProgress();
                 handler.removeCallbacks(progress);
                 handler.removeCallbacks(saveDelay);
             } else {
@@ -660,20 +655,32 @@ public class TorrentPlayer {
         if (player != null) {
             intent.putExtra("pos", player.getCurrentPosition());
             intent.putExtra("dur", player.getDuration());
-            intent.putExtra("play", player.isPlaying() || next != null);
-        } else {
-            intent.putExtra("play", false);
         }
         return intent;
     }
 
-    public void notifyProgress() {
+    public void notifyNext() {
+        Intent intent = notify(PLAYER_NEXT);
+        intent.putExtra("play", player != null);
+        context.sendBroadcast(intent);
+    }
+
+    Intent notifyProgressIntent() {
         Intent intent = notify(PLAYER_PROGRESS);
+        if (player != null)
+            intent.putExtra("play", player.isPlaying() || next != null);
+        else
+            intent.putExtra("play", false);
+        return intent;
+    }
+
+    public void notifyProgress() {
+        Intent intent = notifyProgressIntent();
         context.sendBroadcast(intent);
     }
 
     public void notifyProgress(Receiver receiver) {
-        Intent intent = notify(PLAYER_PROGRESS);
+        Intent intent = notifyProgressIntent();
         receiver.onReceive(context, intent);
     }
 
