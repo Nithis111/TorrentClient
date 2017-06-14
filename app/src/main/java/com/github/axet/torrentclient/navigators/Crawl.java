@@ -54,9 +54,9 @@ public class Crawl extends Search {
 
     public static Locale EN = new Locale("en");
 
-    public static long REFRESH_CRAWL = 12 * AlarmManager.HOUR1; // autorefresh interval - 12 hours
+    public static int REFRESH_CRAWL = 12 * AlarmManager.HOUR1; // autorefresh interval - 12 hours
     public static int CRAWL_SHOW = 20; // how many items to load per page
-    public static long CRAWL_DELAY = AlarmManager.SEC1; // try to download after error / next page - 1 second
+    public static int CRAWL_DELAY = AlarmManager.SEC1; // try to download after error / next page - 1 second
     public static int CRAWL_END = 3; // how many tries (last page reload) to confirm end
     public static int CRAWL_DUPS = 20; // how many dups == end
 
