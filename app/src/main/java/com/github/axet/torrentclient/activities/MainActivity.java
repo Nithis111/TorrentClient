@@ -38,6 +38,7 @@ import android.widget.Toast;
 
 import com.getbase.floatingactionbutton.FloatingActionButton;
 import com.getbase.floatingactionbutton.FloatingActionsMenu;
+import com.github.axet.androidlibrary.app.AlarmManager;
 import com.github.axet.androidlibrary.widgets.HeaderGridView;
 import com.github.axet.androidlibrary.widgets.OpenFileDialog;
 import com.github.axet.torrentclient.R;
@@ -467,8 +468,9 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
 
                 drawer.updateManager();
 
-                if (getApp().player != null) {
-                    getApp().player.notifyProgress(playerReceiver);
+                MainApplication app = getApp();
+                if (app.player != null) {
+                    app.player.notifyProgress(playerReceiver);
                 }
 
                 if (delayedIntent != null) {
@@ -544,7 +546,14 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
                 if (a.equals(TorrentPlayer.PLAYER_NEXT)) {
                     fab_panel.setVisibility(View.VISIBLE);
                     playerTorrent = intent.getLongExtra("t", -1);
-                    fab_status.setText(TorrentPlayer.formatHeader(MainActivity.this, 0, 0));
+                    int pos = intent.getIntExtra("pos", 0);
+                    int dur = intent.getIntExtra("dur", 0);
+                    boolean play = intent.getBooleanExtra("play", false);
+                    if (play) {
+                        fab_status.setText(TorrentPlayer.formatHeader(MainActivity.this, pos, dur));
+                    } else { // next can point on non audio file
+                        fab_status.setText("--");
+                    }
                     fab_play.setImageResource(R.drawable.ic_pause_24dp);
                 }
                 if (a.equals(TorrentPlayer.PLAYER_STOP)) {
@@ -794,7 +803,7 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
             @Override
             public void run() {
                 handler.removeCallbacks(refresh);
-                handler.postDelayed(refresh, 1000);
+                handler.postDelayed(refresh, AlarmManager.SEC1);
 
                 if (delayedInit != null)
                     return;

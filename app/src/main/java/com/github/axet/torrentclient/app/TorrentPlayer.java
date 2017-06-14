@@ -11,6 +11,7 @@ import android.os.Handler;
 import android.support.v7.preference.PreferenceManager;
 import android.view.SurfaceHolder;
 
+import com.github.axet.androidlibrary.app.AlarmManager;
 import com.github.axet.torrentclient.activities.PlayerActivity;
 import com.github.axet.torrentclient.services.TorrentContentProvider;
 
@@ -281,7 +282,7 @@ public class TorrentPlayer {
         public void run() {
             notifyProgress();
             handler.removeCallbacks(progress);
-            handler.postDelayed(progress, 1000);
+            handler.postDelayed(progress, AlarmManager.SEC1);
         }
     };
     Runnable saveDelay = new Runnable() {
@@ -571,12 +572,12 @@ public class TorrentPlayer {
     }
 
     public void notifyNext() {
-        Intent intent = new Intent(PLAYER_NEXT);
-        intent.putExtra("t", torrent.t);
+        Intent intent = notify(PLAYER_NEXT);
         context.sendBroadcast(intent);
     }
 
     public void next(final int next) {
+        handler.removeCallbacks(this.progress);
         handler.removeCallbacks(this.next);
         this.next = new Runnable() {
             @Override
@@ -592,7 +593,7 @@ public class TorrentPlayer {
                 notifyNext();
             }
         };
-        handler.postDelayed(this.next, 1000);
+        handler.postDelayed(this.next, AlarmManager.SEC1);
     }
 
     public boolean isPlaying() { // actual sound
@@ -651,28 +652,26 @@ public class TorrentPlayer {
         return torrent.t;
     }
 
-    Intent notifyProgressIntent() {
-        if (player == null)
-            return null;
-        Intent intent = new Intent(PLAYER_PROGRESS);
+    Intent notify(String a) {
+        Intent intent = new Intent(a);
         intent.putExtra("t", torrent.t);
-        intent.putExtra("pos", player.getCurrentPosition());
-        intent.putExtra("dur", player.getDuration());
-        intent.putExtra("play", player.isPlaying() || next != null);
+        if (player != null) {
+            intent.putExtra("pos", player.getCurrentPosition());
+            intent.putExtra("dur", player.getDuration());
+            intent.putExtra("play", player.isPlaying() || next != null);
+        } else {
+            intent.putExtra("play", false);
+        }
         return intent;
     }
 
     public void notifyProgress() {
-        Intent intent = notifyProgressIntent();
-        if (intent == null)
-            return;
+        Intent intent = notify(PLAYER_PROGRESS);
         context.sendBroadcast(intent);
     }
 
     public void notifyProgress(Receiver receiver) {
-        Intent intent = notifyProgressIntent();
-        if (intent == null)
-            return;
+        Intent intent = notify(PLAYER_PROGRESS);
         receiver.onReceive(context, intent);
     }
 
@@ -703,6 +702,6 @@ public class TorrentPlayer {
 
     public void saveDelay() {
         handler.removeCallbacks(saveDelay);
-        handler.postDelayed(saveDelay, 60 * 1000);
+        handler.postDelayed(saveDelay, AlarmManager.MIN1);
     }
 }

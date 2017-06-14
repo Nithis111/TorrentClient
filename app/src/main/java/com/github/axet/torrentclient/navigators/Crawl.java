@@ -24,6 +24,7 @@ import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
+import com.github.axet.androidlibrary.app.AlarmManager;
 import com.github.axet.androidlibrary.net.HttpClient;
 import com.github.axet.androidlibrary.widgets.HeaderGridView;
 import com.github.axet.androidlibrary.widgets.ThemeUtils;
@@ -53,9 +54,9 @@ public class Crawl extends Search {
 
     public static Locale EN = new Locale("en");
 
-    public static int REFRESH_CRAWL = 12 * 60 * 60 * 1000; // autorefresh interval - 12 hours
+    public static int REFRESH_CRAWL = 8 * AlarmManager.HOUR1; // autorefresh interval - 8 hours
     public static int CRAWL_SHOW = 20; // how many items to load per page
-    public static int CRAWL_DELAY = 1 * 1000; // try to download after error / next page - 1 second
+    public static int CRAWL_DELAY = AlarmManager.SEC1; // try to download after error / next page - 1 second
     public static int CRAWL_END = 3; // how many tries (last page reload) to confirm end
     public static int CRAWL_DUPS = 20; // how many dups == end
 

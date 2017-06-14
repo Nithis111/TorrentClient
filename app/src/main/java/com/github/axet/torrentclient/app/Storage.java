@@ -23,6 +23,7 @@ import android.support.v4.app.NotificationCompat;
 import android.util.Base64;
 import android.util.Log;
 
+import com.github.axet.androidlibrary.app.AlarmManager;
 import com.github.axet.torrentclient.R;
 import com.github.axet.torrentclient.services.TorrentService;
 import com.github.axet.wget.SpeedInfo;
@@ -52,7 +53,8 @@ public class Storage extends com.github.axet.androidlibrary.app.Storage {
 
     public static final String[] PERMISSIONS = new String[]{Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE};
 
-    public static final int SAVE_INTERVAL = 1 * 60 * 1000;
+    public static final long SAVE_INTERVAL = AlarmManager.MIN1;
+    public static final int HASH_LEN = 40;
 
     SpeedInfo downloaded = new SpeedInfo();
     SpeedInfo uploaded = new SpeedInfo();
@@ -157,7 +159,7 @@ public class Storage extends com.github.axet.androidlibrary.app.Storage {
                     String left = "∞";
                     if (c > 0 && a > 0) {
                         long diff = c * 1000 / a;
-                        int diffDays = (int) (diff / (24 * 60 * 60 * 1000));
+                        int diffDays = (int) (diff / (AlarmManager.DAY1));
                         if (diffDays < 30)
                             left = "" + MainApplication.formatDuration(context, diff) + "";
                     }
@@ -521,7 +523,7 @@ public class Storage extends com.github.axet.androidlibrary.app.Storage {
             public void run() {
                 updateHeader();
                 updateDone();
-                handler.postDelayed(refresh, 1000);
+                handler.postDelayed(refresh, AlarmManager.SEC1);
             }
         };
         refresh.run();
@@ -800,7 +802,7 @@ public class Storage extends com.github.axet.androidlibrary.app.Storage {
             s = s.trim();
             if (s.isEmpty())
                 continue;
-            int len = 40;
+            int len = HASH_LEN;
             if (s.length() % len == 0) {
                 int index = 0;
                 // check all are 40 bytes hex strings
@@ -809,7 +811,6 @@ public class Storage extends com.github.axet.androidlibrary.app.Storage {
                     index += mag.length();
                     try {
                         new BigInteger(mag, 16);
-
                         final SharedPreferences shared = PreferenceManager.getDefaultSharedPreferences(context);
                         String[] tt = shared.getString(MainApplication.PREFERENCE_ANNOUNCE, "").split("\n");
                         ff = "magnet:?xt=urn:btih:" + mag;
