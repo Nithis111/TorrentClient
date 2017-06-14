@@ -11,6 +11,7 @@ import android.os.Handler;
 import android.support.v7.preference.PreferenceManager;
 import android.view.SurfaceHolder;
 
+import com.github.axet.androidlibrary.app.AlarmManager;
 import com.github.axet.torrentclient.activities.PlayerActivity;
 import com.github.axet.torrentclient.services.TorrentContentProvider;
 
@@ -281,7 +282,7 @@ public class TorrentPlayer {
         public void run() {
             notifyProgress();
             handler.removeCallbacks(progress);
-            handler.postDelayed(progress, 1000);
+            handler.postDelayed(progress, AlarmManager.SEC1);
         }
     };
     Runnable saveDelay = new Runnable() {
@@ -592,7 +593,7 @@ public class TorrentPlayer {
                 notifyNext();
             }
         };
-        handler.postDelayed(this.next, 1000);
+        handler.postDelayed(this.next, AlarmManager.SEC1);
     }
 
     public boolean isPlaying() { // actual sound
@@ -703,6 +704,6 @@ public class TorrentPlayer {
 
     public void saveDelay() {
         handler.removeCallbacks(saveDelay);
-        handler.postDelayed(saveDelay, 60 * 1000);
+        handler.postDelayed(saveDelay, AlarmManager.MIN1);
     }
 }

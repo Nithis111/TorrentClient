@@ -247,9 +247,7 @@ public class MainApplication extends com.github.axet.androidlibrary.app.MainAppl
         if (d == 0)
             return "";
 
-        SimpleDateFormat s = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-
-        return s.format(new Date(d / 1000000));
+        return SIMPLE.format(new Date(d / 1000000));
     }
 
     public Storage getStorage() {

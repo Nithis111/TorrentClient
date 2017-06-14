@@ -21,6 +21,7 @@ import android.util.Log;
 import android.view.View;
 import android.widget.RemoteViews;
 
+import com.github.axet.androidlibrary.app.AlarmManager;
 import com.github.axet.androidlibrary.widgets.OptimizationPreferenceCompat;
 import com.github.axet.torrentclient.R;
 import com.github.axet.torrentclient.activities.BootActivity;
@@ -126,7 +127,7 @@ public class TorrentService extends Service {
         super.onCreate();
         Log.d(TAG, "onCreate");
 
-        OptimizationPreferenceCompat.REFRESH = 5 * 60 * 1000;
+        OptimizationPreferenceCompat.REFRESH = AlarmManager.MIN5;
         optimization = new OptimizationPreferenceCompat.ServiceReceiver(this, getClass());
 
         receiver = new TorrentReceiver();

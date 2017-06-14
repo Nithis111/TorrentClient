@@ -38,6 +38,7 @@ import android.widget.Toast;
 
 import com.getbase.floatingactionbutton.FloatingActionButton;
 import com.getbase.floatingactionbutton.FloatingActionsMenu;
+import com.github.axet.androidlibrary.app.AlarmManager;
 import com.github.axet.androidlibrary.widgets.HeaderGridView;
 import com.github.axet.androidlibrary.widgets.OpenFileDialog;
 import com.github.axet.torrentclient.R;
@@ -794,7 +795,7 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
             @Override
             public void run() {
                 handler.removeCallbacks(refresh);
-                handler.postDelayed(refresh, 1000);
+                handler.postDelayed(refresh, AlarmManager.SEC1);
 
                 if (delayedInit != null)
                     return;
