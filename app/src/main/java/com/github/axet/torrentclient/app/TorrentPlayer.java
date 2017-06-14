@@ -572,11 +572,12 @@ public class TorrentPlayer {
     }
 
     public void notifyNext() {
-        Intent intent = fill(PLAYER_NEXT);
+        Intent intent = notify(PLAYER_NEXT);
         context.sendBroadcast(intent);
     }
 
     public void next(final int next) {
+        handler.removeCallbacks(this.progress);
         handler.removeCallbacks(this.next);
         this.next = new Runnable() {
             @Override
