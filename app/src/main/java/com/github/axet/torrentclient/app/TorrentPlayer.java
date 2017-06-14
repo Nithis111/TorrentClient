@@ -572,8 +572,7 @@ public class TorrentPlayer {
     }
 
     public void notifyNext() {
-        Intent intent = new Intent(PLAYER_NEXT);
-        intent.putExtra("t", torrent.t);
+        Intent intent = fill(PLAYER_NEXT);
         context.sendBroadcast(intent);
     }
 
@@ -652,28 +651,26 @@ public class TorrentPlayer {
         return torrent.t;
     }
 
-    Intent notifyProgressIntent() {
-        if (player == null)
-            return null;
-        Intent intent = new Intent(PLAYER_PROGRESS);
+    Intent notify(String a) {
+        Intent intent = new Intent(a);
         intent.putExtra("t", torrent.t);
-        intent.putExtra("pos", player.getCurrentPosition());
-        intent.putExtra("dur", player.getDuration());
-        intent.putExtra("play", player.isPlaying() || next != null);
+        if (player != null) {
+            intent.putExtra("pos", player.getCurrentPosition());
+            intent.putExtra("dur", player.getDuration());
+            intent.putExtra("play", player.isPlaying() || next != null);
+        } else {
+            intent.putExtra("play", false);
+        }
         return intent;
     }
 
     public void notifyProgress() {
-        Intent intent = notifyProgressIntent();
-        if (intent == null)
-            return;
+        Intent intent = notify(PLAYER_PROGRESS);
         context.sendBroadcast(intent);
     }
 
     public void notifyProgress(Receiver receiver) {
-        Intent intent = notifyProgressIntent();
-        if (intent == null)
-            return;
+        Intent intent = notify(PLAYER_PROGRESS);
         receiver.onReceive(context, intent);
     }
 
