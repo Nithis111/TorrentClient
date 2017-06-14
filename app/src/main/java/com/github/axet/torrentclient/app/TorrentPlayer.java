@@ -583,14 +583,16 @@ public class TorrentPlayer {
             @Override
             public void run() {
                 TorrentPlayer.this.next = null;
-                int n = next;
-                if (n >= ff.size()) {
+                if (next >= ff.size()) {
                     stop();
                     notifyStop();
                     return; // n = 0;
                 }
-                play(n);
+                PlayerFile f = get(next);
+                boolean b = open(f);
                 notifyNext();
+                if (b)
+                    play();
             }
         };
         handler.postDelayed(this.next, AlarmManager.SEC1);
