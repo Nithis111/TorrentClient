@@ -56,7 +56,7 @@ public class TorrentContentProvider extends ContentProvider {
     public static String FILE_SUFFIX = ".tmp";
 
     public static String getType(String file) {
-        String type = MimeTypeMap.getFileExtensionFromUrl(file);
+        String type = MimeTypeMap.getFileExtensionFromUrl(Uri.encode(file));
         type = MimeTypeMap.getSingleton().getMimeTypeFromExtension(type);
         return type;
     }
