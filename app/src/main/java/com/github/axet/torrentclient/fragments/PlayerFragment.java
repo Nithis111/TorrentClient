@@ -289,8 +289,9 @@ public class PlayerFragment extends Fragment implements MainActivity.TorrentFrag
                     handler.post(new Runnable() {
                         @Override
                         public void run() {
-                            if (player != null)
+                            if (player != null && app.player == player) {
                                 list.smoothScrollToPosition(player.getPlaying());
+                            }
                         }
                     });
                 }
@@ -318,8 +319,13 @@ public class PlayerFragment extends Fragment implements MainActivity.TorrentFrag
             app.player.notifyProgress(playerReceiver);
 
         update();
-        if (player != null)
-            list.setSelection(player.getPlaying());
+
+        if (player != null) {
+            int i = player.getPlaying() - 1;
+            if (i < 0)
+                i = 0;
+            list.setSelection(i); // make 1 above
+        }
 
         return v;
     }
