@@ -467,6 +467,10 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
 
                 drawer.updateManager();
 
+                if (getApp().player != null) {
+                    getApp().player.notifyProgress(playerReceiver);
+                }
+
                 if (delayedIntent != null) {
                     openIntent(delayedIntent);
                     delayedIntent = null;
