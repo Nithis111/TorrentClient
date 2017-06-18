@@ -34,7 +34,7 @@ public class TorrentService extends Service {
     public static final String TAG = TorrentService.class.getSimpleName();
 
     public static final int NOTIFICATION_TORRENT_ICON = 1;
-    public static final int NOTIFICATION_DOWNLOAD_ICON = 10; // 10+ number of torrent
+    public static final int NOTIFICATION_DOWNLOAD_ICON = 10; // 10 + number of torrents
 
     public static String TITLE = "TITLE";
 
