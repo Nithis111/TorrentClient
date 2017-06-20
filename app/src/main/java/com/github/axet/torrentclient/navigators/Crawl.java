@@ -571,6 +571,7 @@ public class Crawl extends Search {
             }, "Crawl Thread");
         } else {
             if (crawlsTopIndex >= crawlsTop.size()) {
+                main.getEngines().save(); // all jobs done, save state
                 return;
             }
             final State t = crawlsTop.get(crawlsTopIndex);
