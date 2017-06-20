@@ -1218,9 +1218,9 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
                     final String update = item.search.get("update");
                     if (update != null && !update.isEmpty()) {
                         final Map<String, String> details = engine.getMap(update);
-                        d.setBaseLoader(new BrowserDialogFragment.BaseLoader() {
+                        d.setListener(new BrowserDialogFragment.Listener() {
                             @Override
-                            public void run(String html) {
+                            public void onPageLoaded(String html) {
                                 detailsList(item, details, url, html);
                             }
                         });
