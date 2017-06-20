@@ -47,6 +47,7 @@ public class BrowserDialogFragment extends DialogFragment implements MainActivit
     HttpProxyClient http;
     Thread thread;
     int load;
+    BaseLoader loader;
 
     public static boolean logIgnore(String msg) { // ignore alert dialogs, which should not shown to regular users
         msg = msg.toLowerCase();
@@ -85,9 +86,15 @@ public class BrowserDialogFragment extends DialogFragment implements MainActivit
         return f;
     }
 
+    public interface BaseLoader {
+        void run(String html);
+    }
+
     public class Inject {
         @JavascriptInterface
-        public void result() {
+        public void result(String html) {
+            if (loader != null)
+                loader.run(html);
             handler.post(new Runnable() {
                 @Override
                 public void run() {
@@ -170,7 +177,7 @@ public class BrowserDialogFragment extends DialogFragment implements MainActivit
 
         String js = getArguments().getString("js");
         String js_post = getArguments().getString("js_post");
-        String result = ";\n\ntorrentclient.result()";
+        String result = ";\n\ntorrentclient.result(document.documentElement.outerHTML)";
         String script = null;
         String script_post = null;
         if (js != null) {
@@ -379,5 +386,9 @@ public class BrowserDialogFragment extends DialogFragment implements MainActivit
             forward.setColorFilter(Color.GRAY);
             forward.setEnabled(false);
         }
+    }
+
+    public void setBaseLoader(BaseLoader loader) {
+        this.loader = loader;
     }
 }
