@@ -1088,6 +1088,8 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
     }
 
     public void updateUnread() {
+        if (engies == null)
+            return; // we got error after exit
         drawer.updateUnread();
         drawer.updateManager();
     }

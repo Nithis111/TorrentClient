@@ -63,6 +63,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -218,12 +219,8 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
     }
 
     public static class SearchItem {
-        public long id; // database id
-        public long last; // last update ms
-        public String html; // source html
         public String title;
         public String image;
-        public Bitmap imageBitmap; // bitmap image
         public String details;
         public String details_html;
         public String magnet;
@@ -234,6 +231,11 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         public String torrent;
         public Long downloads; // downloads from last update / month (pepend on site)
         public Long downloads_total; // total downloads
+
+        public long id; // database id
+        public long last; // last update ms
+        public String html; // source html
+        public Bitmap imageBitmap; // bitmap image
         public Map<String, String> search; // search engine entry
         public String base; // source url
         public boolean update; // did we called update?
@@ -262,6 +264,37 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
             item.downloads_total = matcherLong(html, s.get("downloads_total"), item.downloads_total);
             item.details = matcherUrl(url, html, s.get("details"), item.details);
             item.details_html = matcherHtml(html, s.get("details_html"), item.details_html);
+        }
+
+        public Object get(String name) {
+            switch (name) {
+                case "title":
+                    return title;
+                case "image":
+                    return image;
+                case "magnet":
+                    return magnet;
+                case "torrent":
+                    return torrent;
+                case "date":
+                    return date;
+                case "size":
+                    return size;
+                case "seed":
+                    return seed;
+                case "leech":
+                    return leech;
+                case "downloads":
+                    return downloads;
+                case "download_total":
+                    return downloads_total;
+                case "details":
+                    return details;
+                case "details_html":
+                    return details_html;
+                default:
+                    return null;
+            }
         }
 
         public String toString() {
@@ -1175,13 +1208,23 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
                     if (dialog != null)
                         return;
 
-                    String url = item.details;
+                    final String url = item.details;
 
                     String head = nextSearch.get("details_head");
                     String js = nextSearch.get("details_js");
                     String js_post = nextSearch.get("details_js_post");
 
                     BrowserDialogFragment d = BrowserDialogFragment.create(head, url, http.getCookies(), js, js_post);
+                    final String update = item.search.get("update");
+                    if (update != null && !update.isEmpty()) {
+                        final Map<String, String> details = engine.getMap(update);
+                        d.setBaseLoader(new BrowserDialogFragment.BaseLoader() {
+                            @Override
+                            public void run(String html) {
+                                detailsList(item, details, url, html);
+                            }
+                        });
+                    }
                     dialog = d;
                     d.show(main.getSupportFragmentManager(), "");
                 }
@@ -1680,8 +1723,6 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
     }
 
     void detailsLoad(final SearchItem item) {
-        final HttpClient.DownloadResponse html;
-
         final String url = item.details;
         if (url == null || url.isEmpty()) {
             return;
@@ -1692,9 +1733,26 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
             return;
         }
 
-        html = httpImages.getResponse(null, url);
+        boolean all = true;
+        final Map<String, String> details = engine.getMap(update);
+        for (String k : details.keySet()) {
+            if (k.startsWith("_")) // disabled / comment fields
+                continue;
+            if (item.get(k) == null) { // ignore already filled values
+                all = false;
+                break;
+            }
+        }
+        if (all)
+            return;
+
+        HttpClient.DownloadResponse html = httpImages.getResponse(null, url);
         html.download();
 
+        detailsLoad(item, details, url, html);
+    }
+
+    void detailsLoad(final SearchItem item, final Map<String, String> details, final String url, final HttpClient.DownloadResponse html) {
         final String js = item.search.get("details_js");
         final String js_post = item.search.get("details_js_post");
 
@@ -1708,7 +1766,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
                         @JavascriptInterface
                         public void result(final String html) {
                             super.result(html);
-                            detailsList(item, engine.getMap(update), url, html);
+                            detailsList(item, details, url, html);
                             synchronized (lock) {
                                 lock.notifyAll();
                             }
@@ -1739,7 +1797,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
             };
             handler.post(request); // web must run on UI thread
         } else {
-            detailsList(item, engine.getMap(update), url, html.getHtml());
+            detailsList(item, details, url, html.getHtml());
         }
     }
 
