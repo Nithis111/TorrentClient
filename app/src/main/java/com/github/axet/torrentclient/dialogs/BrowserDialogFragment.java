@@ -33,6 +33,8 @@ import com.github.axet.torrentclient.R;
 import com.github.axet.torrentclient.activities.MainActivity;
 import com.github.axet.torrentclient.net.HttpProxyClient;
 
+import org.jsoup.nodes.Document;
+
 public class BrowserDialogFragment extends DialogFragment implements MainActivity.TorrentFragmentInterface {
     public static String TAG = BrowserDialogFragment.class.getSimpleName();
 
@@ -47,7 +49,7 @@ public class BrowserDialogFragment extends DialogFragment implements MainActivit
     HttpProxyClient http;
     Thread thread;
     int load;
-    BaseLoader loader;
+    Listener listener;
 
     public static boolean logIgnore(String msg) { // ignore alert dialogs, which should not shown to regular users
         msg = msg.toLowerCase();
@@ -86,18 +88,17 @@ public class BrowserDialogFragment extends DialogFragment implements MainActivit
         return f;
     }
 
-    public interface BaseLoader {
-        void run(String html);
+    public interface Listener {
+        void onPageLoaded(String html);
     }
 
     public class Inject {
         @JavascriptInterface
-        public void result(String html) {
-            if (loader != null)
-                loader.run(html);
+        public void result(final String html) {
             handler.post(new Runnable() {
                 @Override
                 public void run() {
+                    onPageLoaded(html);
                 }
             });
         }
@@ -127,7 +128,6 @@ public class BrowserDialogFragment extends DialogFragment implements MainActivit
 
     @Override
     public void close() {
-
     }
 
     @Override
@@ -280,6 +280,14 @@ public class BrowserDialogFragment extends DialogFragment implements MainActivit
                 }
                 return super.shouldInterceptRequest(view, url);
             }
+
+            @Override
+            protected String loadBase(Document doc) {
+                String html = super.loadBase(doc);
+                if (js == null && js_post == null)
+                    onPageLoaded(html);
+                return html;
+            }
         };
 
         web.setInject(script);
@@ -388,7 +396,12 @@ public class BrowserDialogFragment extends DialogFragment implements MainActivit
         }
     }
 
-    public void setBaseLoader(BaseLoader loader) {
-        this.loader = loader;
+    public void onPageLoaded(String html) {
+        if (listener != null)
+            listener.onPageLoaded(html);
+    }
+
+    public void setListener(Listener l) {
+        this.listener = l;
     }
 }
