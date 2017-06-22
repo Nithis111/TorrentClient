@@ -49,7 +49,20 @@ public class BrowserDialogFragment extends DialogFragment implements MainActivit
     HttpProxyClient http;
     Thread thread;
     int load;
-    Listener listener;
+
+    Result result = new Result();
+
+    public static class Result implements DialogInterface {
+        public String html;
+
+        @Override
+        public void cancel() {
+        }
+
+        @Override
+        public void dismiss() {
+        }
+    }
 
     public static boolean logIgnore(String msg) { // ignore alert dialogs, which should not shown to regular users
         msg = msg.toLowerCase();
@@ -88,10 +101,6 @@ public class BrowserDialogFragment extends DialogFragment implements MainActivit
         return f;
     }
 
-    public interface Listener {
-        void onPageLoaded(String html);
-    }
-
     public class Inject {
         @JavascriptInterface
         public void result(final String html) {
@@ -115,7 +124,7 @@ public class BrowserDialogFragment extends DialogFragment implements MainActivit
 
         final Activity activity = getActivity();
         if (activity instanceof DialogInterface.OnDismissListener) {
-            ((DialogInterface.OnDismissListener) activity).onDismiss(dialog);
+            ((DialogInterface.OnDismissListener) activity).onDismiss(result);
         }
     }
 
@@ -397,11 +406,6 @@ public class BrowserDialogFragment extends DialogFragment implements MainActivit
     }
 
     public void onPageLoaded(String html) {
-        if (listener != null)
-            listener.onPageLoaded(html);
-    }
-
-    public void setListener(Listener l) {
-        this.listener = l;
+        result.html = html;
     }
 }
