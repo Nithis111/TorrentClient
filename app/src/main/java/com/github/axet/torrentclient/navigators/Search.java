@@ -1,5 +1,6 @@
 package com.github.axet.torrentclient.navigators;
 
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.SharedPreferences;
@@ -132,6 +133,12 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
 
     HeaderGridView grid;
     View gridView;
+
+    HtmlUpdateListener htmlupdate;
+
+    public static boolean isEmpty(String s) {
+        return s == null || s.isEmpty();
+    }
 
     static Long matcherLong(String html, String q, Long d) {
         String s = matcher(html, q, null);
@@ -297,6 +304,17 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
             }
         }
 
+        public boolean needUpdate(Map<String, String> update) {
+            for (String k : update.keySet()) {
+                if (k.startsWith("_")) // disabled / comment fields
+                    continue;
+                if (get(k) == null) { // ignore already filled values
+                    return true;
+                }
+            }
+            return false;
+        }
+
         public String toString() {
             return title;
         }
@@ -392,8 +410,8 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         }
     }
 
-    public static boolean isEmpty(String s) {
-        return s == null || s.isEmpty();
+    public interface HtmlUpdateListener {
+        void update(String html);
     }
 
     public Search(MainActivity m) {
@@ -1014,6 +1032,15 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
                 }, null);
             }
         }
+
+        if (dialog instanceof BrowserDialogFragment.Result) {
+            final BrowserDialogFragment.Result l = (BrowserDialogFragment.Result) dialog;
+            if (htmlupdate != null) {
+                htmlupdate.update(l.html);
+                htmlupdate = null;
+            }
+        }
+
         notifyDataSetChanged();
     }
 
@@ -1218,12 +1245,12 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
                     final String update = item.search.get("update");
                     if (update != null && !update.isEmpty()) {
                         final Map<String, String> details = engine.getMap(update);
-                        d.setListener(new BrowserDialogFragment.Listener() {
+                        htmlupdate = new HtmlUpdateListener() {
                             @Override
-                            public void onPageLoaded(String html) {
+                            public void update(String html) {
                                 detailsList(item, details, url, html);
                             }
-                        });
+                        };
                     }
                     dialog = d;
                     d.show(main.getSupportFragmentManager(), "");
@@ -1733,17 +1760,8 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
             return;
         }
 
-        boolean all = true;
         final Map<String, String> details = engine.getMap(update);
-        for (String k : details.keySet()) {
-            if (k.startsWith("_")) // disabled / comment fields
-                continue;
-            if (item.get(k) == null) { // ignore already filled values
-                all = false;
-                break;
-            }
-        }
-        if (all)
+        if (!item.needUpdate(details))
             return;
 
         HttpClient.DownloadResponse html = httpImages.getResponse(null, url);
