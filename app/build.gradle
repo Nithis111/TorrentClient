@@ -59,7 +59,7 @@ dependencies {
     compile('com.github.axet:wget:1.4.2') {
         exclude group: 'com.thoughtworks.xstream', module: 'xstream'
     }
-    compile 'com.github.axet:android-library:1.12.31' // compile project(':android-library')
+    compile 'com.github.axet:android-library:1.12.39' // compile project(':android-library')
     compile 'com.github.axet:libtorrent:0.7.6@aar' // compile project(":libtorrent") // API 15+
     compile ('com.github.axet:java-unrar:1.7.0-1') {
         exclude group: 'commons-logging', module: 'commons-logging'
