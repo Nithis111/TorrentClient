@@ -461,35 +461,36 @@ public class Drawer implements com.mikepenz.materialdrawer.Drawer.OnDrawerItemCl
     }
 
     void versionCheck() {
-        String url = VERSION_CHECK;
-        HttpClient client = new HttpClient();
-        HttpClient.DownloadResponse w = client.getResponse(null, url);
-        w.download();
-        if (w.getError() != null)
-            throw new RuntimeException(w.getError() + ": " + url);
-        String html = w.getHtml();
         final View b = navigationHeader.findViewById(R.id.search_engine_new);
-        try {
-            PackageInfo pInfo = context.getPackageManager().getPackageInfo(context.getPackageName(), 0);
-            String v = pInfo.versionName;
-            final String version = Search.matcher(html, ".ref-name:regex(.*-(.*))", "");
-            if (!v.equals(version)) {
-                handler.post(new Runnable() {
-                    @Override
-                    public void run() {
-                        b.setVisibility(View.VISIBLE);
-                        b.setOnClickListener(new View.OnClickListener() {
+        String url = VERSION_CHECK;
+        if (url != null && url.isEmpty()) {
+            HttpClient client = new HttpClient();
+            HttpClient.DownloadResponse w = client.getResponse(null, url);
+            w.download();
+            if (w.getError() == null) { // throw new RuntimeException(w.getError() + ": " + url);
+                String html = w.getHtml();
+                try {
+                    PackageInfo pInfo = context.getPackageManager().getPackageInfo(context.getPackageName(), 0);
+                    String v = pInfo.versionName;
+                    final String version = Search.matcher(html, ".ref-name:regex(.*-(.*))", "");
+                    if (!v.equals(version)) {
+                        handler.post(new Runnable() {
                             @Override
-                            public void onClick(View v) {
-                                Toast.makeText(context, context.getString(R.string.new_version) + " v" + version, Toast.LENGTH_SHORT).show();
+                            public void run() {
+                                b.setVisibility(View.VISIBLE);
+                                b.setOnClickListener(new View.OnClickListener() {
+                                    @Override
+                                    public void onClick(View v) {
+                                        Toast.makeText(context, context.getString(R.string.new_version) + " v" + version, Toast.LENGTH_SHORT).show();
+                                    }
+                                });
                             }
                         });
+                        return;
                     }
-                });
-                return;
+                } catch (PackageManager.NameNotFoundException ignore) {
+                }
             }
-        } catch (PackageManager.NameNotFoundException e) {
-            ;
         }
         b.setVisibility(View.GONE);
     }
