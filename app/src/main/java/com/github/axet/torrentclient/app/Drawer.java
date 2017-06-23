@@ -6,6 +6,7 @@ import android.content.DialogInterface;
 import android.content.SharedPreferences;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
+import android.content.pm.Signature;
 import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.os.Handler;
@@ -54,6 +55,8 @@ public class Drawer implements com.mikepenz.materialdrawer.Drawer.OnDrawerItemCl
     public static final String TAG = Drawer.class.getSimpleName();
 
     public static String VERSION_CHECK = "https://gitlab.com/axet/android-torrent-client/tags";
+    public static int[] DEVELOPERS = new int[]{0xc38af5bf, 0x3feda1d1}; // 0xc38af5bf release, 0x3feda1d1 debug
+
     static final long INFO_MANUAL_REFRESH = 5 * AlarmManager.SEC1; // prevent refresh if button hit often then 5 seconds
     static final long INFO_AUTO_REFRESH = 5 * AlarmManager.MIN1; // ping external port on drawer open not often then 5 minutes
     static final long ENGINES_AUTO_REFRESH = 12 * AlarmManager.HOUR1; // auto refresh engines every 12 hours
@@ -461,35 +464,59 @@ public class Drawer implements com.mikepenz.materialdrawer.Drawer.OnDrawerItemCl
     }
 
     void versionCheck() {
-        String url = VERSION_CHECK;
-        HttpClient client = new HttpClient();
-        HttpClient.DownloadResponse w = client.getResponse(null, url);
-        w.download();
-        if (w.getError() != null)
-            throw new RuntimeException(w.getError() + ": " + url);
-        String html = w.getHtml();
-        final View b = navigationHeader.findViewById(R.id.search_engine_new);
+        PackageManager pm = context.getPackageManager();
+        String installer = pm.getInstallerPackageName(context.getPackageName());
+        boolean apk = installer == null; // apk installed
+        boolean store = installer != null; // google play or amazon store
+
+        if (store) // no version check for play store
+            return;
+
         try {
-            PackageInfo pInfo = context.getPackageManager().getPackageInfo(context.getPackageName(), 0);
-            String v = pInfo.versionName;
-            final String version = Search.matcher(html, ".ref-name:regex(.*-(.*))", "");
-            if (!v.equals(version)) {
-                handler.post(new Runnable() {
-                    @Override
-                    public void run() {
-                        b.setVisibility(View.VISIBLE);
-                        b.setOnClickListener(new View.OnClickListener() {
+            boolean developer = false;
+            Signature[] ss = pm.getPackageInfo(context.getPackageName(), PackageManager.GET_SIGNATURES).signatures;
+            for (Signature s : ss) {
+                int hash = s.hashCode();
+                for (int d : DEVELOPERS) {
+                    if (d == hash)
+                        developer = true;
+                }
+            }
+            if (apk && !developer) // no version check for releases signed by other side
+                return;
+        } catch (PackageManager.NameNotFoundException e) {
+        }
+
+        final View b = navigationHeader.findViewById(R.id.search_engine_new);
+        String url = VERSION_CHECK;
+        if (url != null && url.isEmpty()) {
+            HttpClient client = new HttpClient();
+            HttpClient.DownloadResponse w = client.getResponse(null, url);
+            w.download();
+            if (w.getError() == null) { // throw new RuntimeException(w.getError() + ": " + url);
+                String html = w.getHtml();
+                try {
+                    PackageInfo pInfo = context.getPackageManager().getPackageInfo(context.getPackageName(), 0);
+                    String v = pInfo.versionName;
+                    final String version = Search.matcher(html, ".ref-name:regex(.*-(.*))", "");
+                    if (!v.equals(version)) {
+                        handler.post(new Runnable() {
                             @Override
-                            public void onClick(View v) {
-                                Toast.makeText(context, context.getString(R.string.new_version) + " v" + version, Toast.LENGTH_SHORT).show();
+                            public void run() {
+                                b.setVisibility(View.VISIBLE);
+                                b.setOnClickListener(new View.OnClickListener() {
+                                    @Override
+                                    public void onClick(View v) {
+                                        Toast.makeText(context, context.getString(R.string.new_version) + " v" + version, Toast.LENGTH_SHORT).show();
+                                    }
+                                });
                             }
                         });
+                        return;
                     }
-                });
-                return;
+                } catch (PackageManager.NameNotFoundException ignore) {
+                }
             }
-        } catch (PackageManager.NameNotFoundException e) {
-            ;
         }
         b.setVisibility(View.GONE);
     }
