@@ -217,6 +217,8 @@ public class PlayerFragment extends Fragment implements MainActivity.TorrentFrag
                     player.pause();
                     if (player.isStop()) // we stoped 'next' loop, keep last item highligted
                         files.selected = i;
+                    else
+                        files.selected = -1; // clear user selection after resume
                     MainApplication app = ((MainApplication) getContext().getApplicationContext());
                     TorrentPlayer.save(getContext(), app.player);
                 } else {
