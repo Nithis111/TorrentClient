@@ -125,4 +125,5 @@
     <string name="storage_path">Storage Path</string>
     <string name="stop">Stop Torrent</string>
     <string name="start">Start Torrent</string>
+    <string name="new_version">New version available:</string>
 </resources>
