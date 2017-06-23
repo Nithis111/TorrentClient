@@ -124,4 +124,5 @@
     <string name="storage_path">Путь к папке</string>
     <string name="stop">Стоп Торрент</string>
     <string name="start">Старт Торрент</string>
+    <string name="new_version">Доступна новая версия:</string>
 </resources>

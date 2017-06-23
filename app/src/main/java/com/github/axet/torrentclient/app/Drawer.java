@@ -21,6 +21,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.github.axet.androidlibrary.app.AlarmManager;
+import com.github.axet.androidlibrary.net.HttpClient;
 import com.github.axet.androidlibrary.widgets.OpenFileDialog;
 import com.github.axet.androidlibrary.widgets.ThemeUtils;
 import com.github.axet.androidlibrary.widgets.UnreadCountDrawable;
@@ -52,6 +53,7 @@ import libtorrent.Libtorrent;
 public class Drawer implements com.mikepenz.materialdrawer.Drawer.OnDrawerItemClickListener, UnreadCountDrawable.UnreadCount {
     public static final String TAG = Drawer.class.getSimpleName();
 
+    public static String VERSION_CHECK = "https://gitlab.com/axet/android-torrent-client/tags";
     static final long INFO_MANUAL_REFRESH = 5 * AlarmManager.SEC1; // prevent refresh if button hit often then 5 seconds
     static final long INFO_AUTO_REFRESH = 5 * AlarmManager.MIN1; // ping external port on drawer open not often then 5 minutes
     static final long ENGINES_AUTO_REFRESH = 12 * AlarmManager.HOUR1; // auto refresh engines every 12 hours
@@ -395,13 +397,21 @@ public class Drawer implements com.mikepenz.materialdrawer.Drawer.OnDrawerItemCl
         if (update != null) {
             if (auto)
                 return;
-            else
-                update.interrupt();
         }
         final EnginesManager engines = main.getEngines();
+        final Thread old = update;
         update = new Thread(new Runnable() {
             @Override
             public void run() {
+                if (old != null) {
+                    old.interrupt();
+                    try {
+                        old.join();
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        return;
+                    }
+                }
                 boolean a = auto;
 
                 handler.post(new Runnable() {
@@ -411,6 +421,7 @@ public class Drawer implements com.mikepenz.materialdrawer.Drawer.OnDrawerItemCl
                     }
                 });
                 try {
+                    versionCheck();
                     engines.refresh();
                 } catch (final RuntimeException e) {
                     Log.e(TAG, "Update Engine", e);
@@ -447,6 +458,40 @@ public class Drawer implements com.mikepenz.materialdrawer.Drawer.OnDrawerItemCl
             }
         }, "Engines Update");
         update.start();
+    }
+
+    void versionCheck() {
+        String url = VERSION_CHECK;
+        HttpClient client = new HttpClient();
+        HttpClient.DownloadResponse w = client.getResponse(null, url);
+        w.download();
+        if (w.getError() != null)
+            throw new RuntimeException(w.getError() + ": " + url);
+        String html = w.getHtml();
+        final View b = navigationHeader.findViewById(R.id.search_engine_new);
+        try {
+            PackageInfo pInfo = context.getPackageManager().getPackageInfo(context.getPackageName(), 0);
+            String v = pInfo.versionName;
+            final String version = Search.matcher(html, ".ref-name:regex(.*-(.*))", "");
+            if (!v.equals(version)) {
+                handler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        b.setVisibility(View.VISIBLE);
+                        b.setOnClickListener(new View.OnClickListener() {
+                            @Override
+                            public void onClick(View v) {
+                                Toast.makeText(context, context.getString(R.string.new_version) + " " + version, Toast.LENGTH_SHORT).show();
+                            }
+                        });
+                    }
+                });
+                return;
+            }
+        } catch (PackageManager.NameNotFoundException e) {
+            ;
+        }
+        b.setVisibility(View.GONE);
     }
 
     void updateProxies(List<IDrawerItem> list) {

@@ -249,6 +249,8 @@ public class EnginesManager {
     public void refresh() {
         time = System.currentTimeMillis();
         for (int i = 0; i < list.size(); i++) {
+            if (Thread.currentThread().isInterrupted())
+                return;
             Item item = list.get(i);
             try {
                 final SearchEngine engine = new SearchEngine();

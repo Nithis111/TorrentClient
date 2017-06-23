@@ -140,7 +140,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         return s == null || s.isEmpty();
     }
 
-    static Long matcherLong(String html, String q, Long d) {
+    public static Long matcherLong(String html, String q, Long d) {
         String s = matcher(html, q, null);
         if (s == null || s.isEmpty())
             return d;
@@ -151,7 +151,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         }
     }
 
-    static String matcherUrl(String url, String html, String q, String d) {
+    public static String matcherUrl(String url, String html, String q, String d) {
         String m = matcher(html, q, null);
 
         if (m == null || m.isEmpty())
@@ -168,7 +168,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         return d;
     }
 
-    static String matcherHtml(String html, String q, String d) {
+    public static String matcherHtml(String html, String q, String d) {
         if (q == null)
             return d;
 
@@ -218,7 +218,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         return a;
     }
 
-    static String matcher(String html, String q, String d) {
+    public static String matcher(String html, String q, String d) {
         String a = matcherHtml(html, q, null);
         if (a == null)
             return d;
