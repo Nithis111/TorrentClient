@@ -481,7 +481,7 @@ public class Drawer implements com.mikepenz.materialdrawer.Drawer.OnDrawerItemCl
                         b.setOnClickListener(new View.OnClickListener() {
                             @Override
                             public void onClick(View v) {
-                                Toast.makeText(context, context.getString(R.string.new_version) + " " + version, Toast.LENGTH_SHORT).show();
+                                Toast.makeText(context, context.getString(R.string.new_version) + " v" + version, Toast.LENGTH_SHORT).show();
                             }
                         });
                     }
