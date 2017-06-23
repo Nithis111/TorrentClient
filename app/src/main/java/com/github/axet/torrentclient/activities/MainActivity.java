@@ -503,6 +503,11 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
             public void onClick(View v) {
                 if (dialog != null)
                     return;
+                Storage.Torrent t = getStorage().find(playerTorrent);
+                if (t == null) {
+                    Toast.makeText(MainActivity.this, R.string.not_permitted, Toast.LENGTH_SHORT).show(); // deleted while playing
+                    return;
+                }
                 TorrentDialogFragment d = TorrentDialogFragment.create(playerTorrent);
                 dialog = d;
                 d.show(getSupportFragmentManager(), "");
