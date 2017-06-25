@@ -140,12 +140,20 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         return s == null || s.isEmpty();
     }
 
+    public static String trim(String str) {
+        String[] ss = new String[]{"\u00a0", "\ufffc"};
+        for (String s : ss) {
+            str = str.replaceAll(s, " ");
+        }
+        return str.trim();
+    }
+
     public static Long matcherLong(String html, String q, Long d) {
         String s = matcher(html, q, null);
         if (s == null || s.isEmpty())
             return d;
         try {
-            return Long.valueOf(s);
+            return Long.valueOf(trim(s));
         } catch (NumberFormatException ignore) {
             return d;
         }
@@ -222,7 +230,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
         String a = matcherHtml(html, q, null);
         if (a == null)
             return d;
-        return Html.fromHtml(a).toString().trim();
+        return trim(Html.fromHtml(a).toString());
     }
 
     public static class SearchItem {
