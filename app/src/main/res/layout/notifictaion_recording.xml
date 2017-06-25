@@ -64,7 +64,7 @@
                 android:layout_height="wrap_content"
                 android:layout_gravity="center"
                 android:src="@drawable/ic_pause_24dp"
-                android:tint="@android:color/white" />
+                android:tint="?android:attr/colorForeground" />
         </LinearLayout>
 
     </LinearLayout>
