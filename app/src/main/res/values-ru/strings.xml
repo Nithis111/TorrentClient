@@ -6,7 +6,6 @@
         <item>Тема Темная</item>
     </string-array>
 
-    <string name="title_activity_main">Торрент Клиент</string>
     <string name="action_settings">Настройки</string>
 
     <string name="navigation_drawer_open">Открыть навигационную панель</string>

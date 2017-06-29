@@ -39,6 +39,7 @@ import android.widget.Toast;
 import com.getbase.floatingactionbutton.FloatingActionButton;
 import com.getbase.floatingactionbutton.FloatingActionsMenu;
 import com.github.axet.androidlibrary.app.AlarmManager;
+import com.github.axet.androidlibrary.widgets.AboutPreferenceCompat;
 import com.github.axet.androidlibrary.widgets.HeaderGridView;
 import com.github.axet.androidlibrary.widgets.OpenFileDialog;
 import com.github.axet.torrentclient.R;
@@ -735,8 +736,14 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
             return true;
         }
 
+        if (id == R.id.action_about) {
+            AboutPreferenceCompat.showDialog(this, R.raw.about);
+            return true;
+        }
+
         if (id == R.id.action_show_folder) {
             openFolder(getStorage().getStoragePath());
+            return true;
         }
 
         return super.onOptionsItemSelected(item);
