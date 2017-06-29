@@ -148,4 +148,9 @@
         android:layout_gravity="center"
         android:text="@string/no_trackers" />
 
+    <ListView
+        android:id="@+id/list"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"></ListView>
+
 </LinearLayout>

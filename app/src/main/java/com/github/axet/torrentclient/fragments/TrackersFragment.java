@@ -118,18 +118,19 @@ public class TrackersFragment extends Fragment implements MainActivity.TorrentFr
     @Override
     public View onCreateView(LayoutInflater inflater,
                              ViewGroup container, Bundle savedInstanceState) {
-        //list = (ListView) v.findViewById(R.id.torrent_trackers_list);
-        list = new ListView(getContext());
-        v = list;
-
-        header = inflater.inflate(R.layout.torrent_trackers, list, false);
+        v = inflater.inflate(R.layout.torrent_trackers, container, false);
+        header = v;
+        list = (ListView) v.findViewById(R.id.list);
+//        list = new ListView(getContext());
+//        v = list;
 
         files = new Files();
 
-        list.addHeaderView(header);
+//        list.addHeaderView(header);
         list.setAdapter(files);
 
-        list.setEmptyView(v.findViewById(R.id.empty_list));
+        View empty = v.findViewById(R.id.empty_list);
+        list.setEmptyView(empty);
 
         add = header.findViewById(R.id.torrent_trackers_add);
         dhtLast = (TextView) header.findViewById(R.id.torrent_trackers_dht_last);
@@ -157,7 +158,7 @@ public class TrackersFragment extends Fragment implements MainActivity.TorrentFr
 
         update();
 
-        return list;
+        return v;
     }
 
     @Override
@@ -195,6 +196,5 @@ public class TrackersFragment extends Fragment implements MainActivity.TorrentFr
 
     @Override
     public void close() {
-
     }
 }
