@@ -210,7 +210,17 @@ public class TorrentContentProvider extends ContentProvider {
                 ParcelFileDescriptor fd = ParcelFileDescriptor.open(tmp, fileMode);
                 return fd;
             } else {
-                return ParcelFileDescriptor.open(f.getFile(), fileMode);
+                Uri u = f.getFile();
+                String s = u.getScheme();
+                if (s.startsWith(ContentResolver.SCHEME_CONTENT)) {
+                    ContentResolver resolver = getContext().getContentResolver();
+                    return resolver.openFileDescriptor(u, mode);
+                } else if (s.startsWith(ContentResolver.SCHEME_FILE)) {
+                    File ff = new File(u.getPath());
+                    return ParcelFileDescriptor.open(ff, fileMode);
+                } else {
+                    throw new RuntimeException("unknown uri");
+                }
             }
         } catch (IOException e) {
             throw new RuntimeException(e);

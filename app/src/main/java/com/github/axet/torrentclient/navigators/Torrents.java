@@ -10,6 +10,7 @@ import android.graphics.Color;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffColorFilter;
 import android.graphics.drawable.Drawable;
+import android.net.Uri;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.widget.PopupMenu;
@@ -66,6 +67,7 @@ public class Torrents extends BaseAdapter implements DialogInterface.OnDismissLi
     Map<Storage.Torrent, Boolean> unread = new HashMap<>();
     BroadcastReceiver receiver;
     boolean openFolder;
+    Storage storage;
 
     public static class Tag {
         public int tag;
@@ -107,13 +109,14 @@ public class Torrents extends BaseAdapter implements DialogInterface.OnDismissLi
         this.main = main;
         this.context = main;
         this.list = list;
+        this.storage = getApp().getStorage();
 
         receiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
                 String a = intent.getAction();
                 if (a.equals(PLAY)) {
-                    Storage.Torrent t = getStorage().find(intent.getLongExtra("torrent", -1));
+                    Storage.Torrent t = storage.find(intent.getLongExtra("torrent", -1));
                     play(t);
                 }
             }
@@ -122,7 +125,7 @@ public class Torrents extends BaseAdapter implements DialogInterface.OnDismissLi
         fi.addAction(PLAY);
         getContext().registerReceiver(receiver, fi);
 
-        Intent intent = MainActivity.openFolderIntent(getStorage().getStoragePath());
+        Intent intent = MainActivity.openFolderIntent(storage.getStoragePath());
         openFolder = intent.resolveActivityInfo(context.getPackageManager(), 0) != null;
     }
 
@@ -132,10 +135,6 @@ public class Torrents extends BaseAdapter implements DialogInterface.OnDismissLi
 
     public MainApplication getApp() {
         return (MainApplication) main.getApplication();
-    }
-
-    Storage getStorage() {
-        return getApp().getStorage();
     }
 
     @Override
@@ -171,15 +170,12 @@ public class Torrents extends BaseAdapter implements DialogInterface.OnDismissLi
 
     @Override
     public int getCount() {
-        Storage s = getStorage();
-        if (s == null) // happens on shutdown() from ListView
-            return 0;
-        return s.count();
+        return storage.count();
     }
 
     @Override
     public Storage.Torrent getItem(int i) {
-        return getStorage().torrent(i);
+        return storage.torrent(i);
     }
 
     @Override
@@ -255,9 +251,9 @@ public class Torrents extends BaseAdapter implements DialogInterface.OnDismissLi
                                         Torrents.this.dialog = null;
                                     }
                                     t.stop();
-                                    File f = new File(t.path, t.name());
-                                    FileUtils.deleteQuietly(f);
-                                    getStorage().remove(t);
+                                    Uri f = storage.child(t.path, t.name());
+                                    storage.delete(f);
+                                    storage.remove(t);
                                     Tag.setTag(view, TYPE_DELETED, -1);
                                     select(-1);
                                     main.updateUnread();
@@ -279,7 +275,7 @@ public class Torrents extends BaseAdapter implements DialogInterface.OnDismissLi
                                     Torrents.this.dialog = null;
                                 }
                                 t.stop();
-                                getStorage().remove(t);
+                                storage.remove(t);
                                 Tag.setTag(view, TYPE_DELETED, -1);
                                 select(-1);
                                 main.updateUnread();
@@ -390,7 +386,7 @@ public class Torrents extends BaseAdapter implements DialogInterface.OnDismissLi
             open.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    main.openFolder(new File(t.path));
+                    main.openFolder(t);
                 }
             });
 
@@ -509,13 +505,12 @@ public class Torrents extends BaseAdapter implements DialogInterface.OnDismissLi
 
         list.setAdapter(this);
 
-        Storage s = getStorage();
-        for (int i = 0; i < s.count(); i++) {
-            Storage.Torrent t = s.torrent(i);
+        for (int i = 0; i < storage.count(); i++) {
+            Storage.Torrent t = storage.torrent(i);
             unread.put(t, t.message);
         }
 
-        getStorage().clearUnreadCount();
+        storage.clearUnreadCount();
     }
 
     public void remove(HeaderGridView list) {
@@ -531,7 +526,7 @@ public class Torrents extends BaseAdapter implements DialogInterface.OnDismissLi
 
     @Override
     public int getUnreadCount() {
-        return getStorage().getUnreadCount();
+        return storage.getUnreadCount();
     }
 
     public void play(Storage.Torrent t) {
@@ -546,7 +541,7 @@ public class Torrents extends BaseAdapter implements DialogInterface.OnDismissLi
         if (s == Libtorrent.StatusQueued) {
             // are we on wifi pause mode?
             if (Libtorrent.paused()) // drop torrent from queue
-                getStorage().stop(t);
+                storage.stop(t);
             else { // nope, we are on library pause, start torrent
                 start(t);
             }
@@ -557,7 +552,7 @@ public class Torrents extends BaseAdapter implements DialogInterface.OnDismissLi
         if (s == Libtorrent.StatusPaused)
             start(t);
         else
-            getStorage().stop(t);
+            storage.stop(t);
 
         notifyDataSetChanged();
     }
@@ -571,7 +566,7 @@ public class Torrents extends BaseAdapter implements DialogInterface.OnDismissLi
             t.readonly = false;
         }
 
-        getStorage().start(t);
+        storage.start(t);
 
         if (t.check || t.altered()) {
             Toast.makeText(main, "Files altered, force recheck", Toast.LENGTH_LONG).show();

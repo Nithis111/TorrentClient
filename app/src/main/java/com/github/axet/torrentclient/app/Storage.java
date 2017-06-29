@@ -1,25 +1,24 @@
 package com.github.axet.torrentclient.app;
 
 import android.Manifest;
-import android.app.NotificationManager;
-import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
+import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
-import android.graphics.Color;
-import android.media.RingtoneManager;
+import android.database.Cursor;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
 import android.net.wifi.SupplicantState;
 import android.net.wifi.WifiManager;
+import android.os.Build;
 import android.os.Handler;
 import android.preference.PreferenceManager;
-import android.support.v4.app.NotificationCompat;
+import android.provider.DocumentsContract;
 import android.util.Base64;
 import android.util.Log;
 
@@ -35,6 +34,7 @@ import org.json.JSONObject;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
 import java.net.MulticastSocket;
@@ -42,13 +42,15 @@ import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 
 import libtorrent.BytesInfo;
+import libtorrent.FileStorageTorrent;
 import libtorrent.Libtorrent;
 import libtorrent.StatsTorrent;
 
-public class Storage extends com.github.axet.androidlibrary.app.Storage {
+public class Storage extends com.github.axet.androidlibrary.app.Storage implements FileStorageTorrent {
     public static final String TAG = Storage.class.getSimpleName();
 
     public static final String[] PERMISSIONS = new String[]{Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE};
@@ -60,6 +62,7 @@ public class Storage extends com.github.axet.androidlibrary.app.Storage {
     SpeedInfo uploaded = new SpeedInfo();
 
     ArrayList<Torrent> torrents = new ArrayList<>();
+    HashMap<String, Torrent> hashs = new HashMap<>();
 
     Handler handler;
 
@@ -87,7 +90,8 @@ public class Storage extends com.github.axet.androidlibrary.app.Storage {
         Context context;
 
         public long t; // libtorrent handler
-        public String path; // path to where torrent data located
+        public Uri path; // path to where torrent data located
+        public String hash; // torrent hash hex string
         public boolean message; // highlight torrent
         public boolean check; // force check required, files were altered
         public boolean readonly; // readonly files or target path, show warning
@@ -96,26 +100,30 @@ public class Storage extends com.github.axet.androidlibrary.app.Storage {
         SpeedInfo downloaded = new SpeedInfo();
         SpeedInfo uploaded = new SpeedInfo();
 
-        public Torrent(Context context, long t, String path, boolean message) {
+        public Torrent(Context context, long t, Uri path, boolean message) {
             this.context = context;
             this.t = t;
             this.path = path;
             this.message = message;
+            this.hash = Libtorrent.torrentHash(t);
         }
 
         public String name() {
             String name = Libtorrent.torrentName(t);
             // can be empy for magnet links, show hash instead
             if (name.isEmpty()) {
-                name = Libtorrent.torrentHash(t);
+                name = hash;
             }
             return name;
         }
 
         public void start() {
-            File f = new File(path);
-            if (!f.exists())
-                f.mkdirs();
+            String s = path.getScheme();
+            if (s.startsWith(ContentResolver.SCHEME_FILE)) {
+                File f = new File(path.getPath());
+                if (!f.exists())
+                    f.mkdirs();
+            }
             if (!Libtorrent.startTorrent(t))
                 throw new RuntimeException(Libtorrent.error());
             StatsTorrent b = Libtorrent.torrentStats(t);
@@ -204,9 +212,12 @@ public class Storage extends com.github.axet.androidlibrary.app.Storage {
             for (int k = 0; k < Libtorrent.torrentFilesCount(t); k++) {
                 libtorrent.File f = Libtorrent.torrentFiles(t, k);
                 if (f.getBytesCompleted() != 0) {
-                    File file = new File(path, f.getPath());
-                    if (!file.exists() || file.length() == 0) {
-                        return true;
+                    String s = path.getScheme();
+                    if (s.startsWith(ContentResolver.SCHEME_FILE)) {
+                        File file = new File(path.getPath(), f.getPath());
+                        if (!file.exists() || file.length() == 0) {
+                            return true;
+                        }
                     }
                 }
             }
@@ -214,15 +225,18 @@ public class Storage extends com.github.axet.androidlibrary.app.Storage {
         }
 
         public boolean readonly() {
-            File path = new File(this.path);
-            if (!path.canWrite())
-                return true;
-            for (int k = 0; k < Libtorrent.torrentFilesCount(t); k++) {
-                libtorrent.File f = Libtorrent.torrentFiles(t, k);
-                if (f.getBytesCompleted() != 0) {
-                    File file = new File(path, f.getPath());
-                    if (file.exists() && !file.canWrite()) { // we can only check parent folder and existing files, skip middle folders
-                        return true;
+            String s = path.getScheme();
+            if (s.startsWith(ContentResolver.SCHEME_FILE)) {
+                File p = new File(path.getPath());
+                if (!p.canWrite())
+                    return true;
+                for (int k = 0; k < Libtorrent.torrentFilesCount(t); k++) {
+                    libtorrent.File f = Libtorrent.torrentFiles(t, k);
+                    if (f.getBytesCompleted() != 0) {
+                        File file = new File(p, f.getPath());
+                        if (file.exists() && !file.canWrite()) { // we can only check parent folder and existing files, skip middle folders
+                            return true;
+                        }
                     }
                 }
             }
@@ -339,14 +353,22 @@ public class Storage extends com.github.axet.androidlibrary.app.Storage {
 
                 byte[] b = Base64.decode(o.getString("state"), Base64.DEFAULT);
 
-                String path  = o.getString("path");
+                String path = o.getString("path");
                 long t = Libtorrent.loadTorrent(path, b);
                 if (t == -1) {
                     Log.d(TAG, Libtorrent.error());
                     continue;
                 }
-                Torrent tt = new Torrent(context, t, path, o.getBoolean("message"));
+                Uri u;
+                if (path.startsWith(ContentResolver.SCHEME_CONTENT))
+                    u = Uri.parse(path);
+                else if (path.startsWith(ContentResolver.SCHEME_FILE))
+                    u = Uri.parse(path);
+                else
+                    u = Uri.fromFile(new File(path));
+                Torrent tt = new Torrent(context, t, u, o.getBoolean("message"));
                 torrents.add(tt);
+                hashs.put(tt.hash, tt);
 
                 tt.done = o.optBoolean("done", false);
                 if (tt.altered()) {
@@ -399,7 +421,7 @@ public class Storage extends com.github.axet.androidlibrary.app.Storage {
             JSONObject o = new JSONObject();
             o.put("status", Libtorrent.torrentStatus(t.t));
             o.put("state", state);
-            o.put("path", t.path);
+            o.put("path", t.path.toString());
             o.put("message", t.message);
             o.put("done", t.done);
             edit.putString("torrent_" + i, o.toString());
@@ -419,6 +441,8 @@ public class Storage extends com.github.axet.androidlibrary.app.Storage {
         }
 
         Libtorrent.setBindAddr(":0");
+
+        Libtorrent.torrentStorageSet(this);
 
         if (!Libtorrent.create()) {
             throw new RuntimeException(Libtorrent.error());
@@ -564,6 +588,7 @@ public class Storage extends com.github.axet.androidlibrary.app.Storage {
         save();
 
         torrents.clear();
+        hashs.clear();
 
         Libtorrent.close();
 
@@ -589,6 +614,7 @@ public class Storage extends com.github.axet.androidlibrary.app.Storage {
 
     public void add(Torrent t) {
         torrents.add(t);
+        hashs.put(t.hash, t);
         save();
     }
 
@@ -602,6 +628,7 @@ public class Storage extends com.github.axet.androidlibrary.app.Storage {
 
     public void remove(Torrent t) {
         torrents.remove(t);
+        hashs.remove(t.hash);
 
         long d = t.t; // prevent debugger to crash
         t.t = -1;
@@ -610,7 +637,7 @@ public class Storage extends com.github.axet.androidlibrary.app.Storage {
         save();
     }
 
-    public String path(long t) {
+    public Uri path(long t) {
         for (Torrent a : torrents) {
             if (a.t == t) {
                 return a.path;
@@ -630,19 +657,59 @@ public class Storage extends com.github.axet.androidlibrary.app.Storage {
         return permitted(context, PERMISSIONS);
     }
 
-    public File getStoragePath() {
+    public File fallbackStorage() {
+        File internal = getLocalInternal();
+
+        // Starting in KITKAT, no permissions are required to read or write to the returned path;
+        // it's always accessible to the calling app.
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT) {
+            if (!permitted(context, PERMISSIONS))
+                return internal;
+        }
+
+        File external = getLocalExternal();
+
+        if (external == null)
+            return internal;
+
+        return external;
+    }
+
+    public Uri getStoragePath() {
         SharedPreferences shared = PreferenceManager.getDefaultSharedPreferences(context);
         String path = shared.getString(MainApplication.PREFERENCE_STORAGE, "");
-        File f = new File(path);
+        if (Build.VERSION.SDK_INT >= 21 && path.startsWith(ContentResolver.SCHEME_CONTENT)) {
+            Uri uri = Uri.parse(path);
+            Uri doc = DocumentsContract.buildDocumentUriUsingTree(uri, DocumentsContract.getTreeDocumentId(uri));
+            ContentResolver resolver = context.getContentResolver();
+            try {
+                final int takeFlags = Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION;
+                resolver.takePersistableUriPermission(uri, takeFlags);
+                Cursor c = resolver.query(doc, null, null, null, null);
+                if (c != null) {
+                    c.close();
+                    return uri;
+                }
+            } catch (SecurityException e) {
+                Log.d(TAG, "open SAF failed", e);
+            }
+            path = fallbackStorage().getAbsolutePath(); // we need to fallback to local storage internal or exernal
+        }
+        File f;
+        if (path.startsWith(ContentResolver.SCHEME_FILE)) {
+            f = new File(Uri.parse(path).getPath());
+        } else {
+            f = new File(path);
+        }
         if (!permitted(context, PERMISSIONS))
-            return getLocalStorage();
+            return Uri.fromFile(getLocalStorage());
         else
-            return super.getStoragePath(f);
+            return Uri.fromFile(super.getStoragePath(f));
     }
 
     public void migrateLocalStorage() {
         File l = getLocalStorage();
-        File t = getStoragePath();
+        Uri t = getStoragePath();
 
         // if we are local return
         if (l.equals(t))
@@ -656,27 +723,41 @@ public class Storage extends com.github.axet.androidlibrary.app.Storage {
 
     void migrateTorrents() {
         File l = getLocalStorage();
-        File dir = getStoragePath();
+        Uri dir = getStoragePath();
+        String s = dir.getScheme();
 
         boolean touch = false;
         // migrate torrents, then migrate download data
         for (int i = 0; i < torrents.size(); i++) {
             Torrent torrent = torrents.get(i);
-            if (torrent.path.startsWith(l.getPath())) {
-                Libtorrent.stopTorrent(torrent.t);
-                String name = Libtorrent.torrentName(torrent.t);
-                File f = new File(torrent.path, name);
-                touch = true;
-                if (f.exists()) {
-                    File t = getNextFile(new File(dir, f.getName()));
-                    move(f, t);
-                    // target name changed update torrent meta or pause it
-                    if (!t.getName().equals(name)) {
-                        // TODO replace with rename when it will be impelemented
-                        //Libtorrent.TorrentFileRename(torrent.t, 0, tt.getName());
+            String ts = torrent.path.getScheme();
+            if (ts.startsWith(ContentResolver.SCHEME_FILE)) { // only migrate files torrents
+                String tf = torrent.path.getPath(); // torrent file
+                if (tf.startsWith(l.getPath())) { // only migrate torrent from local storage
+                    Libtorrent.stopTorrent(torrent.t);
+                    String name = Libtorrent.torrentName(torrent.t);
+                    if (s.startsWith(ContentResolver.SCHEME_CONTENT)) {
+                        ; // TODO migrate to SAF
+                    } else if (s.startsWith(ContentResolver.SCHEME_FILE)) {
+                        if (!Storage.permitted(context, PERMISSIONS))
+                            return; // no file operations if not permitted
+                        File f = new File(tf, name);
+                        touch = true;
+                        if (f.exists()) {
+                            File d = new File(dir.getPath());
+                            File t = getNextFile(new File(d, f.getName()));
+                            move(f, t);
+                            // target name changed update torrent meta or pause it
+                            if (!t.getName().equals(name)) {
+                                // TODO replace with rename when it will be impelemented
+                                //Libtorrent.TorrentFileRename(torrent.t, 0, tt.getName());
+                            }
+                        }
+                        torrent.path = dir; // new torrent home = current storage
+                    } else {
+                        throw new RuntimeException("unknown uri");
                     }
                 }
-                torrent.path = dir.getPath();
             }
         }
 
@@ -688,38 +769,31 @@ public class Storage extends com.github.axet.androidlibrary.app.Storage {
             }
 
             torrents.clear();
+            hashs.clear();
 
             load();
         }
     }
 
-    // migrate files and sub dirs
-    void migrateFiles() {
+    void migrateFiles() { // migrate rest files and sub dirs
         File l = getLocalStorage();
-        File dir = getStoragePath();
+        Uri dir = getStoragePath();
+        String s = dir.getScheme();
 
         File[] ff = l.listFiles();
 
         if (ff != null) {
             for (File f : ff) {
-                File t = getNextFile(new File(dir, f.getName()));
-                move(f, t); // move file and sub dirs
+                if (s.startsWith(ContentResolver.SCHEME_CONTENT)) {
+                    ; // TODO migrate to SAF
+                } else if (s.startsWith(ContentResolver.SCHEME_FILE)) {
+                    File d = new File(dir.getPath());
+                    File t = getNextFile(new File(d, f.getName()));
+                    move(f, t); // move file and sub dirs
+                } else {
+                    throw new RuntimeException("unknown uri");
+                }
             }
-        }
-    }
-
-    public FileOutputStream open(File f) {
-        File tmp = f;
-        File parent = tmp.getParentFile();
-        if (!parent.exists() && !parent.mkdirs()) {
-            throw new RuntimeException("unable to create: " + parent);
-        }
-        if (!parent.isDirectory())
-            throw new RuntimeException("target is not a dir: " + parent);
-        try {
-            return new FileOutputStream(tmp, true);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
         }
     }
 
@@ -775,7 +849,7 @@ public class Storage extends com.github.axet.androidlibrary.app.Storage {
     }
 
     public String formatHeader() {
-        File f = getStoragePath();
+        Uri f = getStoragePath();
         long free = getFree(f);
         return MainApplication.formatFree(context, free, downloaded.getCurrentSpeed(), uploaded.getCurrentSpeed());
     }
@@ -831,8 +905,8 @@ public class Storage extends com.github.axet.androidlibrary.app.Storage {
     }
 
     public Torrent addMagnet(String s) {
-        String p = getStoragePath().getPath();
-        long t = Libtorrent.addMagnet(p, s);
+        Uri p = getStoragePath();
+        long t = Libtorrent.addMagnet(p.toString(), s);
         if (t == -1) {
             throw new RuntimeException(Libtorrent.error());
         }
@@ -842,8 +916,8 @@ public class Storage extends com.github.axet.androidlibrary.app.Storage {
     }
 
     public Torrent addTorrentFromBytes(byte[] buf) {
-        String s = getStoragePath().getPath();
-        long t = Libtorrent.addTorrentFromBytes(s, buf);
+        Uri s = getStoragePath();
+        long t = Libtorrent.addTorrentFromBytes(s.toString(), buf);
         if (t == -1) {
             throw new RuntimeException(Libtorrent.error());
         }
@@ -853,8 +927,8 @@ public class Storage extends com.github.axet.androidlibrary.app.Storage {
     }
 
     public void addTorrentFromURL(String p) {
-        String s = getStoragePath().getPath();
-        long t = Libtorrent.addTorrentFromURL(s, p);
+        Uri s = getStoragePath();
+        long t = Libtorrent.addTorrentFromURL(s.toString(), p);
         if (t == -1) {
             throw new RuntimeException(Libtorrent.error());
         }
@@ -912,7 +986,7 @@ public class Storage extends com.github.axet.androidlibrary.app.Storage {
     public Torrent find(String hash) {
         for (int i = 0; i < torrents.size(); i++) {
             Torrent tt = torrents.get(i);
-            if (Libtorrent.torrentHash(tt.t).equals(hash))
+            if (tt.hash.equals(hash))
                 return tt;
         }
         return null;
@@ -941,6 +1015,67 @@ public class Storage extends com.github.axet.androidlibrary.app.Storage {
         } else {
             Libtorrent.setUploadRate(shared.getInt(MainApplication.PREFERENCE_UPLOAD, -1) * 1024);
             Libtorrent.setDownloadRate(shared.getInt(MainApplication.PREFERENCE_DOWNLOAD, -1) * 1024);
+        }
+    }
+
+    @Override
+    public void createZeroLengthFile(String hash, String path) throws Exception {
+        Torrent t = hashs.get(hash);
+        String s = t.path.getScheme();
+        if (s.startsWith(ContentResolver.SCHEME_CONTENT)) {
+            throw new RuntimeException("unsupported operation"); // TODO write to SAF
+        } else if (s.startsWith(ContentResolver.SCHEME_FILE)) {
+            File ff = new File(t.path.getPath(), path);
+            ff.createNewFile();
+        } else {
+            throw new RuntimeException("unknown uri");
+        }
+    }
+
+    @Override
+    public byte[] readFileAt(String hash, String path, long len, long off) throws Exception {
+        Torrent t = hashs.get(hash);
+        String s = t.path.getScheme();
+        if (s.startsWith(ContentResolver.SCHEME_CONTENT)) {
+            throw new RuntimeException("unsupported operation"); // TODO write to SAF
+        } else if (s.startsWith(ContentResolver.SCHEME_FILE)) {
+            File f = new File(t.path.getPath(), path);
+            RandomAccessFile r = new RandomAccessFile(f, "r");
+            r.seek(off);
+            int l = (int) len;
+            long rest = r.length() - off;
+            if (rest < len)
+                l = (int) rest;
+            byte[] buf = new byte[l];
+            int a = r.read(buf);
+            if (a != l)
+                throw new RuntimeException("unable to read a!=l " + a + "!=" + l);
+            r.close();
+            return buf;
+        } else {
+            throw new RuntimeException("unknown uri");
+        }
+    }
+
+    @Override
+    public long writeFileAt(String hash, String path, byte[] buf, long off) throws Exception {
+        Torrent t = hashs.get(hash);
+        String s = t.path.getScheme();
+        if (s.startsWith(ContentResolver.SCHEME_CONTENT)) {
+            throw new RuntimeException("unsupported operation"); // TODO write to SAF
+        } else if (s.startsWith(ContentResolver.SCHEME_FILE)) {
+            File f = new File(t.path.getPath(), path);
+            File p = f.getParentFile();
+            p.mkdirs();
+            RandomAccessFile r = new RandomAccessFile(f, "rw");
+            r.seek(off);
+            r.write(buf);
+            r.close();
+            for (int i = 0; i < buf.length; i++)
+                buf[i] = 0;
+            return buf.length;
+        } else {
+            throw new RuntimeException("unknown uri");
         }
     }
 }

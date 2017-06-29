@@ -3,6 +3,7 @@ package com.github.axet.torrentclient.dialogs;
 import android.app.Activity;
 import android.app.Dialog;
 import android.content.DialogInterface;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.DialogFragment;
@@ -249,7 +250,7 @@ public class AddDialogFragment extends DialogFragment implements MainActivity.To
                                 long t = getArguments().getLong("torrent");
                                 String path = getArguments().getString("path");
                                 getArguments().putLong("torrent", -1);
-                                getApp().getStorage().add(new Storage.Torrent(getContext(), t, path, true));
+                                getApp().getStorage().add(new Storage.Torrent(getContext(), t, Uri.parse(path), true));
                                 result.t = t;
                                 result.ok = true;
                                 dialog.dismiss();

@@ -1,5 +1,6 @@
 package com.github.axet.torrentclient.app;
 
+import android.Manifest;
 import android.app.KeyguardManager;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -53,6 +54,8 @@ import libtorrent.Libtorrent;
 // Reduce MainActivity size, move code related to Drawer here
 public class Drawer implements com.mikepenz.materialdrawer.Drawer.OnDrawerItemClickListener, UnreadCountDrawable.UnreadCount {
     public static final String TAG = Drawer.class.getSimpleName();
+
+    public static final String[] PERMISSIONS = new String[]{Manifest.permission.READ_EXTERNAL_STORAGE};
 
     public static String VERSION_CHECK = "https://gitlab.com/axet/android-torrent-client/tags";
     public static int[] DEVELOPERS = new int[]{0xc38af5bf, 0x3feda1d1}; // 0xc38af5bf release, 0x3feda1d1 debug
@@ -660,7 +663,6 @@ public class Drawer implements com.mikepenz.materialdrawer.Drawer.OnDrawerItemCl
         }
     }
 
-
     @Override
     public boolean onItemClick(View view, int position, IDrawerItem drawerItem) {
         long id = drawerItem.getIdentifier();
@@ -684,35 +686,9 @@ public class Drawer implements com.mikepenz.materialdrawer.Drawer.OnDrawerItemCl
         }
 
         if (id == R.id.nav_add) {
-            final OpenFileDialog f = new OpenFileDialog(context, OpenFileDialog.DIALOG_TYPE.FILE_DIALOG);
-
-            String path = "";
-
-            final SharedPreferences shared = PreferenceManager.getDefaultSharedPreferences(context);
-
-            if (path == null || path.isEmpty()) {
-                path = MainApplication.getPreferenceLastPath(context);
+            if (main.openNav(PERMISSIONS)) {
+                openNav();
             }
-
-            f.setCurrentPath(new File(path));
-            f.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
-                @Override
-                public void onClick(DialogInterface dialog, int which) {
-                    File p = f.getCurrentPath();
-                    shared.edit().putString(MainApplication.PREFERENCE_LAST_PATH, p.getParent()).commit();
-                    Search search = null;
-                    try {
-                        search = engies.add(p);
-                    } catch (RuntimeException e) {
-                        main.Error(e);
-                        return;
-                    }
-                    engies.save();
-                    updateManager();
-                    openDrawer(search);
-                }
-            });
-            f.show();
             // prevent close drawer
             return true;
         }
@@ -732,5 +708,40 @@ public class Drawer implements com.mikepenz.materialdrawer.Drawer.OnDrawerItemCl
             }
         }
         return count;
+    }
+
+    public void openNav() {
+        final EnginesManager engies = main.getEngines();
+
+        final OpenFileDialog f = new OpenFileDialog(context, OpenFileDialog.DIALOG_TYPE.FILE_DIALOG);
+        f.setReadonly(true);
+
+        String path = "";
+
+        final SharedPreferences shared = PreferenceManager.getDefaultSharedPreferences(context);
+
+        if (path == null || path.isEmpty()) {
+            path = MainApplication.getPreferenceLastPath(context);
+        }
+
+        f.setCurrentPath(new File(path));
+        f.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                File p = f.getCurrentPath();
+                shared.edit().putString(MainApplication.PREFERENCE_LAST_PATH, p.getParent()).commit();
+                Search search = null;
+                try {
+                    search = engies.add(p);
+                } catch (RuntimeException e) {
+                    main.Error(e);
+                    return;
+                }
+                engies.save();
+                updateManager();
+                openDrawer(search);
+            }
+        });
+        f.show();
     }
 }
