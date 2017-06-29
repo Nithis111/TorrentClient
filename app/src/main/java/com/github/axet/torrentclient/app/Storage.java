@@ -339,12 +339,13 @@ public class Storage extends com.github.axet.androidlibrary.app.Storage {
 
                 byte[] b = Base64.decode(o.getString("state"), Base64.DEFAULT);
 
-                long t = Libtorrent.loadTorrent(o.getString("path"), b);
+                String path  = o.getString("path");
+                long t = Libtorrent.loadTorrent(path, b);
                 if (t == -1) {
                     Log.d(TAG, Libtorrent.error());
                     continue;
                 }
-                Torrent tt = new Torrent(context, t, o.getString("path"), o.getBoolean("message"));
+                Torrent tt = new Torrent(context, t, path, o.getBoolean("message"));
                 torrents.add(tt);
 
                 tt.done = o.optBoolean("done", false);
