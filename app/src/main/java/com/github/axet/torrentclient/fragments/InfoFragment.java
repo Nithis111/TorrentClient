@@ -110,18 +110,19 @@ public class InfoFragment extends Fragment implements MainActivity.TorrentFragme
             }
         });
 
-        final String p = ((MainApplication) getContext().getApplicationContext()).getStorage().path(t);
+        Storage storage = ((MainApplication) getContext().getApplicationContext()).getStorage();
+        final Uri p = storage.path(t);
 
         TextView path = (TextView) v.findViewById(R.id.torrent_path);
-        path.setText(p);
+        path.setText(storage.getTargetName(p));
 
         pathButton = v.findViewById(R.id.torrent_path_open);
-        Intent intent = MainActivity.openFolderIntent(new File(p));
+        Intent intent = MainActivity.openFolderIntent(p);
         if (intent.resolveActivityInfo(getContext().getPackageManager(), 0) != null) {
             pathButton.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    ((MainActivity) getActivity()).openFolder(new File(p));
+                    ((MainActivity) getActivity()).openFolder(p);
                 }
             });
         } else {

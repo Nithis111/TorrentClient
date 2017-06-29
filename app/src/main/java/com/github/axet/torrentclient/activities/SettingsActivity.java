@@ -8,10 +8,12 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.Configuration;
+import android.os.Build;
 import android.os.Bundle;
 import android.preference.PreferenceActivity;
 import android.preference.PreferenceFragment;
 import android.preference.PreferenceManager;
+import android.support.annotation.NonNull;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
@@ -22,6 +24,7 @@ import android.view.MenuItem;
 import android.widget.Toast;
 
 import com.github.axet.androidlibrary.widgets.OptimizationPreferenceCompat;
+import com.github.axet.androidlibrary.widgets.StoragePathPreferenceCompat;
 import com.github.axet.torrentclient.R;
 import com.github.axet.torrentclient.app.MainApplication;
 import com.github.axet.torrentclient.app.Storage;
@@ -41,6 +44,7 @@ import java.io.File;
  * API Guide</a> for more information on developing a Settings UI.
  */
 public class SettingsActivity extends AppCompatActivity implements SharedPreferences.OnSharedPreferenceChangeListener {
+    public static final String[] PERMISSIONS = new String[]{Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE};
 
     /**
      * A preference value change listener that updates the preference's summary
@@ -163,8 +167,6 @@ public class SettingsActivity extends AppCompatActivity implements SharedPrefere
         }
     }
 
-    public static final String[] PERMISSIONS = new String[]{Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE};
-
     @Override
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
         if (key.equals(MainApplication.PREFERENCE_THEME)) {
@@ -178,7 +180,7 @@ public class SettingsActivity extends AppCompatActivity implements SharedPrefere
             if (!f.canWrite()) {
                 AlertDialog.Builder b = new AlertDialog.Builder(this);
                 b.setTitle(R.string.storage_path);
-                b.setMessage("Readonly directory, please select another");
+                b.setMessage(R.string.filedialog_readonly);
                 Dialog d = b.create();
                 d.show();
                 SharedPreferences.Editor editor = sharedPreferences.edit();
@@ -219,6 +221,14 @@ public class SettingsActivity extends AppCompatActivity implements SharedPrefere
 
             bindPreferenceSummaryToValue(findPreference(MainApplication.PREFERENCE_THEME));
             bindPreferenceSummaryToValue(findPreference(MainApplication.PREFERENCE_ANNOUNCE));
+
+            Storage storage = ((MainApplication) getContext().getApplicationContext()).getStorage();
+            StoragePathPreferenceCompat s = (StoragePathPreferenceCompat) findPreference(MainApplication.PREFERENCE_STORAGE);
+            s.setStorage(storage);
+//            if (Build.VERSION.SDK_INT >= 21)
+//                s.setStorageAccessFramework(this, 2);
+//            else
+                s.setPermissionsDialog(this, PERMISSIONS, 1);
         }
 
         @Override
@@ -236,6 +246,32 @@ public class SettingsActivity extends AppCompatActivity implements SharedPrefere
             super.onResume();
             OptimizationPreferenceCompat optimization = (OptimizationPreferenceCompat) findPreference(MainApplication.PREFERENCE_OPTIMIZATION);
             optimization.onResume();
+        }
+
+        @Override
+        public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+            super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+
+            StoragePathPreferenceCompat s = (StoragePathPreferenceCompat) findPreference(MainApplication.PREFERENCE_STORAGE);
+
+            switch (requestCode) {
+                case 1:
+                    s.onRequestPermissionsResult();
+                    break;
+            }
+        }
+
+        @Override
+        public void onActivityResult(int requestCode, int resultCode, Intent data) {
+            super.onActivityResult(requestCode, resultCode, data);
+
+            StoragePathPreferenceCompat s = (StoragePathPreferenceCompat) findPreference(MainApplication.PREFERENCE_STORAGE);
+
+            switch (requestCode) {
+                case 2:
+                    s.onActivityResult(resultCode, data);
+                    break;
+            }
         }
     }
 
