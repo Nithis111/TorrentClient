@@ -19,3 +19,10 @@ If you want to translate 'Torrent Client' to your language  please read followin
 # Screenshots
 
 ![shot](/docs/shot.png)
+
+
+# Donations
+
+  * [PayPal EUR](https://www.paypal.com/cgi-bin/webscr?cmd=_xclick&business=axet@me.com&amount=&currency_code=EUR&return=&item_name=torrent+client)
+  * [PayPal USD](https://www.paypal.com/cgi-bin/webscr?cmd=_xclick&business=axet@me.com&amount=&currency_code=USD&return=&item_name=torrent+client)
+  * [PayPal RUB](https://www.paypal.com/cgi-bin/webscr?cmd=_xclick&business=axet@me.com&amount=&currency_code=RUB&return=&item_name=torrent+client)
