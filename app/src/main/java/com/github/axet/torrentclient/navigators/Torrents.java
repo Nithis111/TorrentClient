@@ -568,7 +568,7 @@ public class Torrents extends BaseAdapter implements DialogInterface.OnDismissLi
 
         storage.start(t);
 
-        if (t.check || t.altered()) {
+        if (t.check || t.altered(storage)) {
             Toast.makeText(main, "Files altered, force recheck", Toast.LENGTH_LONG).show();
             t.check = false;
             Libtorrent.checkTorrent(t.t);

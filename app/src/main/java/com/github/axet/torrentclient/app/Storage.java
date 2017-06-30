@@ -1,6 +1,7 @@
 package com.github.axet.torrentclient.app;
 
 import android.Manifest;
+import android.annotation.TargetApi;
 import android.content.BroadcastReceiver;
 import android.content.ContentResolver;
 import android.content.Context;
@@ -17,10 +18,12 @@ import android.net.wifi.SupplicantState;
 import android.net.wifi.WifiManager;
 import android.os.Build;
 import android.os.Handler;
+import android.os.ParcelFileDescriptor;
 import android.preference.PreferenceManager;
 import android.provider.DocumentsContract;
 import android.util.Base64;
 import android.util.Log;
+import android.webkit.MimeTypeMap;
 
 import com.github.axet.androidlibrary.app.AlarmManager;
 import com.github.axet.torrentclient.R;
@@ -32,6 +35,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.RandomAccessFile;
@@ -39,12 +43,15 @@ import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
 import java.net.MulticastSocket;
 import java.net.URLEncoder;
+import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 
+import libtorrent.Buffer;
 import libtorrent.BytesInfo;
 import libtorrent.FileStorageTorrent;
 import libtorrent.Libtorrent;
@@ -208,12 +215,17 @@ public class Storage extends com.github.axet.androidlibrary.app.Storage implemen
             return getProgress(t);
         }
 
-        public boolean altered() {
+        public boolean altered(Storage storage) {
             for (int k = 0; k < Libtorrent.torrentFilesCount(t); k++) {
                 libtorrent.File f = Libtorrent.torrentFiles(t, k);
                 if (f.getBytesCompleted() != 0) {
                     String s = path.getScheme();
-                    if (s.startsWith(ContentResolver.SCHEME_FILE)) {
+                    if (s.startsWith(ContentResolver.SCHEME_CONTENT)) {
+                        Uri file = storage.child(path, f.getPath());
+                        if (!storage.exists(file) || storage.getLength(file) == 0) {
+                            return true;
+                        }
+                    } else if (s.startsWith(ContentResolver.SCHEME_FILE)) {
                         File file = new File(path.getPath(), f.getPath());
                         if (!file.exists() || file.length() == 0) {
                             return true;
@@ -270,7 +282,6 @@ public class Storage extends com.github.axet.androidlibrary.app.Storage implemen
             if (!lseed && !rseed) {
                 Integer lp = lhs.getProgress();
                 Integer rp = rhs.getProgress();
-
                 // seed time desc
                 return lp.compareTo(rp);
             }
@@ -371,7 +382,7 @@ public class Storage extends com.github.axet.androidlibrary.app.Storage implemen
                 hashs.put(tt.hash, tt);
 
                 tt.done = o.optBoolean("done", false);
-                if (tt.altered()) {
+                if (tt.altered(this)) {
                     tt.check = true;
                 }
                 if (tt.readonly()) {
@@ -681,7 +692,6 @@ public class Storage extends com.github.axet.androidlibrary.app.Storage implemen
         if (Build.VERSION.SDK_INT >= 21 && path.startsWith(ContentResolver.SCHEME_CONTENT)) {
             Uri uri = Uri.parse(path);
             Uri doc = DocumentsContract.buildDocumentUriUsingTree(uri, DocumentsContract.getTreeDocumentId(uri));
-            ContentResolver resolver = context.getContentResolver();
             try {
                 final int takeFlags = Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION;
                 resolver.takePersistableUriPermission(uri, takeFlags);
@@ -737,7 +747,20 @@ public class Storage extends com.github.axet.androidlibrary.app.Storage implemen
                     Libtorrent.stopTorrent(torrent.t);
                     String name = Libtorrent.torrentName(torrent.t);
                     if (s.startsWith(ContentResolver.SCHEME_CONTENT)) {
-                        ; // TODO migrate to SAF
+                        File f = new File(tf, name);
+                        touch = true;
+                        if (f.exists()) {
+                            String n = getNameNoExt(f);
+                            String e = getExt(f);
+                            Uri t = getNextFile(torrent.path, n, e);
+                            move(f, t);
+                            // target name changed update torrent meta or pause it
+                            if (!getDocumentName(t).equals(name)) {
+                                // TODO replace with rename when it will be impelemented
+                                //Libtorrent.TorrentFileRename(torrent.t, 0, tt.getName());
+                            }
+                        }
+                        torrent.path = dir; // new torrent home = current storage
                     } else if (s.startsWith(ContentResolver.SCHEME_FILE)) {
                         if (!Storage.permitted(context, PERMISSIONS))
                             return; // no file operations if not permitted
@@ -778,45 +801,53 @@ public class Storage extends com.github.axet.androidlibrary.app.Storage implemen
     void migrateFiles() { // migrate rest files and sub dirs
         File l = getLocalStorage();
         Uri dir = getStoragePath();
-        String s = dir.getScheme();
 
         File[] ff = l.listFiles();
+        if (ff == null)
+            return;
 
-        if (ff != null) {
-            for (File f : ff) {
-                if (s.startsWith(ContentResolver.SCHEME_CONTENT)) {
-                    ; // TODO migrate to SAF
-                } else if (s.startsWith(ContentResolver.SCHEME_FILE)) {
-                    File d = new File(dir.getPath());
-                    File t = getNextFile(new File(d, f.getName()));
-                    move(f, t); // move file and sub dirs
-                } else {
-                    throw new RuntimeException("unknown uri");
-                }
-            }
+        for (File f : ff) {
+            String n = f.getName();
+            String e = getExt(f);
+            Uri t = getNextFile(dir, n, e);
+            move(f, t); // move file and sub dirs
         }
     }
 
-    public static void move(File f, File to) {
-        Log.d(TAG, "migrate: " + f + " --> " + to);
-        if (f.isDirectory()) {
-            String[] files = f.list();
-            if (files != null) {
-                for (String n : files) {
-                    File ff = new File(f, n);
-                    move(ff, new File(to, n));
-                }
+    public Uri move(File f, Uri dir) {
+        String s = dir.getScheme();
+        if (s.startsWith(ContentResolver.SCHEME_CONTENT)) {
+            Log.d(TAG, "migrate: " + f + " --> " + getTargetName(dir));
+            if (f.isDirectory()) {
+                Uri t = createFolder(dir, f.getName());
+                return move(f, t);
             }
-            FileUtils.deleteQuietly(f);
-            return;
-        }
+            return move(f, dir);
+        } else if (s.startsWith(ContentResolver.SCHEME_FILE)) {
+            Log.d(TAG, "migrate: " + f + " --> " + dir.getPath());
+            if (f.isDirectory()) {
+                String[] files = f.list();
+                if (files != null) {
+                    for (String n : files) {
+                        File ff = new File(f, n);
+                        Uri u = child(dir, n);
+                        move(ff, u);
+                    }
+                }
+                FileUtils.deleteQuietly(f);
+                return dir;
+            }
 
-        File parent = to.getParentFile();
-        if (!parent.exists() && !parent.mkdirs()) {
-            throw new RuntimeException("No permissions: " + parent);
-        }
+            File to = new File(dir.getPath());
+            File parent = to.getParentFile();
+            if (!parent.exists() && !parent.mkdirs()) {
+                throw new RuntimeException("No permissions: " + parent);
+            }
 
-        com.github.axet.androidlibrary.app.Storage.move(f, to);
+            return Uri.fromFile(com.github.axet.androidlibrary.app.Storage.move(f, to));
+        } else {
+            throw new RuntimeException("unknown uri");
+        }
     }
 
     public void pause() {
@@ -1022,8 +1053,8 @@ public class Storage extends com.github.axet.androidlibrary.app.Storage implemen
     public void createZeroLengthFile(String hash, String path) throws Exception {
         Torrent t = hashs.get(hash);
         String s = t.path.getScheme();
-        if (s.startsWith(ContentResolver.SCHEME_CONTENT)) {
-            throw new RuntimeException("unsupported operation"); // TODO write to SAF
+        if (Build.VERSION.SDK_INT >= 21 && s.startsWith(ContentResolver.SCHEME_CONTENT)) {
+            createFile(t.path, path);
         } else if (s.startsWith(ContentResolver.SCHEME_FILE)) {
             File ff = new File(t.path.getPath(), path);
             ff.createNewFile();
@@ -1033,25 +1064,39 @@ public class Storage extends com.github.axet.androidlibrary.app.Storage implemen
     }
 
     @Override
-    public byte[] readFileAt(String hash, String path, long len, long off) throws Exception {
+    public long readFileAt(String hash, String path, Buffer buf, long off) throws Exception {
         Torrent t = hashs.get(hash);
         String s = t.path.getScheme();
         if (s.startsWith(ContentResolver.SCHEME_CONTENT)) {
-            throw new RuntimeException("unsupported operation"); // TODO write to SAF
+            Uri u = child(t.path, path);
+            ParcelFileDescriptor fd = resolver.openFileDescriptor(u, "rw"); // rw to make it file request (r or w can be a pipes)
+            FileInputStream fis = new FileInputStream(fd.getFileDescriptor());
+            FileChannel c = fis.getChannel();
+            c.position(off);
+            ByteBuffer bb = ByteBuffer.allocate((int) buf.length());
+            c.read(bb);
+            long l = c.position() - off;
+            c.close();
+            bb.flip();
+            buf.write(bb.array(), 0, l);
+            return l;
         } else if (s.startsWith(ContentResolver.SCHEME_FILE)) {
             File f = new File(t.path.getPath(), path);
             RandomAccessFile r = new RandomAccessFile(f, "r");
             r.seek(off);
-            int l = (int) len;
+            int l = (int) buf.length();
             long rest = r.length() - off;
-            if (rest < len)
+            if (rest < l)
                 l = (int) rest;
-            byte[] buf = new byte[l];
-            int a = r.read(buf);
+            byte[] b = new byte[l];
+            int a = r.read(b);
             if (a != l)
                 throw new RuntimeException("unable to read a!=l " + a + "!=" + l);
             r.close();
-            return buf;
+            long k = buf.write(b, 0, l);
+            if (l != k)
+                throw new RuntimeException("unable to write l!=k " + l + "!=" + k);
+            return l;
         } else {
             throw new RuntimeException("unknown uri");
         }
@@ -1061,8 +1106,17 @@ public class Storage extends com.github.axet.androidlibrary.app.Storage implemen
     public long writeFileAt(String hash, String path, byte[] buf, long off) throws Exception {
         Torrent t = hashs.get(hash);
         String s = t.path.getScheme();
-        if (s.startsWith(ContentResolver.SCHEME_CONTENT)) {
-            throw new RuntimeException("unsupported operation"); // TODO write to SAF
+        if (Build.VERSION.SDK_INT >= 21 && s.startsWith(ContentResolver.SCHEME_CONTENT)) {
+            Uri u = createFile(t.path, path);
+            ParcelFileDescriptor fd = resolver.openFileDescriptor(u, "rw");
+            FileOutputStream fos = new FileOutputStream(fd.getFileDescriptor());
+            FileChannel c = fos.getChannel();
+            c.position(off);
+            ByteBuffer bb = ByteBuffer.wrap(buf);
+            c.write(bb);
+            long l = c.position() - off;
+            c.close();
+            return l;
         } else if (s.startsWith(ContentResolver.SCHEME_FILE)) {
             File f = new File(t.path.getPath(), path);
             File p = f.getParentFile();

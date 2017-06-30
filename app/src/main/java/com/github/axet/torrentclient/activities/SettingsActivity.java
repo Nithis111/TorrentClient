@@ -4,10 +4,12 @@ package com.github.axet.torrentclient.activities;
 import android.Manifest;
 import android.annotation.TargetApi;
 import android.app.Dialog;
+import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.Configuration;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.preference.PreferenceActivity;
@@ -25,6 +27,7 @@ import android.widget.Toast;
 
 import com.github.axet.androidlibrary.widgets.OptimizationPreferenceCompat;
 import com.github.axet.androidlibrary.widgets.StoragePathPreferenceCompat;
+import com.github.axet.torrentclient.BuildConfig;
 import com.github.axet.torrentclient.R;
 import com.github.axet.torrentclient.app.MainApplication;
 import com.github.axet.torrentclient.app.Storage;
@@ -176,6 +179,13 @@ public class SettingsActivity extends AppCompatActivity implements SharedPrefere
         }
         if (key.equals(MainApplication.PREFERENCE_STORAGE)) {
             String path = sharedPreferences.getString(MainApplication.PREFERENCE_STORAGE, "");
+
+            if (path.startsWith(ContentResolver.SCHEME_CONTENT)) {
+                return;
+            }
+            if (path.startsWith(ContentResolver.SCHEME_FILE)) {
+                path = Uri.parse(path).getPath();
+            }
             File f = new File(path);
             if (!f.canWrite()) {
                 AlertDialog.Builder b = new AlertDialog.Builder(this);
@@ -183,9 +193,10 @@ public class SettingsActivity extends AppCompatActivity implements SharedPrefere
                 b.setMessage(R.string.filedialog_readonly);
                 Dialog d = b.create();
                 d.show();
+                SharedPreferences shared = PreferenceManager.getDefaultSharedPreferences(this);
                 SharedPreferences.Editor editor = sharedPreferences.edit();
-                path = MainApplication.getPreferenceLastPath(this);
-                editor.putString(MainApplication.PREFERENCE_STORAGE, path);
+                String old = shared.getString(MainApplication.PREFERENCE_STORAGE, ""); // old
+                editor.putString(MainApplication.PREFERENCE_STORAGE, old);
                 editor.commit();
             }
         }
@@ -225,9 +236,9 @@ public class SettingsActivity extends AppCompatActivity implements SharedPrefere
             Storage storage = ((MainApplication) getContext().getApplicationContext()).getStorage();
             StoragePathPreferenceCompat s = (StoragePathPreferenceCompat) findPreference(MainApplication.PREFERENCE_STORAGE);
             s.setStorage(storage);
-//            if (Build.VERSION.SDK_INT >= 21)
-//                s.setStorageAccessFramework(this, 2);
-//            else
+            if (BuildConfig.DEBUG && Build.VERSION.SDK_INT >= 21) // currently zip & rar does not support SAF. disable
+                s.setStorageAccessFramework(this, 2);
+            else
                 s.setPermissionsDialog(this, PERMISSIONS, 1);
         }
 
