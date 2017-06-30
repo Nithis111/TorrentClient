@@ -86,7 +86,7 @@ public class TorrentPlayer {
             Uri u = storage.child(torrent.path, f.file.getPath());
             String s = u.getScheme();
             if (s.startsWith(ContentResolver.SCHEME_CONTENT)) {
-                throw new RuntimeException("unsupported uri"); // TODO add archive SAF
+                return false; // TODO add archive SAF
             } else if (s.startsWith(ContentResolver.SCHEME_FILE)) {
                 File local = new File(u.getPath());
                 if (!local.exists())
@@ -173,7 +173,7 @@ public class TorrentPlayer {
             Uri u = storage.child(torrent.path, f.file.getPath());
             String s = u.getScheme();
             if (s.startsWith(ContentResolver.SCHEME_CONTENT)) {
-                throw new RuntimeException("unsupported uri"); // TODO add archive SAF
+                return false; // TODO add archive SAF
             } else if (s.startsWith(ContentResolver.SCHEME_FILE)) {
                 File local = new File(u.getPath());
                 if (!local.exists())
