@@ -17,10 +17,12 @@ import android.net.wifi.SupplicantState;
 import android.net.wifi.WifiManager;
 import android.os.Build;
 import android.os.Handler;
+import android.os.ParcelFileDescriptor;
 import android.preference.PreferenceManager;
 import android.provider.DocumentsContract;
 import android.util.Base64;
 import android.util.Log;
+import android.webkit.MimeTypeMap;
 
 import com.github.axet.androidlibrary.app.AlarmManager;
 import com.github.axet.torrentclient.R;
@@ -39,12 +41,15 @@ import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
 import java.net.MulticastSocket;
 import java.net.URLEncoder;
+import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 
+import libtorrent.Buffer;
 import libtorrent.BytesInfo;
 import libtorrent.FileStorageTorrent;
 import libtorrent.Libtorrent;
@@ -1022,8 +1027,14 @@ public class Storage extends com.github.axet.androidlibrary.app.Storage implemen
     public void createZeroLengthFile(String hash, String path) throws Exception {
         Torrent t = hashs.get(hash);
         String s = t.path.getScheme();
-        if (s.startsWith(ContentResolver.SCHEME_CONTENT)) {
-            throw new RuntimeException("unsupported operation"); // TODO write to SAF
+        if (Build.VERSION.SDK_INT >= 21 && s.startsWith(ContentResolver.SCHEME_CONTENT)) {
+            Uri u = child(t.path, path);
+            String ext = getExt(u);
+            String n = getDocumentName(u);
+            ContentResolver contentResolver = context.getContentResolver();
+            String mime = MimeTypeMap.getSingleton().getMimeTypeFromExtension(ext);
+            Uri docUri = DocumentsContract.buildDocumentUriUsingTree(u, DocumentsContract.getTreeDocumentId(u));
+            DocumentsContract.createDocument(contentResolver, docUri, mime, n);
         } else if (s.startsWith(ContentResolver.SCHEME_FILE)) {
             File ff = new File(t.path.getPath(), path);
             ff.createNewFile();
@@ -1033,25 +1044,40 @@ public class Storage extends com.github.axet.androidlibrary.app.Storage implemen
     }
 
     @Override
-    public byte[] readFileAt(String hash, String path, long len, long off) throws Exception {
+    public long readFileAt(String hash, String path, Buffer buf, long off) throws Exception {
         Torrent t = hashs.get(hash);
         String s = t.path.getScheme();
         if (s.startsWith(ContentResolver.SCHEME_CONTENT)) {
-            throw new RuntimeException("unsupported operation"); // TODO write to SAF
+            Uri u = child(t.path, path);
+            ContentResolver resolver = context.getContentResolver();
+            ParcelFileDescriptor fd = resolver.openFileDescriptor(u, "rw"); // rw to make it file request (r or w can be a pipes)
+            FileOutputStream fos = new FileOutputStream(fd.getFileDescriptor());
+            FileChannel c = fos.getChannel();
+            c.position(off);
+            ByteBuffer bb = ByteBuffer.allocate((int) buf.length());
+            c.read(bb);
+            long l = c.position() - off;
+            c.close();
+            bb.flip();
+            buf.write(bb.array(), 0, l);
+            return l;
         } else if (s.startsWith(ContentResolver.SCHEME_FILE)) {
             File f = new File(t.path.getPath(), path);
             RandomAccessFile r = new RandomAccessFile(f, "r");
             r.seek(off);
-            int l = (int) len;
+            int l = (int) buf.length();
             long rest = r.length() - off;
-            if (rest < len)
+            if (rest < l)
                 l = (int) rest;
-            byte[] buf = new byte[l];
-            int a = r.read(buf);
+            byte[] b = new byte[l];
+            int a = r.read(b);
             if (a != l)
                 throw new RuntimeException("unable to read a!=l " + a + "!=" + l);
             r.close();
-            return buf;
+            long k = buf.write(b, 0, l);
+            if (l != k)
+                throw new RuntimeException("unable to write l!=k " + l + "!=" + k);
+            return l;
         } else {
             throw new RuntimeException("unknown uri");
         }
@@ -1062,7 +1088,17 @@ public class Storage extends com.github.axet.androidlibrary.app.Storage implemen
         Torrent t = hashs.get(hash);
         String s = t.path.getScheme();
         if (s.startsWith(ContentResolver.SCHEME_CONTENT)) {
-            throw new RuntimeException("unsupported operation"); // TODO write to SAF
+            Uri u = child(t.path, path);
+            ContentResolver resolver = context.getContentResolver();
+            ParcelFileDescriptor fd = resolver.openFileDescriptor(u, "rw");
+            FileOutputStream fos = new FileOutputStream(fd.getFileDescriptor());
+            FileChannel c = fos.getChannel();
+            c.position(off);
+            ByteBuffer bb = ByteBuffer.wrap(buf);
+            c.write(bb);
+            long l = c.position() - off;
+            c.close();
+            return l;
         } else if (s.startsWith(ContentResolver.SCHEME_FILE)) {
             File f = new File(t.path.getPath(), path);
             File p = f.getParentFile();
