@@ -236,9 +236,9 @@ public class SettingsActivity extends AppCompatActivity implements SharedPrefere
             Storage storage = ((MainApplication) getContext().getApplicationContext()).getStorage();
             StoragePathPreferenceCompat s = (StoragePathPreferenceCompat) findPreference(MainApplication.PREFERENCE_STORAGE);
             s.setStorage(storage);
-            if (BuildConfig.DEBUG && Build.VERSION.SDK_INT >= 21) // currently zip & rar does not support SAF. disable
+//            if (Build.VERSION.SDK_INT >= 21)
                 s.setStorageAccessFramework(this, 2);
-            else
+//            else
                 s.setPermissionsDialog(this, PERMISSIONS, 1);
         }
 

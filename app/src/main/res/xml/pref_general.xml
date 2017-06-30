@@ -1,5 +1,5 @@
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
-    <com.github.axet.androidlibrary.widgets.StoragePathPreferenceCompat
+    <com.github.axet.torrentclient.widgets.StoragePathPreferenceCompat
         android:defaultValue="Torrent Client"
         android:key="storage_path"
         android:summary="/sdcard/[path]/"
