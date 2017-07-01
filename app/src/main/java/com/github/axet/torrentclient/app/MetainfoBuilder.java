@@ -16,6 +16,7 @@ import libtorrent.Buffer;
 
 public class MetainfoBuilder implements libtorrent.MetainfoBuilder {
 
+    Uri parent;
     Uri u;
     Storage storage;
     ContentResolver resolver;
@@ -26,7 +27,8 @@ public class MetainfoBuilder implements libtorrent.MetainfoBuilder {
         public long l;
     }
 
-    public MetainfoBuilder(Storage storage, Uri u) {
+    public MetainfoBuilder(Uri parent, Storage storage, Uri u) {
+        this.parent = parent;
         this.storage = storage;
         this.resolver = storage.getContext().getContentResolver();
         this.u = u;
@@ -39,7 +41,14 @@ public class MetainfoBuilder implements libtorrent.MetainfoBuilder {
             return 0;
         } else if (s.equals(ContentResolver.SCHEME_FILE)) {
             File f = new File(u.getPath());
-            list(f.getPath(), f);
+            if (f.isFile()) {
+                Info info = new Info();
+                info.name = f.getName();
+                info.l = f.length();
+                list.add(info);
+            } else if (f.isDirectory()) {
+                list(f.getPath(), f);
+            }
             return list.size();
         } else {
             throw new RuntimeException("unknown");
@@ -64,12 +73,12 @@ public class MetainfoBuilder implements libtorrent.MetainfoBuilder {
 
     @Override
     public long filesLength(long l) {
-        return list.get((int)l).l;
+        return list.get((int) l).l;
     }
 
     @Override
     public String filesName(long l) {
-        return list.get((int)l).name;
+        return list.get((int) l).name;
     }
 
     @Override
@@ -94,7 +103,7 @@ public class MetainfoBuilder implements libtorrent.MetainfoBuilder {
             buf.write(bb.array(), 0, l);
             return l;
         } else if (s.startsWith(ContentResolver.SCHEME_FILE)) {
-            File f = new File(u.getPath(), path);
+            File f = new File(parent.getPath(), path);
             RandomAccessFile r = new RandomAccessFile(f, "r");
             r.seek(off);
             int l = (int) buf.length();
@@ -117,6 +126,6 @@ public class MetainfoBuilder implements libtorrent.MetainfoBuilder {
 
     @Override
     public String root() {
-        return u.toString();
+        return parent.toString();
     }
 }

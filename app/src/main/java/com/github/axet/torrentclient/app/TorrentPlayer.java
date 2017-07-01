@@ -525,6 +525,8 @@ public class TorrentPlayer {
 
     public boolean open(Uri uri) {
         TorrentPlayer.PlayerFile f = find(uri);
+        if (f == null)
+            return false;
         return open(f);
     }
 
