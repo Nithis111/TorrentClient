@@ -849,7 +849,8 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
         if (dialogInterface instanceof AddDialogFragment.Result) {
             AddDialogFragment.Result r = (AddDialogFragment.Result) dialogInterface;
             if (r.ok) {
-                storage.add(new Storage.Torrent(this, r.t, r.path, true));
+                Storage.Torrent t = storage.add(new Storage.Torrent(this, r.t, r.path, true));
+                t.done = t.completed(); // do not show notification for completed new torrents
                 torrentUnread(storage.find(r.t));
                 updateUnread();
             } else {

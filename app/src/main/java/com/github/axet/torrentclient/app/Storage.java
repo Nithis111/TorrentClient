@@ -102,7 +102,7 @@ public class Storage extends com.github.axet.androidlibrary.app.Storage implemen
         public boolean message; // highlight torrent
         public boolean check; // force check required, files were altered
         public boolean readonly; // readonly files or target path, show warning
-        public boolean done; // done notification
+        public boolean done; // done 'true' notification shown
 
         SpeedInfo downloaded = new SpeedInfo();
         SpeedInfo uploaded = new SpeedInfo();
@@ -175,7 +175,7 @@ public class Storage extends com.github.axet.androidlibrary.app.Storage implemen
                 case Libtorrent.StatusDownloading:
                     long c = 0;
                     if (Libtorrent.metaTorrent(t))
-                        c = Libtorrent.torrentPendingBytesLength(t) - Libtorrent.torrentPendingBytesCompleted(t);
+                        c = left();
                     int a = downloaded.getAverageSpeed();
                     String left = "∞";
                     if (c > 0 && a > 0) {
@@ -245,7 +245,7 @@ public class Storage extends com.github.axet.androidlibrary.app.Storage implemen
         public boolean readonly() {
             String s = path.getScheme();
             if (s.startsWith(ContentResolver.SCHEME_FILE)) {
-                if (Libtorrent.metaTorrent(t) && Libtorrent.torrentPendingBytesLength(t) == Libtorrent.torrentPendingBytesCompleted(t)) {
+                if (Libtorrent.metaTorrent(t) && completed()) {
                     return false;  // ignore, readonly we fully downloaded
                 }
                 File p = new File(path.getPath());
@@ -262,6 +262,14 @@ public class Storage extends com.github.axet.androidlibrary.app.Storage implemen
                 }
             }
             return false;
+        }
+
+        public long left() {
+            return Libtorrent.torrentPendingBytesLength(t) - Libtorrent.torrentPendingBytesCompleted(t);
+        }
+
+        public boolean completed() {
+            return left() == 0;
         }
     }
 
@@ -579,7 +587,7 @@ public class Storage extends com.github.axet.androidlibrary.app.Storage implemen
     void updateDone() {
         for (Torrent t : torrents) {
             if (Libtorrent.metaTorrent(t.t)) {
-                if (Libtorrent.torrentPendingBytesLength(t.t) == Libtorrent.torrentPendingBytesCompleted(t.t)) {
+                if (t.completed()) {
                     if (!t.done) {
                         TorrentService.notifyDone(context, t, torrents.indexOf(t));
                     }
@@ -634,12 +642,13 @@ public class Storage extends com.github.axet.androidlibrary.app.Storage implemen
         TorrentService.stopService(context);
     }
 
-    public void add(Torrent t) {
+    public Torrent add(Torrent t) {
         synchronized (hashs) {
             torrents.add(t);
             hashs.put(t.hash, t);
         }
         save();
+        return t;
     }
 
     public int count() {

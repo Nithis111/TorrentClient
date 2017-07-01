@@ -364,6 +364,11 @@ public class AddDialogFragment extends DialogFragment implements MainActivity.To
 
                 String s = u.getScheme();
 
+                if (s.startsWith(ContentResolver.SCHEME_CONTENT)) {
+                    u = Uri.fromFile(storage.fallbackStorage());
+                    s = u.getScheme();
+                }
+
                 if (s.startsWith(ContentResolver.SCHEME_FILE)) {
                     f.setCurrentPath(new File(u.getPath()));
                     f.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
@@ -375,13 +380,21 @@ public class AddDialogFragment extends DialogFragment implements MainActivity.To
 
                             long t = getArguments().getLong("torrent");
                             String hash = getArguments().getString("hash");
-                            byte[] buf = Libtorrent.getTorrent(t);
-                            storage.cancelTorrent(hash);
-
-                            Storage.Torrent tt = storage.prepareTorrentFromBytes(Uri.fromFile(p), buf);
-                            t = tt.t;
-                            getArguments().putString("hash", tt.hash);
-                            getArguments().putLong("torrent", t);
+                            if (Libtorrent.metaTorrent(t)) {
+                                byte[] buf = Libtorrent.getTorrent(t);
+                                storage.cancelTorrent(hash);
+                                Storage.Torrent tt = storage.prepareTorrentFromBytes(Uri.fromFile(p), buf);
+                                t = tt.t;
+                                getArguments().putString("hash", tt.hash);
+                                getArguments().putLong("torrent", t);
+                            } else {
+                                String m = Libtorrent.torrentMagnet(t);
+                                storage.cancelTorrent(hash);
+                                Storage.Torrent tt = storage.prepareTorrentFromMagnet(Uri.fromFile(p), m);
+                                t = tt.t;
+                                getArguments().putString("hash", tt.hash);
+                                getArguments().putLong("torrent", t);
+                            }
 
                             update();
                         }
