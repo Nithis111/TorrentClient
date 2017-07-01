@@ -2,6 +2,7 @@ package com.github.axet.torrentclient.dialogs;
 
 import android.app.Activity;
 import android.app.Dialog;
+import android.content.ContentResolver;
 import android.content.DialogInterface;
 import android.net.Uri;
 import android.os.Bundle;
@@ -14,6 +15,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
+import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.ImageView;
 import android.widget.ListView;
@@ -56,12 +58,17 @@ public class AddDialogFragment extends DialogFragment implements MainActivity.To
 
     String torrentName;
 
+    Button positive;
+
     Result result = new Result();
+
+    Storage storage;
 
     public static class Result implements DialogInterface {
         public long t;
         public boolean ok;
         public String hash;
+        public Uri path;
 
         @Override
         public void cancel() {
@@ -238,6 +245,8 @@ public class AddDialogFragment extends DialogFragment implements MainActivity.To
 
     @Override
     public Dialog onCreateDialog(Bundle savedInstanceState) {
+        storage = getApp().getStorage();
+
         AlertDialog.Builder b = new AlertDialog.Builder(getActivity())
                 .setPositiveButton(R.string.ok,
                         new DialogInterface.OnClickListener() {
@@ -245,8 +254,8 @@ public class AddDialogFragment extends DialogFragment implements MainActivity.To
                                 long t = getArguments().getLong("torrent");
                                 String path = getArguments().getString("path");
                                 getArguments().putLong("torrent", -1);
-                                getApp().getStorage().add(new Storage.Torrent(getContext(), t, Uri.parse(path), true));
                                 result.t = t;
+                                result.path = Uri.parse(path);
                                 result.ok = true;
                                 result.hash = getArguments().getString("hash");
                                 dialog.dismiss();
@@ -266,7 +275,15 @@ public class AddDialogFragment extends DialogFragment implements MainActivity.To
 
         builder(b);
 
-        return b.create();
+        final AlertDialog d = b.create();
+        d.setOnShowListener(new DialogInterface.OnShowListener() {
+            @Override
+            public void onShow(DialogInterface dialog) {
+                positive = d.getButton(DialogInterface.BUTTON_POSITIVE);
+                update();
+            }
+        });
+        return d;
     }
 
     void builder(AlertDialog.Builder b) {
@@ -343,24 +360,34 @@ public class AddDialogFragment extends DialogFragment implements MainActivity.To
             public void onClick(View v) {
                 final OpenFileDialog f = new OpenFileDialog(getContext(), OpenFileDialog.DIALOG_TYPE.FOLDER_DIALOG);
 
-                f.setCurrentPath(new File(getArguments().getString("path")));
-                f.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        File p = f.getCurrentPath();
-                        getArguments().putString("path", p.getPath());
+                Uri u = Uri.parse(getArguments().getString("path"));
 
-                        long t = getArguments().getLong("torrent");
-                        byte[] buf = Libtorrent.getTorrent(t);
-                        Libtorrent.removeTorrent(t);
+                String s = u.getScheme();
 
-                        t = Libtorrent.addTorrentFromBytes(p.getPath(), buf);
-                        getArguments().putLong("torrent", t);
+                if (s.startsWith(ContentResolver.SCHEME_FILE)) {
+                    f.setCurrentPath(new File(u.getPath()));
+                    f.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            File p = f.getCurrentPath();
+                            Uri u = Uri.fromFile(p);
+                            getArguments().putString("path", u.toString());
 
-                        update();
-                    }
-                });
-                f.show();
+                            long t = getArguments().getLong("torrent");
+                            String hash = getArguments().getString("hash");
+                            byte[] buf = Libtorrent.getTorrent(t);
+                            storage.cancelTorrent(hash);
+
+                            Storage.Torrent tt = storage.prepareTorrentFromBytes(Uri.fromFile(p), buf);
+                            t = tt.t;
+                            getArguments().putString("hash", tt.hash);
+                            getArguments().putLong("torrent", t);
+
+                            update();
+                        }
+                    });
+                    f.show();
+                }
             }
         });
 
@@ -426,7 +453,22 @@ public class AddDialogFragment extends DialogFragment implements MainActivity.To
 
         MainApplication.setTextNA(pieces, !Libtorrent.metaTorrent(t) ? "" : Libtorrent.torrentPiecesCount(t) + " / " + MainApplication.formatSize(getContext(), Libtorrent.torrentPieceLength(t)));
 
-        path.setText(getArguments().getString("path"));
+        Uri u = Uri.parse(getArguments().getString("path"));
+        String s = u.getScheme();
+        if (s.startsWith(ContentResolver.SCHEME_FILE)) {
+            File f = new File(u.getPath());
+            boolean e = true;
+            if (!f.canWrite()) {
+                e = false;
+                if (Libtorrent.metaTorrent(t)) {
+                    e = Libtorrent.torrentPendingBytesCompleted(t) == Libtorrent.torrentPendingBytesLength(t);
+                }
+            }
+            if (positive != null) {
+                positive.setEnabled(e);
+            }
+        }
+        path.setText(storage.getTargetName(u));
 
         check.setOnClickListener(new View.OnClickListener() {
             @Override
