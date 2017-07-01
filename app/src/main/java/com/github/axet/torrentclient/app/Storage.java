@@ -68,8 +68,8 @@ public class Storage extends com.github.axet.androidlibrary.app.Storage implemen
     SpeedInfo downloaded = new SpeedInfo();
     SpeedInfo uploaded = new SpeedInfo();
 
-    ArrayList<Torrent> torrents = new ArrayList<>();
-    HashMap<String, Torrent> hashs = new HashMap<>();
+    final ArrayList<Torrent> torrents = new ArrayList<>();
+    final HashMap<String, Torrent> hashs = new HashMap<>();
 
     Handler handler;
 
@@ -113,6 +113,12 @@ public class Storage extends com.github.axet.androidlibrary.app.Storage implemen
             this.path = path;
             this.message = message;
             this.hash = Libtorrent.torrentHash(t);
+        }
+
+        public void close() {
+            long d = t; // prevent debugger to crash
+            t = -1;
+            Libtorrent.removeTorrent(d);
         }
 
         public String name() {
@@ -364,33 +370,35 @@ public class Storage extends com.github.axet.androidlibrary.app.Storage implemen
 
                 byte[] b = Base64.decode(o.getString("state"), Base64.DEFAULT);
 
-                String path = o.getString("path");
-                long t = Libtorrent.loadTorrent(path, b);
-                if (t == -1) {
-                    Log.d(TAG, Libtorrent.error());
-                    continue;
-                }
-                Uri u;
-                if (path.startsWith(ContentResolver.SCHEME_CONTENT))
-                    u = Uri.parse(path);
-                else if (path.startsWith(ContentResolver.SCHEME_FILE))
-                    u = Uri.parse(path);
-                else
-                    u = Uri.fromFile(new File(path));
-                Torrent tt = new Torrent(context, t, u, o.getBoolean("message"));
-                torrents.add(tt);
-                hashs.put(tt.hash, tt);
+                synchronized (hashs) {
+                    String path = o.getString("path");
+                    long t = Libtorrent.loadTorrent(path, b);
+                    if (t == -1) {
+                        Log.d(TAG, Libtorrent.error());
+                        continue;
+                    }
+                    Uri u;
+                    if (path.startsWith(ContentResolver.SCHEME_CONTENT))
+                        u = Uri.parse(path);
+                    else if (path.startsWith(ContentResolver.SCHEME_FILE))
+                        u = Uri.parse(path);
+                    else
+                        u = Uri.fromFile(new File(path));
+                    Torrent tt = new Torrent(context, t, u, o.getBoolean("message"));
+                    torrents.add(tt);
+                    hashs.put(tt.hash, tt);
 
-                tt.done = o.optBoolean("done", false);
-                if (tt.altered(this)) {
-                    tt.check = true;
-                }
-                if (tt.readonly()) {
-                    tt.readonly = true;
-                }
+                    tt.done = o.optBoolean("done", false);
+                    if (tt.altered(this)) {
+                        tt.check = true;
+                    }
+                    if (tt.readonly()) {
+                        tt.readonly = true;
+                    }
 
-                if (o.getInt("status") != Libtorrent.StatusPaused) {
-                    resume.add(tt);
+                    if (o.getInt("status") != Libtorrent.StatusPaused) {
+                        resume.add(tt);
+                    }
                 }
             } catch (JSONException e) {
                 throw new RuntimeException(e);
@@ -624,8 +632,10 @@ public class Storage extends com.github.axet.androidlibrary.app.Storage implemen
     }
 
     public void add(Torrent t) {
-        torrents.add(t);
-        hashs.put(t.hash, t);
+        synchronized (hashs) {
+            torrents.add(t);
+            hashs.put(t.hash, t);
+        }
         save();
     }
 
@@ -640,11 +650,7 @@ public class Storage extends com.github.axet.androidlibrary.app.Storage implemen
     public void remove(Torrent t) {
         torrents.remove(t);
         hashs.remove(t.hash);
-
-        long d = t.t; // prevent debugger to crash
-        t.t = -1;
-        Libtorrent.removeTorrent(d);
-
+        t.close();
         save();
     }
 
@@ -788,7 +794,7 @@ public class Storage extends com.github.axet.androidlibrary.app.Storage implemen
             save();
 
             for (Torrent torrent : torrents) {
-                Libtorrent.removeTorrent(torrent.t);
+                torrent.close();
             }
 
             torrents.clear();
@@ -937,22 +943,20 @@ public class Storage extends com.github.axet.androidlibrary.app.Storage implemen
 
     public Torrent addMagnet(String s) {
         Uri p = getStoragePath();
-        long t = Libtorrent.addMagnet(p.toString(), s);
-        if (t == -1) {
+        Torrent tt = prepareTorrentFromMagnet(p, s);
+        if (tt == null) {
             throw new RuntimeException(Libtorrent.error());
         }
-        Torrent tt = new Storage.Torrent(context, t, p, true);
         add(tt);
         return tt;
     }
 
     public Torrent addTorrentFromBytes(byte[] buf) {
         Uri s = getStoragePath();
-        long t = Libtorrent.addTorrentFromBytes(s.toString(), buf);
-        if (t == -1) {
+        Torrent tt = prepareTorrentFromBytes(s, buf);
+        if (tt == null) {
             throw new RuntimeException(Libtorrent.error());
         }
-        Torrent tt = new Storage.Torrent(context, t, s, true);
         add(tt);
         return tt;
     }
@@ -1065,7 +1069,10 @@ public class Storage extends com.github.axet.androidlibrary.app.Storage implemen
 
     @Override
     public long readFileAt(String hash, String path, Buffer buf, long off) throws Exception {
-        Torrent t = hashs.get(hash);
+        Torrent t;
+        synchronized (hashs) {
+            t = hashs.get(hash);
+        }
         String s = t.path.getScheme();
         if (s.startsWith(ContentResolver.SCHEME_CONTENT)) {
             Uri u = child(t.path, path);
@@ -1104,7 +1111,10 @@ public class Storage extends com.github.axet.androidlibrary.app.Storage implemen
 
     @Override
     public long writeFileAt(String hash, String path, byte[] buf, long off) throws Exception {
-        Torrent t = hashs.get(hash);
+        Torrent t;
+        synchronized (hashs) {
+            t = hashs.get(hash);
+        }
         String s = t.path.getScheme();
         if (Build.VERSION.SDK_INT >= 21 && s.startsWith(ContentResolver.SCHEME_CONTENT)) {
             Uri u = createFile(t.path, path);
@@ -1132,4 +1142,47 @@ public class Storage extends com.github.axet.androidlibrary.app.Storage implemen
             throw new RuntimeException("unknown uri");
         }
     }
+
+    public Torrent prepareTorrentFromBuilder(Uri pp) {
+        synchronized (hashs) {
+            final long t = Libtorrent.createTorrentFromMetaInfo();
+            if (t == -1) {
+                return null;
+            }
+            Storage.Torrent tt = new Storage.Torrent(context, t, pp, true);
+            hashs.put(tt.hash, tt);
+            return tt;
+        }
+    }
+
+    public void cancelTorrent(String hash) { // cancel adding torrent, remove storage IO interface
+        synchronized (hashs) {
+            Torrent t = hashs.get(hash);
+            t.close();
+            hashs.remove(hash);
+        }
+    }
+
+    public Torrent prepareTorrentFromBytes(Uri pp, byte[] buf) {
+        synchronized (hashs) {
+            long t = Libtorrent.addTorrentFromBytes(pp.toString(), buf);
+            if (t == -1)
+                return null;
+            Storage.Torrent tt = new Storage.Torrent(context, t, pp, true);
+            hashs.put(tt.hash, tt);
+            return tt;
+        }
+    }
+
+    public Torrent prepareTorrentFromMagnet(Uri pp, String m) {
+        synchronized (hashs) {
+            long t = Libtorrent.addMagnet(pp.toString(), m);
+            if (t == -1)
+                return null;
+            Storage.Torrent tt = new Storage.Torrent(context, t, pp, true);
+            hashs.put(tt.hash, tt);
+            return tt;
+        }
+    }
+
 }

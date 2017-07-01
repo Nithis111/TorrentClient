@@ -61,6 +61,7 @@ public class AddDialogFragment extends DialogFragment implements MainActivity.To
     public static class Result implements DialogInterface {
         public long t;
         public boolean ok;
+        public String hash;
 
         @Override
         public void cancel() {
@@ -226,12 +227,6 @@ public class AddDialogFragment extends DialogFragment implements MainActivity.To
     public void onDismiss(DialogInterface dialog) {
         super.onDismiss(dialog);
 
-        long t = getArguments().getLong("torrent");
-        if (t != -1) {
-            Libtorrent.removeTorrent(t);
-            getArguments().putLong("torrent", -1);
-        }
-
         // stop update
         v = null;
 
@@ -253,16 +248,16 @@ public class AddDialogFragment extends DialogFragment implements MainActivity.To
                                 getApp().getStorage().add(new Storage.Torrent(getContext(), t, Uri.parse(path), true));
                                 result.t = t;
                                 result.ok = true;
+                                result.hash = getArguments().getString("hash");
                                 dialog.dismiss();
-                                onDismiss(dialog);
                             }
                         }
                 )
                 .setNegativeButton(R.string.cancel,
                         new DialogInterface.OnClickListener() {
                             public void onClick(DialogInterface dialog, int whichButton) {
+                                result.hash = getArguments().getString("hash");
                                 dialog.dismiss();
-                                onDismiss(dialog);
                             }
                         }
                 )
@@ -356,7 +351,6 @@ public class AddDialogFragment extends DialogFragment implements MainActivity.To
                         getArguments().putString("path", p.getPath());
 
                         long t = getArguments().getLong("torrent");
-
                         byte[] buf = Libtorrent.getTorrent(t);
                         Libtorrent.removeTorrent(t);
 

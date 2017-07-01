@@ -1,11 +1,11 @@
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
-    <com.github.axet.torrentclient.widgets.StoragePathPreferenceCompat
+    <com.github.axet.androidlibrary.widgets.StoragePathPreferenceCompat
         android:defaultValue="Torrent Client"
         android:key="storage_path"
         android:summary="/sdcard/[path]/"
         android:title="@string/storage_path" />
 
-    <com.github.axet.torrentclient.widgets.MultiEditListPreference
+    <com.github.axet.androidlibrary.widgets.MultiEditListPreference
         android:defaultValue="udp://tracker.openbittorrent.com:80\nudp://tracker.kicks-ass.net:80/announce"
         android:key="announces_list"
         android:summary="Initial announce trackers list for newly created torrents"
