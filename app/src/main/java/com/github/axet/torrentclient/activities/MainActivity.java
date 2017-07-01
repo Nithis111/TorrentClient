@@ -784,6 +784,10 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
                     Toast.makeText(this, R.string.not_permitted, Toast.LENGTH_SHORT).show();
                 }
                 break;
+            case RESULT_CREATE_TORRENT:
+                if (Storage.permitted(this, PERMISSIONS))
+                    createTorrent();
+                break;
         }
     }
 
@@ -807,10 +811,6 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
-                break;
-            case RESULT_CREATE_TORRENT:
-                if (Storage.permitted(this, PERMISSIONS))
-                    createTorrent();
                 break;
         }
     }
