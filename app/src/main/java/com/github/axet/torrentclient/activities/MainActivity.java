@@ -43,6 +43,7 @@ import com.github.axet.androidlibrary.app.AlarmManager;
 import com.github.axet.androidlibrary.widgets.AboutPreferenceCompat;
 import com.github.axet.androidlibrary.widgets.HeaderGridView;
 import com.github.axet.androidlibrary.widgets.OpenFileDialog;
+import com.github.axet.androidlibrary.widgets.StoragePathPreferenceCompat;
 import com.github.axet.torrentclient.R;
 import com.github.axet.torrentclient.app.Drawer;
 import com.github.axet.torrentclient.app.EnginesManager;
@@ -213,7 +214,13 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
         add.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                if (Storage.permitted(MainActivity.this, PERMISSIONS, RESULT_ADD_TORRENT)) {
+                Uri u = storage.getStoragePath();
+                if (Build.VERSION.SDK_INT >= 21 && StoragePathPreferenceCompat.showStorageAccessFramework(MainActivity.this, u.toString(), PERMISSIONS)) {
+                    Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+                    intent.addCategory(Intent.CATEGORY_OPENABLE);
+                    intent.setType("*/*");
+                    startActivityForResult(intent, RESULT_ADD_TORRENT);
+                } else if (Storage.permitted(MainActivity.this, PERMISSIONS, RESULT_ADD_TORRENT)) {
                     addTorrent();
                 }
                 fab.collapse();
