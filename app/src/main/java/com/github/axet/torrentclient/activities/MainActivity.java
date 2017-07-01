@@ -849,6 +849,7 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
         if (dialogInterface instanceof AddDialogFragment.Result) {
             AddDialogFragment.Result r = (AddDialogFragment.Result) dialogInterface;
             if (r.ok) {
+                storage.add(new Storage.Torrent(this, r.t, r.path, true));
                 torrentUnread(storage.find(r.t));
                 updateUnread();
             } else {
@@ -1240,7 +1241,10 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
                 try {
                     File f = new File(p.getPath());
                     byte[] buf = FileUtils.readFileToByteArray(f);
-                    addTorrentFromBytes(storage.getStoragePath(), buf, shared.getBoolean(MainApplication.PREFERENCE_DIALOG, false));
+                    boolean show = shared.getBoolean(MainApplication.PREFERENCE_DIALOG, false);
+                    if (!f.canWrite())
+                        show = true;
+                    addTorrentFromBytes(Uri.fromFile(p.getParentFile()), buf, show);
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
