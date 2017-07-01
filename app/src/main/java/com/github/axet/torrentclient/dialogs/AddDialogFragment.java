@@ -4,7 +4,10 @@ import android.app.Activity;
 import android.app.Dialog;
 import android.content.ContentResolver;
 import android.content.DialogInterface;
+import android.content.Intent;
+import android.content.pm.ActivityInfo;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.DialogFragment;
@@ -22,6 +25,7 @@ import android.widget.ListView;
 import android.widget.TextView;
 
 import com.github.axet.androidlibrary.widgets.OpenFileDialog;
+import com.github.axet.androidlibrary.widgets.StoragePathPreferenceCompat;
 import com.github.axet.torrentclient.R;
 import com.github.axet.torrentclient.activities.MainActivity;
 import com.github.axet.torrentclient.app.MainApplication;
@@ -364,6 +368,16 @@ public class AddDialogFragment extends DialogFragment implements MainActivity.To
 
                 String s = u.getScheme();
 
+                if (Build.VERSION.SDK_INT >= 21 && StoragePathPreferenceCompat.showStorageAccessFramework(getActivity(), u.toString(), MainActivity.PERMISSIONS)) {
+                    Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);
+                    intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION
+                            | Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+                            | Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION
+                            | Intent.FLAG_GRANT_PREFIX_URI_PERMISSION);
+                    startActivityForResult(intent, 1);
+                    return;
+                }
+
                 if (s.startsWith(ContentResolver.SCHEME_CONTENT)) {
                     u = Uri.fromFile(storage.fallbackStorage());
                     s = u.getScheme();
@@ -376,27 +390,7 @@ public class AddDialogFragment extends DialogFragment implements MainActivity.To
                         public void onClick(DialogInterface dialog, int which) {
                             File p = f.getCurrentPath();
                             Uri u = Uri.fromFile(p);
-                            getArguments().putString("path", u.toString());
-
-                            long t = getArguments().getLong("torrent");
-                            String hash = getArguments().getString("hash");
-                            if (Libtorrent.metaTorrent(t)) {
-                                byte[] buf = Libtorrent.getTorrent(t);
-                                storage.cancelTorrent(hash);
-                                Storage.Torrent tt = storage.prepareTorrentFromBytes(Uri.fromFile(p), buf);
-                                t = tt.t;
-                                getArguments().putString("hash", tt.hash);
-                                getArguments().putLong("torrent", t);
-                            } else {
-                                String m = Libtorrent.torrentMagnet(t);
-                                storage.cancelTorrent(hash);
-                                Storage.Torrent tt = storage.prepareTorrentFromMagnet(Uri.fromFile(p), m);
-                                t = tt.t;
-                                getArguments().putString("hash", tt.hash);
-                                getArguments().putLong("torrent", t);
-                            }
-
-                            update();
+                            setPath(u);
                         }
                     });
                     f.show();
@@ -526,8 +520,43 @@ public class AddDialogFragment extends DialogFragment implements MainActivity.To
         }
     }
 
+    public void setPath(Uri u) {
+        getArguments().putString("path", u.toString());
+
+        long t = getArguments().getLong("torrent");
+        String hash = getArguments().getString("hash");
+        if (Libtorrent.metaTorrent(t)) {
+            byte[] buf = Libtorrent.getTorrent(t);
+            storage.cancelTorrent(hash);
+            Storage.Torrent tt = storage.prepareTorrentFromBytes(u, buf);
+            t = tt.t;
+            getArguments().putString("hash", tt.hash);
+            getArguments().putLong("torrent", t);
+        } else {
+            String m = Libtorrent.torrentMagnet(t);
+            storage.cancelTorrent(hash);
+            Storage.Torrent tt = storage.prepareTorrentFromMagnet(u, m);
+            t = tt.t;
+            getArguments().putString("hash", tt.hash);
+            getArguments().putLong("torrent", t);
+        }
+
+        update();
+    }
+
     @Override
     public void close() {
+    }
 
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        switch (requestCode) {
+            case 1:
+                if (resultCode != Activity.RESULT_OK)
+                    return;
+                setPath(data.getData());
+                break;
+        }
     }
 }
