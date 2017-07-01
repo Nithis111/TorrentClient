@@ -1023,6 +1023,7 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
 
     public void createTorrent() {
         final OpenFileDialog f = new OpenFileDialog(MainActivity.this, OpenFileDialog.DIALOG_TYPE.FOLDER_DIALOG);
+        f.setReadonly(true);
 
         String path = "";
 
