@@ -29,6 +29,7 @@ import android.widget.Toast;
 import com.github.axet.androidlibrary.app.AlarmManager;
 import com.github.axet.androidlibrary.net.HttpClient;
 import com.github.axet.androidlibrary.widgets.OpenFileDialog;
+import com.github.axet.androidlibrary.widgets.StoragePathPreferenceCompat;
 import com.github.axet.androidlibrary.widgets.ThemeUtils;
 import com.github.axet.androidlibrary.widgets.UnreadCountDrawable;
 import com.github.axet.torrentclient.R;
@@ -690,13 +691,10 @@ public class Drawer implements com.mikepenz.materialdrawer.Drawer.OnDrawerItemCl
         }
 
         if (id == R.id.nav_add) {
-            if (Build.VERSION.SDK_INT >= 21) {
-                openNav();
-            } else if (Storage.permitted(main, PERMISSIONS, MainActivity.RESULT_ADD_ENGINE)) {
+            if (Storage.permitted(main, PERMISSIONS, MainActivity.RESULT_ADD_ENGINE)) {
                 openNavFiles();
             }
-            // prevent close drawer
-            return true;
+            return true; // prevent close drawer
         }
         return true;
     }
