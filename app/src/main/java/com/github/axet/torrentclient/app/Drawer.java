@@ -1,15 +1,19 @@
 package com.github.axet.torrentclient.app;
 
 import android.Manifest;
+import android.app.Activity;
 import android.app.KeyguardManager;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.Signature;
 import android.graphics.Color;
 import android.graphics.drawable.Drawable;
+import android.net.Uri;
+import android.os.Build;
 import android.os.Handler;
 import android.preference.PreferenceManager;
 import android.support.v7.app.AlertDialog;
@@ -686,8 +690,10 @@ public class Drawer implements com.mikepenz.materialdrawer.Drawer.OnDrawerItemCl
         }
 
         if (id == R.id.nav_add) {
-            if (main.openNav(PERMISSIONS)) {
+            if (Build.VERSION.SDK_INT >= 21) {
                 openNav();
+            } else if (Storage.permitted(main, PERMISSIONS, MainActivity.RESULT_ADD_ENGINE)) {
+                openNavFiles();
             }
             // prevent close drawer
             return true;
@@ -711,8 +717,23 @@ public class Drawer implements com.mikepenz.materialdrawer.Drawer.OnDrawerItemCl
     }
 
     public void openNav() {
-        final EnginesManager engies = main.getEngines();
+        if (Build.VERSION.SDK_INT >= 21) {
+            Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+            intent.addCategory(Intent.CATEGORY_OPENABLE);
+            intent.setType("*/*");
+            main.startActivityForResult(intent, MainActivity.RESULT_ADD_ENGINE_URL);
+        } else {
+            openNavFiles();
+        }
+    }
 
+    public void onActivityResult(int resultCode, Intent data) {
+        if (resultCode != Activity.RESULT_OK)
+            return;
+        save(data.getData());
+    }
+
+    public void openNavFiles() {
         final OpenFileDialog f = new OpenFileDialog(context, OpenFileDialog.DIALOG_TYPE.FILE_DIALOG);
         f.setReadonly(true);
 
@@ -730,18 +751,24 @@ public class Drawer implements com.mikepenz.materialdrawer.Drawer.OnDrawerItemCl
             public void onClick(DialogInterface dialog, int which) {
                 File p = f.getCurrentPath();
                 shared.edit().putString(MainApplication.PREFERENCE_LAST_PATH, p.getParent()).commit();
-                Search search = null;
-                try {
-                    search = engies.add(p);
-                } catch (RuntimeException e) {
-                    main.Error(e);
-                    return;
-                }
-                engies.save();
-                updateManager();
-                openDrawer(search);
+                Uri u = Uri.fromFile(p);
             }
         });
         f.show();
+    }
+
+    void save(Uri p) {
+        final EnginesManager engies = main.getEngines();
+
+        Search search = null;
+        try {
+            search = engies.add(p);
+        } catch (RuntimeException e) {
+            main.Error(e);
+            return;
+        }
+        engies.save();
+        updateManager();
+        openDrawer(search);
     }
 }

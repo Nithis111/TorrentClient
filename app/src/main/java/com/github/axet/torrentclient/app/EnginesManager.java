@@ -117,6 +117,20 @@ public class EnginesManager {
         }
     }
 
+    public Search add(Uri f) {
+        try {
+            String s = f.getScheme();
+            if (s.startsWith(ContentResolver.SCHEME_FILE)) {
+                return add(new File(f.getPath()));
+            }
+            ContentResolver res = context.getContentResolver();
+            String json = IOUtils.toString(res.openInputStream(f), MainApplication.UTF8);
+            return add(f.toString(), json);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public Search add(String url, String json) {
         SearchEngine engine = new SearchEngine();
         engine.loadJson(json);
