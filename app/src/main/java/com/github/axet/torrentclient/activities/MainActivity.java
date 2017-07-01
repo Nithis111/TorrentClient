@@ -76,6 +76,7 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
     public static final int RESULT_ADD_ENGINE = 2;
     public static final int RESULT_ADD_ENGINE_URL = 3;
     public static final int RESULT_ADD_TORRENT = 4;
+    public static final int RESULT_CREATE_TORRENT = 5;
 
     public int scrollState;
 
@@ -201,43 +202,9 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
         create.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                final OpenFileDialog f = new OpenFileDialog(MainActivity.this, OpenFileDialog.DIALOG_TYPE.FOLDER_DIALOG);
-
-                String path = "";
-
-                final SharedPreferences shared = PreferenceManager.getDefaultSharedPreferences(MainActivity.this);
-
-                if (path == null || path.isEmpty()) {
-                    path = MainApplication.getPreferenceLastPath(MainActivity.this);
+                if (Storage.permitted(MainActivity.this, PERMISSIONS, RESULT_CREATE_TORRENT)) {
+                    createTorrent();
                 }
-
-                f.setCurrentPath(new File(path));
-                f.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        File p = f.getCurrentPath();
-
-                        shared.edit().putString(MainApplication.PREFERENCE_LAST_PATH, p.getParent()).commit();
-
-                        String path = p.getPath();
-                        File parent = new File(path).getParentFile();
-                        if (parent == null) {
-                            parent = new File("/");
-                            path = ".";
-                        }
-                        try {
-                            File f = new File(path);
-                            path = f.getCanonicalPath(); // resolve symlink
-                        } catch (IOException e) {
-                            // ignore
-                        }
-
-                        final Uri pp = Uri.fromFile(parent);
-
-                        createTorrent(pp, Uri.fromFile(new File(path)));
-                    }
-                });
-                f.show();
                 fab.collapse();
             }
         });
@@ -841,6 +808,10 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
                     throw new RuntimeException(e);
                 }
                 break;
+            case RESULT_CREATE_TORRENT:
+                if (Storage.permitted(this, PERMISSIONS))
+                    createTorrent();
+                break;
         }
     }
 
@@ -1048,6 +1019,46 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
         fragment.setArguments(args);
 
         fragment.show(getSupportFragmentManager(), "");
+    }
+
+    public void createTorrent() {
+        final OpenFileDialog f = new OpenFileDialog(MainActivity.this, OpenFileDialog.DIALOG_TYPE.FOLDER_DIALOG);
+
+        String path = "";
+
+        final SharedPreferences shared = PreferenceManager.getDefaultSharedPreferences(MainActivity.this);
+
+        if (path == null || path.isEmpty()) {
+            path = MainApplication.getPreferenceLastPath(MainActivity.this);
+        }
+
+        f.setCurrentPath(new File(path));
+        f.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                File p = f.getCurrentPath();
+
+                shared.edit().putString(MainApplication.PREFERENCE_LAST_PATH, p.getParent()).commit();
+
+                String path = p.getPath();
+                File parent = new File(path).getParentFile();
+                if (parent == null) {
+                    parent = new File("/");
+                    path = ".";
+                }
+                try {
+                    File f = new File(path);
+                    path = f.getCanonicalPath(); // resolve symlink
+                } catch (IOException e) {
+                    // ignore
+                }
+
+                final Uri pp = Uri.fromFile(parent);
+
+                createTorrent(pp, Uri.fromFile(new File(path)));
+            }
+        });
+        f.show();
     }
 
     public void createTorrent(final Uri pp, Uri u) {
