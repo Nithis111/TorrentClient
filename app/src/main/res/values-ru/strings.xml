@@ -124,4 +124,6 @@
     <string name="stop">Стоп Торрент</string>
     <string name="start">Старт Торрент</string>
     <string name="new_version">Доступна новая версия:</string>
+    <string name="torrent_altered">Files altered, force recheck</string>
+    <string name="torrent_notfound">Not found, force recheck</string>
 </resources>

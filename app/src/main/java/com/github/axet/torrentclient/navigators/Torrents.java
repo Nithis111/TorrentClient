@@ -344,7 +344,7 @@ public class Torrents extends BaseAdapter implements DialogInterface.OnDismissLi
             PorterDuffColorFilter filter = new PorterDuffColorFilter(0xb0000000 | (0xFFFFFF & color), PorterDuff.Mode.MULTIPLY);
             stateImage.setColorFilter(filter);
 
-            if (t.check || t.readonly) {
+            if (t.fail()) {
                 d = ContextCompat.getDrawable(getContext(), R.drawable.ic_exclamation);
                 int color2 = ThemeUtils.getThemeColor(getContext(), R.attr.colorAccent);
                 PorterDuffColorFilter filter2 = new PorterDuffColorFilter(color2, PorterDuff.Mode.SRC_IN);
@@ -558,20 +558,28 @@ public class Torrents extends BaseAdapter implements DialogInterface.OnDismissLi
     }
 
     void start(Storage.Torrent t) {
+        if (t.ejected(storage)) {
+            Toast.makeText(main, R.string.torrent_notfound, Toast.LENGTH_LONG).show();
+            t.ejected = true;
+            return;
+        }
+        t.ejected = false;
+
         if (t.readonly) {
             if (t.readonly()) {
-                main.Error(main.getString(R.string.filedialog_readonly) + " " + t.path);
+                main.Error(main.getString(R.string.filedialog_readonly) + " " + storage.getTargetName(t.path));
                 return;
             }
             t.readonly = false;
         }
 
-        storage.start(t);
-
         if (t.check || t.altered(storage)) {
-            Toast.makeText(main, "Files altered, force recheck", Toast.LENGTH_LONG).show();
+            Toast.makeText(main, R.string.torrent_altered, Toast.LENGTH_LONG).show();
             t.check = false;
             Libtorrent.checkTorrent(t.t);
+            return;
         }
+
+        storage.start(t);
     }
 }
