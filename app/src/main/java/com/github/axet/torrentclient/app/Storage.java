@@ -103,6 +103,7 @@ public class Storage extends com.github.axet.androidlibrary.app.Storage implemen
         public boolean check; // force check required, files were altered
         public boolean readonly; // readonly files or target path, show warning
         public boolean done; // done 'true' notification shown
+        public boolean ejected; // unmounted / deleted folder
 
         SpeedInfo downloaded = new SpeedInfo();
         SpeedInfo uploaded = new SpeedInfo();
@@ -264,12 +265,41 @@ public class Storage extends com.github.axet.androidlibrary.app.Storage implemen
             return false;
         }
 
+        public boolean ejected(Storage storage) {
+            String s = path.getScheme();
+            if (Build.VERSION.SDK_INT >= 21 && s.startsWith(ContentResolver.SCHEME_CONTENT)) {
+                try {
+                    final int takeFlags = Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION;
+                    ContentResolver resolver = context.getContentResolver();
+                    resolver.takePersistableUriPermission(path, takeFlags);
+                    if (Libtorrent.metaTorrent(t)) {
+                        String name = Libtorrent.torrentName(t);
+                        Uri u = storage.child(path, name);
+                        if (!storage.exists(u))
+                            return true;
+                    }
+                    return false;
+                } catch (Exception e) {
+                    return true;
+                }
+            } else if (s.startsWith(ContentResolver.SCHEME_FILE)) {
+                File p = new File(path.getPath());
+                if (!p.canRead())
+                    return true;
+            }
+            return false;
+        }
+
         public long left() {
             return Libtorrent.torrentPendingBytesLength(t) - Libtorrent.torrentPendingBytesCompleted(t);
         }
 
         public boolean completed() {
             return left() == 0;
+        }
+
+        public boolean fail() {
+            return check || readonly || ejected;
         }
     }
 
@@ -400,11 +430,15 @@ public class Storage extends com.github.axet.androidlibrary.app.Storage implemen
                     hashs.put(tt.hash, tt);
 
                     tt.done = o.optBoolean("done", false);
-                    if (tt.altered(this)) {
-                        tt.check = true;
-                    }
-                    if (tt.readonly()) {
-                        tt.readonly = true;
+                    if (tt.ejected(this)) {
+                        tt.ejected = true;
+                    } else {
+                        if (tt.altered(this)) {
+                            tt.check = true;
+                        }
+                        if (tt.readonly()) {
+                            tt.readonly = true;
+                        }
                     }
 
                     if (o.getInt("status") != Libtorrent.StatusPaused) {
@@ -419,7 +453,7 @@ public class Storage extends com.github.axet.androidlibrary.app.Storage implemen
         Collections.sort(resume, new LoadTorrents());
 
         for (Torrent t : resume) {
-            if (t.check || t.readonly)
+            if (t.fail())
                 continue;
             start(t);
         }
@@ -1085,39 +1119,45 @@ public class Storage extends com.github.axet.androidlibrary.app.Storage implemen
         synchronized (hashs) {
             t = hashs.get(hash);
         }
-        String s = t.path.getScheme();
-        if (s.startsWith(ContentResolver.SCHEME_CONTENT)) {
-            Uri u = child(t.path, path);
-            ParcelFileDescriptor fd = resolver.openFileDescriptor(u, "rw"); // rw to make it file request (r or w can be a pipes)
-            FileInputStream fis = new FileInputStream(fd.getFileDescriptor());
-            FileChannel c = fis.getChannel();
-            c.position(off);
-            ByteBuffer bb = ByteBuffer.allocate((int) buf.length());
-            c.read(bb);
-            long l = c.position() - off;
-            c.close();
-            bb.flip();
-            buf.write(bb.array(), 0, l);
-            return l;
-        } else if (s.startsWith(ContentResolver.SCHEME_FILE)) {
-            File f = new File(t.path.getPath(), path);
-            RandomAccessFile r = new RandomAccessFile(f, "r");
-            r.seek(off);
-            int l = (int) buf.length();
-            long rest = r.length() - off;
-            if (rest < l)
-                l = (int) rest;
-            byte[] b = new byte[l];
-            int a = r.read(b);
-            if (a != l)
-                throw new RuntimeException("unable to read a!=l " + a + "!=" + l);
-            r.close();
-            long k = buf.write(b, 0, l);
-            if (l != k)
-                throw new RuntimeException("unable to write l!=k " + l + "!=" + k);
-            return l;
-        } else {
-            throw new RuntimeException("unknown uri");
+        try {
+            String s = t.path.getScheme();
+            if (s.startsWith(ContentResolver.SCHEME_CONTENT)) {
+                Uri u = child(t.path, path);
+                ParcelFileDescriptor fd = resolver.openFileDescriptor(u, "rw"); // rw to make it file request (r or w can be a pipes)
+                FileInputStream fis = new FileInputStream(fd.getFileDescriptor());
+                FileChannel c = fis.getChannel();
+                c.position(off);
+                ByteBuffer bb = ByteBuffer.allocate((int) buf.length());
+                c.read(bb);
+                long l = c.position() - off;
+                c.close();
+                bb.flip();
+                buf.write(bb.array(), 0, l);
+                return l;
+            } else if (s.startsWith(ContentResolver.SCHEME_FILE)) {
+                File f = new File(t.path.getPath(), path);
+                RandomAccessFile r = new RandomAccessFile(f, "r");
+                r.seek(off);
+                int l = (int) buf.length();
+                long rest = r.length() - off;
+                if (rest < l)
+                    l = (int) rest;
+                byte[] b = new byte[l];
+                int a = r.read(b);
+                if (a != l)
+                    throw new RuntimeException("unable to read a!=l " + a + "!=" + l);
+                r.close();
+                long k = buf.write(b, 0, l);
+                if (l != k)
+                    throw new RuntimeException("unable to write l!=k " + l + "!=" + k);
+                return l;
+            } else {
+                throw new RuntimeException("unknown uri");
+            }
+        } catch (IOException | IllegalArgumentException e) {
+            t.ejected = true;
+            t.stop();
+            throw e;
         }
     }
 
