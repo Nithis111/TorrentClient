@@ -691,7 +691,13 @@ public class Drawer implements com.mikepenz.materialdrawer.Drawer.OnDrawerItemCl
         }
 
         if (id == R.id.nav_add) {
-            if (Storage.permitted(main, PERMISSIONS, MainActivity.RESULT_ADD_ENGINE)) {
+            Uri u = getApp().getStorage().getStoragePath();
+            if (Build.VERSION.SDK_INT >= 21 && StoragePathPreferenceCompat.showStorageAccessFramework(main, u.toString(), MainActivity.PERMISSIONS)) {
+                Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+                intent.addCategory(Intent.CATEGORY_OPENABLE);
+                intent.setType("*/*");
+                main.startActivityForResult(intent, MainActivity.RESULT_ADD_ENGINE_URL);
+            } else if (Storage.permitted(main, PERMISSIONS, MainActivity.RESULT_ADD_ENGINE)) {
                 openNavFiles();
             }
             return true; // prevent close drawer
@@ -712,17 +718,6 @@ public class Drawer implements com.mikepenz.materialdrawer.Drawer.OnDrawerItemCl
             }
         }
         return count;
-    }
-
-    public void openNav() {
-        if (Build.VERSION.SDK_INT >= 21) {
-            Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
-            intent.addCategory(Intent.CATEGORY_OPENABLE);
-            intent.setType("*/*");
-            main.startActivityForResult(intent, MainActivity.RESULT_ADD_ENGINE_URL);
-        } else {
-            openNavFiles();
-        }
     }
 
     public void onActivityResult(int resultCode, Intent data) {
@@ -769,4 +764,9 @@ public class Drawer implements com.mikepenz.materialdrawer.Drawer.OnDrawerItemCl
         updateManager();
         openDrawer(search);
     }
+
+    public MainApplication getApp() {
+        return (MainApplication) context.getApplicationContext();
+    }
+
 }
