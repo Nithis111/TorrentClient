@@ -178,6 +178,10 @@ public class MainApplication extends com.github.axet.androidlibrary.app.MainAppl
             receiver = null;
         }
         TorrentPlayer.save(this, player);
+        if (player != null) {
+            player.close();
+            player = null;
+        }
     }
 
     @Override

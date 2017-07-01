@@ -245,6 +245,9 @@ public class Storage extends com.github.axet.androidlibrary.app.Storage implemen
         public boolean readonly() {
             String s = path.getScheme();
             if (s.startsWith(ContentResolver.SCHEME_FILE)) {
+                if (Libtorrent.metaTorrent(t) && Libtorrent.torrentPendingBytesLength(t) == Libtorrent.torrentPendingBytesCompleted(t)) {
+                    return false;  // ignore, readonly we fully downloaded
+                }
                 File p = new File(path.getPath());
                 if (!p.canWrite())
                     return true;

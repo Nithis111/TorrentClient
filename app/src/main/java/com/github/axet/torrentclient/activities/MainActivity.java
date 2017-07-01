@@ -213,40 +213,8 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
         add.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                if (Build.VERSION.SDK_INT >= 21) {
-                    Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
-                    intent.addCategory(Intent.CATEGORY_OPENABLE);
-                    intent.setType("*/*");
-                    startActivityForResult(intent, RESULT_ADD_TORRENT);
-                } else {
-                    final OpenFileDialog f = new OpenFileDialog(MainActivity.this, OpenFileDialog.DIALOG_TYPE.FILE_DIALOG);
-
-                    String path = "";
-
-                    final SharedPreferences shared = PreferenceManager.getDefaultSharedPreferences(MainActivity.this);
-
-                    if (path == null || path.isEmpty()) {
-                        path = MainApplication.getPreferenceLastPath(MainActivity.this);
-                    }
-
-                    f.setCurrentPath(new File(path));
-                    f.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialog, int which) {
-                            File p = f.getCurrentPath();
-
-                            shared.edit().putString(MainApplication.PREFERENCE_LAST_PATH, p.getParent()).commit();
-
-                            try {
-                                File f = new File(p.getPath());
-                                byte[] buf = FileUtils.readFileToByteArray(f);
-                                addTorrentFromBytes(storage.getStoragePath(), buf, shared.getBoolean(MainApplication.PREFERENCE_DIALOG, false));
-                            } catch (IOException e) {
-                                throw new RuntimeException(e);
-                            }
-                        }
-                    });
-                    f.show();
+                if (Storage.permitted(MainActivity.this, PERMISSIONS, RESULT_ADD_TORRENT)) {
+                    addTorrent();
                 }
                 fab.collapse();
             }
@@ -785,8 +753,18 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
                 }
                 break;
             case RESULT_CREATE_TORRENT:
-                if (Storage.permitted(this, PERMISSIONS))
+                if (Storage.permitted(this, PERMISSIONS)) {
                     createTorrent();
+                } else {
+                    Toast.makeText(this, R.string.not_permitted, Toast.LENGTH_SHORT).show();
+                }
+                break;
+            case RESULT_ADD_TORRENT:
+                if (Storage.permitted(this, PERMISSIONS)) {
+                    addTorrent();
+                } else {
+                    Toast.makeText(this, R.string.not_permitted, Toast.LENGTH_SHORT).show();
+                }
                 break;
         }
     }
@@ -805,8 +783,9 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
                 if (resultCode != RESULT_OK)
                     return;
                 try {
+                    Uri u = data.getData();
                     ContentResolver resolver = getContentResolver();
-                    byte[] buf = IOUtils.toByteArray(resolver.openInputStream(data.getData()));
+                    byte[] buf = IOUtils.toByteArray(resolver.openInputStream(u));
                     addTorrentFromBytes(storage.getStoragePath(), buf, shared.getBoolean(MainApplication.PREFERENCE_DIALOG, false));
                 } catch (IOException e) {
                     throw new RuntimeException(e);
@@ -1022,7 +1001,7 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
     }
 
     public void createTorrent() {
-        final OpenFileDialog f = new OpenFileDialog(MainActivity.this, OpenFileDialog.DIALOG_TYPE.FOLDER_DIALOG);
+        final OpenFileDialog f = new OpenFileDialog(MainActivity.this, OpenFileDialog.DIALOG_TYPE.BOOTH);
         f.setReadonly(true);
 
         String path = "";
@@ -1067,7 +1046,8 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
         progress.setOwnerActivity(MainActivity.this);
         progress.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
 
-        final AtomicLong pieces = new AtomicLong(Libtorrent.createMetainfoBuilder(new MetainfoBuilder(storage, u)));
+        final MetainfoBuilder b = new MetainfoBuilder(pp, storage, u);
+        final AtomicLong pieces = new AtomicLong(Libtorrent.createMetainfoBuilder(b));
         if (pieces.get() == -1) {
             Error(Libtorrent.error());
             return;
@@ -1117,7 +1097,7 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
                         if (activity.isFinishing())
                             return;
                         MainActivity.this.dialog = null;
-                        activity.createTorrentFromMetaInfo(pp);
+                        activity.createTorrentFromMetaInfo(Uri.parse(b.root()));
                         Libtorrent.closeMetaInfo();
                         progress.dismiss();
                     }
@@ -1236,5 +1216,36 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
         if (torrents == null)
             return; // delayed init
         show(torrents);
+    }
+
+    public void addTorrent() {
+        final OpenFileDialog f = new OpenFileDialog(MainActivity.this, OpenFileDialog.DIALOG_TYPE.FILE_DIALOG);
+
+        String path = "";
+
+        final SharedPreferences shared = PreferenceManager.getDefaultSharedPreferences(MainActivity.this);
+
+        if (path == null || path.isEmpty()) {
+            path = MainApplication.getPreferenceLastPath(MainActivity.this);
+        }
+
+        f.setCurrentPath(new File(path));
+        f.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                File p = f.getCurrentPath();
+
+                shared.edit().putString(MainApplication.PREFERENCE_LAST_PATH, p.getParent()).commit();
+
+                try {
+                    File f = new File(p.getPath());
+                    byte[] buf = FileUtils.readFileToByteArray(f);
+                    addTorrentFromBytes(storage.getStoragePath(), buf, shared.getBoolean(MainApplication.PREFERENCE_DIALOG, false));
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        });
+        f.show();
     }
 }
