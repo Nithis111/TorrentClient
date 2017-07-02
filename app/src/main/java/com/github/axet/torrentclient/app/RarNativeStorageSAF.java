@@ -6,25 +6,25 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.provider.DocumentsContract;
 
-import net.lingala.zip4j.core.NativeStorage;
-
 import java.io.File;
 import java.io.FileNotFoundException;
 
-public class ZipNativeStorageSAF extends NativeStorage {
+import de.innosystec.unrar.NativeStorage;
+
+public class RarNativeStorageSAF extends NativeStorage {
     Storage storage;
     Uri u;
     Uri parent;
-    ZipNativeStorageSAF parentFolder;
+    RarNativeStorageSAF parentFolder;
 
-    public ZipNativeStorageSAF(Storage storage, Uri parent, Uri u) {
+    public RarNativeStorageSAF(Storage storage, Uri parent, Uri u) {
         super((File) null);
         this.storage = storage;
         this.u = u;
         this.parent = parent;
     }
 
-    public ZipNativeStorageSAF(Storage storage, ZipNativeStorageSAF parent, Uri u) {
+    public RarNativeStorageSAF(Storage storage, RarNativeStorageSAF parent, Uri u) {
         super((File) null);
         this.storage = storage;
         this.u = u;
@@ -32,7 +32,7 @@ public class ZipNativeStorageSAF extends NativeStorage {
         this.parent = parentFolder.u;
     }
 
-    public ZipNativeStorageSAF(ZipNativeStorageSAF v) {
+    public RarNativeStorageSAF(RarNativeStorageSAF v) {
         super((File) null);
         u = Uri.parse(v.u.toString());
         storage = v.storage;
@@ -40,18 +40,18 @@ public class ZipNativeStorageSAF extends NativeStorage {
     }
 
     @Override
-    public ZipNativeFileSAF read() throws FileNotFoundException {
-        return new ZipNativeFileSAF(storage, u, "r");
+    public RarNativeFileSAF read() throws FileNotFoundException {
+        return new RarNativeFileSAF(storage, u, "r");
     }
 
     @Override
-    public ZipNativeFileSAF write() throws FileNotFoundException {
-        return new ZipNativeFileSAF(storage, u, "rw");
+    public RarNativeFileSAF write() throws FileNotFoundException {
+        return new RarNativeFileSAF(storage, u, "rw");
     }
 
     @Override
     public NativeStorage open(String name) {
-        return new ZipNativeStorageSAF(storage, this, storage.child(parent, name));
+        return new RarNativeStorageSAF(storage, this, storage.child(parent, name));
     }
 
     @Override
@@ -102,7 +102,7 @@ public class ZipNativeStorageSAF extends NativeStorage {
 
     @Override
     public boolean renameTo(NativeStorage f) {
-        String name = Storage.getDocumentName(((ZipNativeStorageSAF) f).u);
+        String name = Storage.getDocumentName(((RarNativeStorageSAF) f).u);
         Uri m = storage.rename(u, name);
         return m != null;
     }
@@ -138,7 +138,7 @@ public class ZipNativeStorageSAF extends NativeStorage {
         while (c.moveToNext()) {
             String id = c.getString(c.getColumnIndex(DocumentsContract.Document.COLUMN_DOCUMENT_ID));
             Uri f = DocumentsContract.buildChildDocumentsUriUsingTree(parent, id);
-            nn[i] = new ZipNativeStorageSAF(storage, parentFolder, f);
+            nn[i] = new RarNativeStorageSAF(storage, parentFolder, f);
         }
         c.close();
         return nn;

@@ -4,8 +4,6 @@ import android.content.ContentResolver;
 import android.net.Uri;
 import android.os.ParcelFileDescriptor;
 
-import net.lingala.zip4j.core.NativeFile;
-
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -13,12 +11,14 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 
-public class ZipNativeFileSAF extends NativeFile {
+import de.innosystec.unrar.NativeFile;
+
+public class RarNativeFileSAF extends NativeFile {
     Storage storage;
     Uri u;
     FileChannel c;
 
-    public ZipNativeFileSAF(Storage storage, Uri u, String mode) throws FileNotFoundException {
+    public RarNativeFileSAF(Storage storage, Uri u, String mode) throws FileNotFoundException {
         this.u = u;
         this.storage = storage;
         ContentResolver resolver = storage.getContext().getContentResolver();
@@ -39,7 +39,7 @@ public class ZipNativeFileSAF extends NativeFile {
     }
 
     @Override
-    public void seek(long s) throws IOException {
+    public void setPosition(long s) throws IOException {
         c.position(s);
     }
 
@@ -63,7 +63,13 @@ public class ZipNativeFileSAF extends NativeFile {
     }
 
     @Override
-    public long getFilePointer() throws IOException {
+    public int readFully(byte[] buf, int len) throws IOException {
+        ByteBuffer bb = ByteBuffer.wrap(buf, 0, len);
+        return c.read(bb);
+    }
+
+    @Override
+    public long getPosition() throws IOException {
         return c.position();
     }
 
@@ -85,4 +91,14 @@ public class ZipNativeFileSAF extends NativeFile {
         ByteBuffer bb = ByteBuffer.wrap(b, off, len);
         c.write(bb);
     }
+
+    public int read() throws IOException {
+        ByteBuffer bb = ByteBuffer.allocate(Integer.SIZE / Byte.SIZE);
+        int i = c.read(bb);
+        if(i != bb.position())
+            throw new RuntimeException("unable to read int");
+        bb.flip();
+        return bb.asIntBuffer().get();
+    }
+
 }
