@@ -1,8 +1,10 @@
 package com.github.axet.torrentclient.app;
 
 import android.Manifest;
+import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.KeyguardManager;
+import android.content.ContentResolver;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -695,6 +697,7 @@ public class Drawer implements com.mikepenz.materialdrawer.Drawer.OnDrawerItemCl
             if (Build.VERSION.SDK_INT >= 21 && StoragePathPreferenceCompat.showStorageAccessFramework(main, u.toString(), MainActivity.PERMISSIONS)) {
                 Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
                 intent.addCategory(Intent.CATEGORY_OPENABLE);
+                intent.addFlags(Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION);
                 intent.setType("*/*");
                 main.startActivityForResult(intent, MainActivity.RESULT_ADD_ENGINE_URL);
             } else if (Storage.permitted(main, PERMISSIONS, MainActivity.RESULT_ADD_ENGINE)) {
@@ -720,10 +723,15 @@ public class Drawer implements com.mikepenz.materialdrawer.Drawer.OnDrawerItemCl
         return count;
     }
 
+    @TargetApi(21)
     public void onActivityResult(int resultCode, Intent data) {
         if (resultCode != Activity.RESULT_OK)
             return;
-        save(data.getData());
+        Uri uri = data.getData();
+        final int takeFlags = Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION;
+        ContentResolver resolver = context.getContentResolver();
+        resolver.takePersistableUriPermission(uri, takeFlags);
+        save(uri);
     }
 
     public void openNavFiles() {

@@ -2,7 +2,9 @@ package com.github.axet.torrentclient.app;
 
 import android.content.ContentResolver;
 import android.content.Context;
+import android.content.Intent;
 import android.net.Uri;
+import android.os.Build;
 
 import com.github.axet.androidlibrary.net.HttpClient;
 
@@ -95,7 +97,10 @@ public class SearchEngine {
             } else if (uri.getScheme().equals(ContentResolver.SCHEME_ANDROID_RESOURCE)) { // app assests
                 InputStream is = context.getContentResolver().openInputStream(uri);
                 json = IOUtils.toString(is, MainApplication.UTF8);
-            } else if (uri.getScheme().equals(ContentResolver.SCHEME_CONTENT)) { // saf
+            } else if (Build.VERSION.SDK_INT >= 21 && uri.getScheme().equals(ContentResolver.SCHEME_CONTENT)) { // saf
+                final int takeFlags = Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION;
+                ContentResolver resolver = context.getContentResolver();
+                resolver.takePersistableUriPermission(uri, takeFlags);
                 InputStream is = context.getContentResolver().openInputStream(uri);
                 json = IOUtils.toString(is, MainApplication.UTF8);
             } else {
