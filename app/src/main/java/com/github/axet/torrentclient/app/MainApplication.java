@@ -177,8 +177,8 @@ public class MainApplication extends com.github.axet.androidlibrary.app.MainAppl
             receiver.close();
             receiver = null;
         }
-        TorrentPlayer.save(this, player);
         if (player != null) {
+            TorrentPlayer.save(this, player);
             player.close();
             player = null;
         }
