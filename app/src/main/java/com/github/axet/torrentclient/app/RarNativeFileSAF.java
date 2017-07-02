@@ -39,25 +39,8 @@ public class RarNativeFileSAF extends NativeFile {
     }
 
     @Override
-    public long length() throws IOException {
-        return c.size();
-    }
-
-    @Override
     public void setPosition(long s) throws IOException {
         c.position(s);
-    }
-
-    @Override
-    public void readFully(byte[] buf, int off, int len) throws IOException {
-        int r = read(buf, off, len);
-        if (r != len)
-            throw new IOException("bad read");
-    }
-
-    @Override
-    public int read(byte[] buf) throws IOException {
-        return read(buf, 0, buf.length);
     }
 
     @Override
@@ -96,17 +79,6 @@ public class RarNativeFileSAF extends NativeFile {
             fd.close();
             fd = null;
         }
-    }
-
-    @Override
-    public void write(byte[] buf) throws IOException {
-        write(buf, 0, buf.length);
-    }
-
-    @Override
-    public void write(byte[] b, int off, int len) throws IOException {
-        ByteBuffer bb = ByteBuffer.wrap(b, off, len);
-        c.write(bb);
     }
 
     public int read() throws IOException {

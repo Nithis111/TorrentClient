@@ -63,9 +63,12 @@ public class LoginDialogFragment extends BrowserDialogFragment {
         return f;
     }
 
+    public LoginDialogFragment() {
+        super.result = result;
+    }
+
     @Override
     public void onDismiss(DialogInterface dialog) {
-        super.result = result;
         super.onDismiss(result);
     }
 

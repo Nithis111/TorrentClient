@@ -113,6 +113,9 @@ public class BrowserDialogFragment extends DialogFragment implements MainActivit
         }
     }
 
+    public BrowserDialogFragment() {
+    }
+
     @Override
     public void onDismiss(DialogInterface dialog) {
         super.onDismiss(dialog);

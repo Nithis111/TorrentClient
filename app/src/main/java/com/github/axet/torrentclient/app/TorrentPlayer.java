@@ -85,8 +85,6 @@ public class TorrentPlayer {
     };
 
     public Decoder RAR = new Decoder() {
-        HashMap<Long, Archive> map = new HashMap<>();
-
         @Override
         public boolean supported(TorFile f) {
             Uri u = storage.child(torrent.path, f.file.getPath());
@@ -108,9 +106,6 @@ public class TorrentPlayer {
         @Override
         public ArrayList<ArchiveFile> list(TorFile f) {
             try {
-                Archive old = map.get(f.index);
-                if (old != null)
-                    old.close();
                 ArrayList<ArchiveFile> ff = new ArrayList<>();
                 Uri u = storage.child(torrent.path, f.file.getPath());
                 String s = u.getScheme();
@@ -124,7 +119,6 @@ public class TorrentPlayer {
                 } else {
                     throw new RuntimeException("unknown uri");
                 }
-                map.put(Long.valueOf(f.index), archive);
                 List<FileHeader> list = archive.getFileHeaders();
                 for (FileHeader h : list) {
                     if (h.isDirectory())
