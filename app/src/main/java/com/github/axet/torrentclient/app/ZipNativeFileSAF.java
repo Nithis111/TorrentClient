@@ -17,18 +17,21 @@ public class ZipNativeFileSAF extends NativeFile {
     Storage storage;
     Uri u;
     FileChannel c;
+    ParcelFileDescriptor fd;
+    FileInputStream fis;
+    FileOutputStream fos;
 
     public ZipNativeFileSAF(Storage storage, Uri u, String mode) throws FileNotFoundException {
         this.u = u;
         this.storage = storage;
         ContentResolver resolver = storage.getContext().getContentResolver();
-        ParcelFileDescriptor fd = resolver.openFileDescriptor(u, "rw");
+        fd = resolver.openFileDescriptor(u, "rw");
         if (mode.equals("r")) {
-            FileInputStream fos = new FileInputStream(fd.getFileDescriptor());
-            c = fos.getChannel();
+            fis = new FileInputStream(fd.getFileDescriptor());
+            c = fis.getChannel();
         }
         if (mode.equals("rw")) {
-            FileOutputStream fos = new FileOutputStream(fd.getFileDescriptor());
+            fos = new FileOutputStream(fd.getFileDescriptor());
             c = fos.getChannel();
         }
     }
@@ -72,6 +75,18 @@ public class ZipNativeFileSAF extends NativeFile {
         if (c != null) {
             c.close();
             c = null;
+        }
+        if (fis != null) {
+            fis.close();
+            fis = null;
+        }
+        if (fos != null) {
+            fos.close();
+            fos = null;
+        }
+        if (fd != null) {
+            fd.close();
+            fd = null;
         }
     }
 

@@ -1,8 +1,10 @@
 package com.github.axet.torrentclient.app;
 
+import android.content.ContentProviderClient;
 import android.content.ContentResolver;
 import android.net.Uri;
 import android.os.ParcelFileDescriptor;
+import android.os.RemoteException;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -17,18 +19,21 @@ public class RarNativeFileSAF extends NativeFile {
     Storage storage;
     Uri u;
     FileChannel c;
+    FileInputStream fis;
+    FileOutputStream fos;
+    ParcelFileDescriptor fd;
 
     public RarNativeFileSAF(Storage storage, Uri u, String mode) throws FileNotFoundException {
         this.u = u;
         this.storage = storage;
         ContentResolver resolver = storage.getContext().getContentResolver();
-        ParcelFileDescriptor fd = resolver.openFileDescriptor(u, "rw");
+        fd = resolver.openFileDescriptor(u, "rw");
         if (mode.equals("r")) {
-            FileInputStream fos = new FileInputStream(fd.getFileDescriptor());
-            c = fos.getChannel();
+            fis = new FileInputStream(fd.getFileDescriptor());
+            c = fis.getChannel();
         }
         if (mode.equals("rw")) {
-            FileOutputStream fos = new FileOutputStream(fd.getFileDescriptor());
+            fos = new FileOutputStream(fd.getFileDescriptor());
             c = fos.getChannel();
         }
     }
@@ -79,6 +84,18 @@ public class RarNativeFileSAF extends NativeFile {
             c.close();
             c = null;
         }
+        if (fis != null) {
+            fis.close();
+            fis = null;
+        }
+        if (fos != null) {
+            fos.close();
+            fos = null;
+        }
+        if (fd != null) {
+            fd.close();
+            fd = null;
+        }
     }
 
     @Override
@@ -95,7 +112,7 @@ public class RarNativeFileSAF extends NativeFile {
     public int read() throws IOException {
         ByteBuffer bb = ByteBuffer.allocate(Integer.SIZE / Byte.SIZE);
         int i = c.read(bb);
-        if(i != bb.position())
+        if (i != bb.position())
             throw new RuntimeException("unable to read int");
         bb.flip();
         return bb.asIntBuffer().get();
