@@ -30,6 +30,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.List;
 
 import de.innosystec.unrar.Archive;
@@ -84,12 +85,14 @@ public class TorrentPlayer {
     };
 
     public Decoder RAR = new Decoder() {
+        HashMap<Long, Archive> map = new HashMap<>();
+
         @Override
         public boolean supported(TorFile f) {
             Uri u = storage.child(torrent.path, f.file.getPath());
             String s = u.getScheme();
             if (s.startsWith(ContentResolver.SCHEME_CONTENT)) {
-                return false; // TODO add archive SAF
+                return u.getPath().endsWith(".rar");
             } else if (s.startsWith(ContentResolver.SCHEME_FILE)) {
                 File local = new File(u.getPath());
                 if (!local.exists())
@@ -105,18 +108,23 @@ public class TorrentPlayer {
         @Override
         public ArrayList<ArchiveFile> list(TorFile f) {
             try {
+                Archive old = map.get(f.index);
+                if (old != null)
+                    old.close();
                 ArrayList<ArchiveFile> ff = new ArrayList<>();
                 Uri u = storage.child(torrent.path, f.file.getPath());
                 String s = u.getScheme();
                 final Archive archive;
                 if (s.startsWith(ContentResolver.SCHEME_CONTENT)) {
-                    throw new RuntimeException("unsupported uri"); // TODO add archive SAF
+                    RarNativeStorageSAF local = new RarNativeStorageSAF(storage, torrent.path, u);
+                    archive = new Archive(new RarNativeStorageSAF(local));
                 } else if (s.startsWith(ContentResolver.SCHEME_FILE)) {
                     File local = new File(u.getPath());
-                    archive = new Archive(local);
+                    archive = new Archive(new de.innosystec.unrar.NativeStorage(local));
                 } else {
                     throw new RuntimeException("unknown uri");
                 }
+                map.put(Long.valueOf(f.index), archive);
                 List<FileHeader> list = archive.getFileHeaders();
                 for (FileHeader h : list) {
                     if (h.isDirectory())
