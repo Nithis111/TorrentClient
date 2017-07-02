@@ -36,6 +36,7 @@ import org.json.JSONObject;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.RandomAccessFile;
@@ -741,6 +742,11 @@ public class Storage extends com.github.axet.androidlibrary.app.Storage implemen
     public Uri getStoragePath() {
         SharedPreferences shared = PreferenceManager.getDefaultSharedPreferences(context);
         String path = shared.getString(MainApplication.PREFERENCE_STORAGE, "");
+        return getStoragePath(path);
+    }
+
+    @Override
+    public Uri getStoragePath(String path) {
         if (Build.VERSION.SDK_INT >= 21 && path.startsWith(ContentResolver.SCHEME_CONTENT)) {
             Uri uri = Uri.parse(path);
             Uri doc = DocumentsContract.buildDocumentUriUsingTree(uri, DocumentsContract.getTreeDocumentId(uri));
@@ -1119,9 +1125,9 @@ public class Storage extends com.github.axet.androidlibrary.app.Storage implemen
         synchronized (hashs) {
             t = hashs.get(hash);
         }
-        try {
-            String s = t.path.getScheme();
-            if (s.startsWith(ContentResolver.SCHEME_CONTENT)) {
+        String s = t.path.getScheme();
+        if (Build.VERSION.SDK_INT >= 21 && s.startsWith(ContentResolver.SCHEME_CONTENT)) {
+            try {
                 Uri u = child(t.path, path);
                 ParcelFileDescriptor fd = resolver.openFileDescriptor(u, "rw"); // rw to make it file request (r or w can be a pipes)
                 FileInputStream fis = new FileInputStream(fd.getFileDescriptor());
@@ -1134,8 +1140,18 @@ public class Storage extends com.github.axet.androidlibrary.app.Storage implemen
                 bb.flip();
                 buf.write(bb.array(), 0, l);
                 return l;
-            } else if (s.startsWith(ContentResolver.SCHEME_FILE)) {
-                File f = new File(t.path.getPath(), path);
+            } catch (IOException | IllegalArgumentException e) {
+                Uri root = DocumentsContract.buildDocumentUriUsingTree(t.path, DocumentsContract.getTreeDocumentId(t.path));
+                if (!exists(root)) {
+                    t.ejected = true;
+                    t.stop();
+                }
+                throw e;
+            }
+        } else if (s.startsWith(ContentResolver.SCHEME_FILE)) {
+            File p = new File(t.path.getPath());
+            try {
+                File f = new File(p, path);
                 RandomAccessFile r = new RandomAccessFile(f, "r");
                 r.seek(off);
                 int l = (int) buf.length();
@@ -1151,13 +1167,15 @@ public class Storage extends com.github.axet.androidlibrary.app.Storage implemen
                 if (l != k)
                     throw new RuntimeException("unable to write l!=k " + l + "!=" + k);
                 return l;
-            } else {
-                throw new RuntimeException("unknown uri");
+            } catch (IOException e) {
+                if (!p.canRead()) {
+                    t.ejected = true;
+                    t.stop();
+                }
+                throw e;
             }
-        } catch (IOException | IllegalArgumentException e) {
-            t.ejected = true;
-            t.stop();
-            throw e;
+        } else {
+            throw new RuntimeException("unknown uri");
         }
     }
 
