@@ -411,6 +411,7 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
                     getApp().player.notifyStop();
                     getApp().player.close();
                     getApp().player = null;
+                    TorrentPlayer.save(MainActivity.this, getApp().player);
                 }
             }
         });

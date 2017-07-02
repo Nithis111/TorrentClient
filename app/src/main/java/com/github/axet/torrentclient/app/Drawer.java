@@ -203,22 +203,24 @@ public class Drawer implements com.mikepenz.materialdrawer.Drawer.OnDrawerItemCl
         List<IDrawerItem> list = new ArrayList<>();
 
         final Torrents torrents = main.getTorrents();
-        if (torrents != null) {
-            PrimaryDrawerItem item = new PrimaryDrawerItem();
-            item.withIdentifier(R.id.nav_torrents);
-            item.withName(R.string.torrents);
-            item.withIcon(new UnreadCountDrawable(context, R.drawable.ic_storage_black_24dp, torrents));
-            item.withIconTintingEnabled(true);
-            item.withSelectable(true);
-            item.withSetSelected(main.active(torrents));
-            list.add(item);
-        } else {
-            ProgressDrawerItem item = new ProgressDrawerItem();
-            item.withIdentifier(R.id.progress);
-            item.withSelectable(true);
-            item.withSetSelected(false);
-            list.add(item);
+        if (torrents == null) {
+            ProgressDrawerItem progress = new ProgressDrawerItem();
+            progress.withIdentifier(R.id.progress);
+            progress.withSelectable(true);
+            progress.withSetSelected(false);
+            list.add(progress);
+            update(list);
+            return;
         }
+
+        PrimaryDrawerItem tt = new PrimaryDrawerItem();
+        tt.withIdentifier(R.id.nav_torrents);
+        tt.withName(R.string.torrents);
+        tt.withIcon(new UnreadCountDrawable(context, R.drawable.ic_storage_black_24dp, torrents));
+        tt.withIconTintingEnabled(true);
+        tt.withSelectable(true);
+        tt.withSetSelected(main.active(torrents));
+        list.add(tt);
 
         KeyguardManager myKM = (KeyguardManager) context.getSystemService(Context.KEYGUARD_SERVICE);
         final boolean locked = myKM.inKeyguardRestrictedInputMode();
@@ -380,6 +382,10 @@ public class Drawer implements com.mikepenz.materialdrawer.Drawer.OnDrawerItemCl
                 .withSelectable(false);
         list.add(item);
 
+        update(list);
+    }
+
+    void update(List<IDrawerItem> list) {
         ItemAdapter<IDrawerItem> ad = drawer.getItemAdapter();
         for (int i = ad.getAdapterItemCount() - 1; i >= 0; i--) {
             boolean delete = true;
@@ -407,6 +413,8 @@ public class Drawer implements com.mikepenz.materialdrawer.Drawer.OnDrawerItemCl
     }
 
     public void refreshEngines(final boolean auto) {
+        if (auto && main.getTorrents() == null)
+            return;
         if (update != null) {
             if (auto)
                 return;
