@@ -45,11 +45,6 @@ public class RarNativeStorageSAF extends NativeStorage {
     }
 
     @Override
-    public RarNativeFileSAF write() throws FileNotFoundException {
-        return new RarNativeFileSAF(storage, u, "rw");
-    }
-
-    @Override
     public NativeStorage open(String name) {
         return new RarNativeStorageSAF(storage, this, storage.child(parent, name));
     }
@@ -60,88 +55,13 @@ public class RarNativeStorageSAF extends NativeStorage {
     }
 
     @Override
-    public boolean canRead() {
-        return true;
-    }
-
-    @Override
-    public boolean canWrite() {
-        return true;
-    }
-
-    @Override
-    public boolean isHidden() {
-        return false;
-    }
-
-    @Override
     public NativeStorage getParent() {
         return parentFolder;
     }
 
     @Override
-    public String getName() {
-        return Storage.getDocumentName(u);
-    }
-
-    @Override
-    @TargetApi(21)
-    public boolean isDirectory() {
-        return !DocumentsContract.isDocumentUri(storage.getContext(), u);
-    }
-
-    @Override
-    public long lastModified() {
-        return storage.getLast(u);
-    }
-
-    @Override
     public long length() {
         return storage.getLength(u);
-    }
-
-    @Override
-    public boolean renameTo(NativeStorage f) {
-        String name = Storage.getDocumentName(((RarNativeStorageSAF) f).u);
-        Uri m = storage.rename(u, name);
-        return m != null;
-    }
-
-    @Override
-    public void setLastModified(long l) {
-    }
-
-    @Override
-    public void setReadOnly() {
-    }
-
-    @Override
-    public boolean mkdirs() {
-        Uri t = storage.createFolder(parent, Storage.getDocumentPath(u));
-        return t != null;
-    }
-
-    @Override
-    public boolean delete() {
-        return storage.delete(u);
-    }
-
-    @Override
-    @TargetApi(21)
-    public NativeStorage[] listFiles() {
-        ContentResolver resolver = storage.getContext().getContentResolver();
-        Cursor c = resolver.query(u, null, null, null, null);
-        if (c == null)
-            return null;
-        NativeStorage[] nn = new NativeStorage[c.getCount()];
-        int i = 0;
-        while (c.moveToNext()) {
-            String id = c.getString(c.getColumnIndex(DocumentsContract.Document.COLUMN_DOCUMENT_ID));
-            Uri f = DocumentsContract.buildChildDocumentsUriUsingTree(parent, id);
-            nn[i] = new RarNativeStorageSAF(storage, parentFolder, f);
-        }
-        c.close();
-        return nn;
     }
 
     @Override

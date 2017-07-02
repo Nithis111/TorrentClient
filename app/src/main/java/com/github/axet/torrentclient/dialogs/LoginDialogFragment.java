@@ -63,6 +63,10 @@ public class LoginDialogFragment extends BrowserDialogFragment {
         return f;
     }
 
+    public LoginDialogFragment() {
+        super.result = result;
+    }
+
     @Override
     public void onDismiss(DialogInterface dialog) {
         super.onDismiss(result);
@@ -70,7 +74,6 @@ public class LoginDialogFragment extends BrowserDialogFragment {
 
     @Override
     public Dialog onCreateDialog(final Bundle savedInstanceState) {
-        super.result = result;
         final AlertDialog d = new AlertDialog.Builder(getActivity())
                 .setNeutralButton(R.string.browser, new DialogInterface.OnClickListener() {
                     @Override
