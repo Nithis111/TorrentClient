@@ -745,6 +745,7 @@ public class Drawer implements com.mikepenz.materialdrawer.Drawer.OnDrawerItemCl
                 File p = f.getCurrentPath();
                 shared.edit().putString(MainApplication.PREFERENCE_LAST_PATH, p.getParent()).commit();
                 Uri u = Uri.fromFile(p);
+                save(u);
             }
         });
         f.show();

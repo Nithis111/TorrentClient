@@ -1043,7 +1043,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
 
         if (dialog instanceof BrowserDialogFragment.Result) {
             final BrowserDialogFragment.Result l = (BrowserDialogFragment.Result) dialog;
-            if (htmlupdate != null) {
+            if (htmlupdate != null && l.html != null && !l.html.isEmpty()) {
                 htmlupdate.update(l.html);
                 htmlupdate = null;
             }

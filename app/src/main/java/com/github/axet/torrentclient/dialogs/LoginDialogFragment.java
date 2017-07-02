@@ -18,14 +18,13 @@ import com.github.axet.torrentclient.R;
 import com.github.axet.torrentclient.activities.MainActivity;
 
 public class LoginDialogFragment extends BrowserDialogFragment {
-    ViewPager pager;
     FrameLayout v;
     TextView login;
     TextView pass;
 
     Result result = new Result();
 
-    public static class Result implements DialogInterface {
+    public static class Result extends BrowserDialogFragment.Result {
         public boolean ok;
         public boolean browser;
         public boolean clear;
@@ -66,6 +65,7 @@ public class LoginDialogFragment extends BrowserDialogFragment {
 
     @Override
     public void onDismiss(DialogInterface dialog) {
+        super.result = result;
         super.onDismiss(result);
     }
 
