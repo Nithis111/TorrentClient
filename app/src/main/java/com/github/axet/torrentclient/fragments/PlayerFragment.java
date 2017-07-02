@@ -182,6 +182,7 @@ public class PlayerFragment extends Fragment implements MainActivity.TorrentFrag
                 if (i >= player.getSize())
                     i = 0;
                 play(i);
+                files.selected = -1;
                 files.notifyDataSetChanged();
             }
         });
@@ -195,6 +196,7 @@ public class PlayerFragment extends Fragment implements MainActivity.TorrentFrag
                 if (i < 0)
                     i = player.getSize() - 1;
                 play(i);
+                files.selected = -1;
                 files.notifyDataSetChanged();
             }
         });
