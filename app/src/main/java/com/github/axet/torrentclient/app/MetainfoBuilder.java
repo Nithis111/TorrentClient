@@ -38,7 +38,7 @@ public class MetainfoBuilder implements libtorrent.MetainfoBuilder {
     public long filesCount() throws Exception {
         String s = u.getScheme();
         if (s.equals(ContentResolver.SCHEME_CONTENT)) {
-            return 0;
+            return 0; // TODO add SAF support
         } else if (s.equals(ContentResolver.SCHEME_FILE)) {
             File f = new File(u.getPath());
             if (f.isFile()) {

@@ -10,11 +10,15 @@ import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Handler;
 import android.support.v7.preference.PreferenceManager;
+import android.util.Log;
 import android.view.SurfaceHolder;
 
 import com.github.axet.androidlibrary.app.AlarmManager;
 import com.github.axet.torrentclient.activities.PlayerActivity;
 import com.github.axet.torrentclient.services.TorrentContentProvider;
+
+import net.lingala.zip4j.core.NativeStorage;
+import net.lingala.zip4j.core.ZipFile;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -27,14 +31,13 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Enumeration;
 import java.util.List;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
 
 import de.innosystec.unrar.Archive;
 import de.innosystec.unrar.rarfile.FileHeader;
 import libtorrent.Libtorrent;
 
 public class TorrentPlayer {
+    public static String TAG = TorrentPlayer.class.getSimpleName();
 
     public static final String PLAYER_NEXT = TorrentPlayer.class.getCanonicalName() + ".PLAYER_NEXT";
     public static final String PLAYER_PROGRESS = TorrentPlayer.class.getCanonicalName() + ".PLAYER_PROGRESS";
@@ -173,7 +176,7 @@ public class TorrentPlayer {
             Uri u = storage.child(torrent.path, f.file.getPath());
             String s = u.getScheme();
             if (s.startsWith(ContentResolver.SCHEME_CONTENT)) {
-                return false; // TODO add archive SAF
+                return u.getPath().endsWith(".zip");
             } else if (s.startsWith(ContentResolver.SCHEME_FILE)) {
                 File local = new File(u.getPath());
                 if (!local.exists())
@@ -194,23 +197,23 @@ public class TorrentPlayer {
                 String s = u.getScheme();
                 final ZipFile zip;
                 if (s.startsWith(ContentResolver.SCHEME_CONTENT)) {
-                    throw new RuntimeException("unsupported uri"); // TODO add archive SAF
+                    zip = new ZipFile(new ZipNativeStorageSAF(storage, torrent.path, u));
                 } else if (s.startsWith(ContentResolver.SCHEME_FILE)) {
                     File local = new File(u.getPath());
-                    zip = new ZipFile(local);
+                    zip = new ZipFile(new NativeStorage(local));
                 } else {
                     throw new RuntimeException("unknown uri");
                 }
-                Enumeration<?> enu = zip.entries();
-                while (enu.hasMoreElements()) {
-                    final ZipEntry zipEntry = (ZipEntry) enu.nextElement();
+                List list = zip.getFileHeaders();
+                for (Object o : list) {
+                    final net.lingala.zip4j.model.FileHeader zipEntry = (net.lingala.zip4j.model.FileHeader) o;
                     if (zipEntry.isDirectory())
                         continue;
                     ArchiveFile a = new ArchiveFile() {
 
                         @Override
                         public String getPath() {
-                            return zipEntry.getName();
+                            return zipEntry.getFileName();
                         }
 
                         @Override
@@ -224,7 +227,7 @@ public class TorrentPlayer {
 
                         @Override
                         public long getLength() {
-                            return zipEntry.getSize();
+                            return zipEntry.getUncompressedSize();
                         }
                     };
                     ff.add(a);
@@ -491,11 +494,15 @@ public class TorrentPlayer {
             if (f.tor.file.getBytesCompleted() == f.tor.file.getLength()) {
                 Decoder d = getDecoder(f.tor);
                 if (d != null) {
-                    ArrayList<ArchiveFile> list = d.list(f.tor);
-                    Collections.sort(list, new SortArchiveFiles());
-                    int q = 0;
-                    for (ArchiveFile a : list) {
-                        this.ff.add(new PlayerFile(f.tor, a).index(q++, list.size()));
+                    try {
+                        ArrayList<ArchiveFile> list = d.list(f.tor);
+                        Collections.sort(list, new SortArchiveFiles());
+                        int q = 0;
+                        for (ArchiveFile a : list) {
+                            this.ff.add(new PlayerFile(f.tor, a).index(q++, list.size()));
+                        }
+                    } catch (RuntimeException e) {
+                        Log.d(TAG, "Unable to unpack zip", e);
                     }
                 }
             }

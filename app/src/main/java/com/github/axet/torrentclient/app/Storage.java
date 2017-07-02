@@ -1167,31 +1167,37 @@ public class Storage extends com.github.axet.androidlibrary.app.Storage implemen
         synchronized (hashs) {
             t = hashs.get(hash);
         }
-        String s = t.path.getScheme();
-        if (Build.VERSION.SDK_INT >= 21 && s.startsWith(ContentResolver.SCHEME_CONTENT)) {
-            Uri u = createFile(t.path, path);
-            ParcelFileDescriptor fd = resolver.openFileDescriptor(u, "rw");
-            FileOutputStream fos = new FileOutputStream(fd.getFileDescriptor());
-            FileChannel c = fos.getChannel();
-            c.position(off);
-            ByteBuffer bb = ByteBuffer.wrap(buf);
-            c.write(bb);
-            long l = c.position() - off;
-            c.close();
-            return l;
-        } else if (s.startsWith(ContentResolver.SCHEME_FILE)) {
-            File f = new File(t.path.getPath(), path);
-            File p = f.getParentFile();
-            p.mkdirs();
-            RandomAccessFile r = new RandomAccessFile(f, "rw");
-            r.seek(off);
-            r.write(buf);
-            r.close();
-            for (int i = 0; i < buf.length; i++)
-                buf[i] = 0;
-            return buf.length;
-        } else {
-            throw new RuntimeException("unknown uri");
+        try {
+            String s = t.path.getScheme();
+            if (Build.VERSION.SDK_INT >= 21 && s.startsWith(ContentResolver.SCHEME_CONTENT)) {
+                Uri u = createFile(t.path, path);
+                ParcelFileDescriptor fd = resolver.openFileDescriptor(u, "rw");
+                FileOutputStream fos = new FileOutputStream(fd.getFileDescriptor());
+                FileChannel c = fos.getChannel();
+                c.position(off);
+                ByteBuffer bb = ByteBuffer.wrap(buf);
+                c.write(bb);
+                long l = c.position() - off;
+                c.close();
+                return l;
+            } else if (s.startsWith(ContentResolver.SCHEME_FILE)) {
+                File f = new File(t.path.getPath(), path);
+                File p = f.getParentFile();
+                p.mkdirs();
+                RandomAccessFile r = new RandomAccessFile(f, "rw");
+                r.seek(off);
+                r.write(buf);
+                r.close();
+                for (int i = 0; i < buf.length; i++)
+                    buf[i] = 0;
+                return buf.length;
+            } else {
+                throw new RuntimeException("unknown uri");
+            }
+        } catch (IOException | IllegalArgumentException e) {
+            t.ejected = true;
+            t.stop();
+            throw e;
         }
     }
 
