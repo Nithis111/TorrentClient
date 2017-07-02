@@ -1,5 +1,6 @@
 package com.github.axet.torrentclient.app;
 
+import android.content.ContentResolver;
 import android.content.Context;
 import android.net.Uri;
 
@@ -88,10 +89,13 @@ public class SearchEngine {
             Uri uri = Uri.parse(url);
             String json;
 
-            if (uri.getScheme().equals("file")) {
+            if (uri.getScheme().equals(ContentResolver.SCHEME_FILE)) {
                 InputStream is = context.getContentResolver().openInputStream(uri);
                 json = IOUtils.toString(is, MainApplication.UTF8);
-            } else if (uri.getScheme().equals("android.resource")) {
+            } else if (uri.getScheme().equals(ContentResolver.SCHEME_ANDROID_RESOURCE)) { // app assests
+                InputStream is = context.getContentResolver().openInputStream(uri);
+                json = IOUtils.toString(is, MainApplication.UTF8);
+            } else if (uri.getScheme().equals(ContentResolver.SCHEME_CONTENT)) { // saf
                 InputStream is = context.getContentResolver().openInputStream(uri);
                 json = IOUtils.toString(is, MainApplication.UTF8);
             } else {
