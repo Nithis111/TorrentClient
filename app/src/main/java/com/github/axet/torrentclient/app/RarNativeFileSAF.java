@@ -44,21 +44,33 @@ public class RarNativeFileSAF extends NativeFile {
     }
 
     @Override
+    public long getPosition() throws IOException {
+        return c.position();
+    }
+
+    @Override
     public int read(byte[] buf, int off, int len) throws IOException {
         ByteBuffer bb = ByteBuffer.wrap(buf, off, len);
-        int l = c.read(bb);
-        return l;
+        return c.read(bb);
     }
 
     @Override
     public int readFully(byte[] buf, int len) throws IOException {
         ByteBuffer bb = ByteBuffer.wrap(buf, 0, len);
-        return c.read(bb);
+        int i = c.read(bb);
+        if (i != len)
+            throw new RuntimeException("uneable read fully");
+        return i;
     }
 
     @Override
-    public long getPosition() throws IOException {
-        return c.position();
+    public int read() throws IOException {
+        ByteBuffer bb = ByteBuffer.allocate(Integer.SIZE / Byte.SIZE);
+        int i = c.read(bb);
+        if (i != bb.limit())
+            throw new RuntimeException("unable to read int");
+        bb.flip();
+        return bb.asIntBuffer().get();
     }
 
     @Override
@@ -79,15 +91,6 @@ public class RarNativeFileSAF extends NativeFile {
             fd.close();
             fd = null;
         }
-    }
-
-    public int read() throws IOException {
-        ByteBuffer bb = ByteBuffer.allocate(Integer.SIZE / Byte.SIZE);
-        int i = c.read(bb);
-        if (i != bb.position())
-            throw new RuntimeException("unable to read int");
-        bb.flip();
-        return bb.asIntBuffer().get();
     }
 
 }
