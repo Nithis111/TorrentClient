@@ -656,6 +656,7 @@ public class TorrentPlayer {
     }
 
     public void play(final int i) {
+        handler.removeCallbacks(next);
         PlayerFile f = get(i);
         if (!open(f))
             return;

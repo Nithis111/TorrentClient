@@ -184,6 +184,7 @@ public class PlayerFragment extends Fragment implements MainActivity.TorrentFrag
                 play(i);
                 files.selected = -1;
                 files.notifyDataSetChanged();
+                list.smoothScrollToPosition(i);
             }
         });
         prev = v.findViewById(R.id.player_prev);
@@ -203,6 +204,7 @@ public class PlayerFragment extends Fragment implements MainActivity.TorrentFrag
                 play(i);
                 files.selected = -1;
                 files.notifyDataSetChanged();
+                list.smoothScrollToPosition(i);
             }
         });
         play = (ImageView) v.findViewById(R.id.player_play);
