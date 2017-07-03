@@ -595,6 +595,7 @@ public class TorrentPlayer {
         if (player != null) {
             player.release();
             player = null;
+            video = -1;
         }
         playingIndex = i;
         playingUri = f.uri;
