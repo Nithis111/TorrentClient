@@ -99,7 +99,7 @@ public class TorrentPlayer {
         }
     };
     Handler handler;
-    int video; // index
+    int video = -1; // index
 
     BroadcastReceiver receiver = new BroadcastReceiver() {
         @Override
