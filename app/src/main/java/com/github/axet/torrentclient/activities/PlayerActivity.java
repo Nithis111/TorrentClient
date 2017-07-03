@@ -10,6 +10,7 @@ import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.WindowManager;
 import android.widget.ImageView;
 import android.widget.SeekBar;
 import android.widget.TextView;
@@ -25,6 +26,7 @@ import com.google.android.exoplayer2.ui.SimpleExoPlayerView;
  */
 public class PlayerActivity extends AppCompatActivity {
     public static String CLOSE = PlayerActivity.class.getCanonicalName() + ".CLOSE";
+    public static String RESUME = PlayerActivity.class.getCanonicalName() + ".RESUME";
 
     /**
      * Whether or not the system UI should be auto-hidden after
@@ -98,6 +100,8 @@ public class PlayerActivity extends AppCompatActivity {
     View controls;
     View controls2;
     View frame;
+    TorrentPlayer player;
+    int playingIndex;
 
     /**
      * Touch listener to use for in-layout UI controls to delay hiding the
@@ -116,11 +120,13 @@ public class PlayerActivity extends AppCompatActivity {
 
     public static void startActivity(Context context) {
         Intent intent = new Intent(context, PlayerActivity.class);
+        intent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
         context.startActivity(intent);
     }
 
     public static void closeActivity(Context context) {
         Intent intent = new Intent(context, PlayerActivity.class);
+        intent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
         intent.setAction(CLOSE);
         context.startActivity(intent);
     }
@@ -129,17 +135,25 @@ public class PlayerActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON |
+                WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED |
+                WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON);
+
         setContentView(R.layout.activity_player);
 
         String a = getIntent().getAction();
         if (a != null) {
             if (a.equals(CLOSE)) {
+                player = null;
                 finish();
                 return;
             }
         }
 
         final MainApplication app = (MainApplication) getApplicationContext();
+
+        player = app.player;
+        playingIndex = player.getPlaying();
 
         exoplayer = (SimpleExoPlayerView) findViewById(R.id.fullscreen_content);
         close = findViewById(R.id.player_close);
@@ -148,13 +162,41 @@ public class PlayerActivity extends AppCompatActivity {
 
         final TextView playerPos = (TextView) findViewById(R.id.player_pos);
         final TextView playerDur = (TextView) findViewById(R.id.player_dur);
+        final ImageView fab_prev = (ImageView) findViewById(R.id.player_prev);
+        final ImageView fab_next = (ImageView) findViewById(R.id.player_next);
         final ImageView fab_play = (ImageView) findViewById(R.id.player_play);
         final SeekBar seek = (SeekBar) findViewById(R.id.player_seek);
 
         close.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                close();
+                finish();
+            }
+        });
+
+        fab_prev.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                TorrentPlayer p = player;
+                int i = p.getPlaying();
+                i = i - 1;
+                if (i < 0)
+                    i = p.getSize() - 1;
+                p.play(i);
+                p.notifyNext();
+            }
+        });
+
+        fab_next.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                TorrentPlayer p = player;
+                int i = p.getPlaying();
+                i = i + 1;
+                if (i >= p.getSize())
+                    i = 0;
+                p.play(i);
+                p.notifyNext();
             }
         });
 
@@ -162,7 +204,8 @@ public class PlayerActivity extends AppCompatActivity {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
                 if (fromUser) {
-                    app.player.seek(progress);
+                    player.seek(progress);
+                    playerPos.setText(MainApplication.formatDuration(PlayerActivity.this, progress));
                 }
             }
 
@@ -206,15 +249,15 @@ public class PlayerActivity extends AppCompatActivity {
         };
 
         mVisible = true;
-        app.player.play(exoplayer);
+        player.play(exoplayer);
 
         fab_play.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (app.player.isPlaying()) {
-                    app.player.pause();
+                if (player.isPlaying()) {
+                    player.pause();
                 } else {
-                    app.player.resume();
+                    player.resume();
                 }
             }
         });
@@ -231,13 +274,7 @@ public class PlayerActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        final MainApplication app = (MainApplication) getApplicationContext();
-        if (app.player != null)
-            app.player.close(exoplayer);
-        if (playerReceiver != null) {
-            playerReceiver.close();
-            playerReceiver = null;
-        }
+        close();
     }
 
     @Override
@@ -289,31 +326,55 @@ public class PlayerActivity extends AppCompatActivity {
     }
 
     @Override
+    public void finish() {
+        super.finish();
+        MainActivity.startActivity(this);
+    }
+
+    @Override
     public void onBackPressed() {
         super.onBackPressed();
-        close();
+        finish();
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+
+        String a = intent.getAction();
+        if (a != null) {
+            if (a.equals(CLOSE)) {
+                player = null;
+                finish();
+                return;
+            }
+        }
+
+        if (player != null)
+            player.play(exoplayer);
+        delayedHide(100);
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        final MainApplication app = (MainApplication) getApplicationContext();
-        app.player.play(exoplayer);
-        delayedHide(100);
     }
 
     @Override
     protected void onPause() {
         super.onPause();
-        final MainApplication app = (MainApplication) getApplicationContext();
-        if (app.player != null)
-            app.player.hide(exoplayer);
+        if (player != null)
+            player.hide(exoplayer);
     }
 
     void close() {
-        final MainApplication app = (MainApplication) getApplicationContext();
-        if (app.player != null)
-            app.player.close(exoplayer);
-        finish();
+        if (player != null) {
+            player.close(exoplayer);
+            player = null;
+        }
+        if (playerReceiver != null) {
+            playerReceiver.close();
+            playerReceiver = null;
+        }
     }
 }
