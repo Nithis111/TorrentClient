@@ -14,16 +14,43 @@ import android.util.Log;
 import android.view.SurfaceHolder;
 
 import com.github.axet.androidlibrary.app.AlarmManager;
+import com.github.axet.torrentclient.R;
 import com.github.axet.torrentclient.activities.PlayerActivity;
 import com.github.axet.torrentclient.services.TorrentContentProvider;
+import com.google.android.exoplayer2.C;
+import com.google.android.exoplayer2.ExoPlaybackException;
+import com.google.android.exoplayer2.ExoPlayer;
+import com.google.android.exoplayer2.ExoPlayerFactory;
+import com.google.android.exoplayer2.PlaybackParameters;
+import com.google.android.exoplayer2.SimpleExoPlayer;
+import com.google.android.exoplayer2.Timeline;
+import com.google.android.exoplayer2.extractor.DefaultExtractorsFactory;
+import com.google.android.exoplayer2.extractor.ExtractorsFactory;
+import com.google.android.exoplayer2.source.ExtractorMediaSource;
+import com.google.android.exoplayer2.source.MediaSource;
+import com.google.android.exoplayer2.source.TrackGroupArray;
+import com.google.android.exoplayer2.trackselection.AdaptiveTrackSelection;
+import com.google.android.exoplayer2.trackselection.DefaultTrackSelector;
+import com.google.android.exoplayer2.trackselection.TrackSelection;
+import com.google.android.exoplayer2.trackselection.TrackSelectionArray;
+import com.google.android.exoplayer2.trackselection.TrackSelector;
+import com.google.android.exoplayer2.ui.SimpleExoPlayerView;
+import com.google.android.exoplayer2.upstream.BandwidthMeter;
+import com.google.android.exoplayer2.upstream.DataSource;
+import com.google.android.exoplayer2.upstream.DefaultBandwidthMeter;
+import com.google.android.exoplayer2.upstream.DefaultDataSourceFactory;
+import com.google.android.exoplayer2.util.Util;
 
 import net.lingala.zip4j.core.NativeStorage;
 import net.lingala.zip4j.core.ZipFile;
+
+import org.apache.commons.io.IOUtils;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
 import java.util.ArrayList;
@@ -34,6 +61,7 @@ import java.util.HashMap;
 import java.util.List;
 
 import de.innosystec.unrar.Archive;
+import de.innosystec.unrar.exception.RarException;
 import de.innosystec.unrar.rarfile.FileHeader;
 import libtorrent.Libtorrent;
 
@@ -51,7 +79,10 @@ public class TorrentPlayer {
     public String torrentHash;
     public String torrentName;
     Storage storage;
-    MediaPlayer player;
+    BandwidthMeter bandwidthMeter = new DefaultBandwidthMeter();
+    TrackSelection.Factory videoTrackSelectionFactory = new AdaptiveTrackSelection.Factory(bandwidthMeter);
+    TrackSelector trackSelector = new DefaultTrackSelector(videoTrackSelectionFactory);
+    SimpleExoPlayer player;
     int playingIndex = -1;
     Uri playingUri;
     PlayerFile playingFile;
@@ -159,6 +190,17 @@ public class TorrentPlayer {
                         }
 
                         @Override
+                        public void write(OutputStream os) {
+                            try {
+                                archive.extractFile(header, os);
+                                os.flush();
+                                os.close();
+                            } catch (IOException | RarException e) {
+                                throw new RuntimeException(e);
+                            }
+                        }
+
+                        @Override
                         public long getLength() {
                             return header.getFullUnpackSize();
                         }
@@ -227,6 +269,17 @@ public class TorrentPlayer {
                             }
                         }
 
+                        public void write(OutputStream os) {
+                            try {
+                                InputStream is = zip.getInputStream(zipEntry);
+                                IOUtils.copy(is, os);
+                                os.flush();
+                                os.close();
+                            } catch (Exception e) {
+                                throw new RuntimeException(e);
+                            }
+                        }
+
                         @Override
                         public long getLength() {
                             return zipEntry.getUncompressedSize();
@@ -273,7 +326,7 @@ public class TorrentPlayer {
         edit.remove(MainApplication.PREFERENCE_PLAYER);
     }
 
-    public static String formatHeader(Context context, int pos, int dur) {
+    public static String formatHeader(Context context, long pos, long dur) {
         String header = MainApplication.formatDuration(context, pos);
         if (dur > 0)
             header += "/" + MainApplication.formatDuration(context, dur);
@@ -381,6 +434,8 @@ public class TorrentPlayer {
         String getPath();
 
         InputStream open();
+
+        void write(OutputStream os);
 
         long getLength();
     }
@@ -549,23 +604,59 @@ public class TorrentPlayer {
         playingUri = f.uri;
         playingFile = f;
         if (f.tor.file.getBytesCompleted() == f.tor.file.getLength()) {
-            if (!skipType(f))
-                player = MediaPlayer.create(context, f.uri);
+            if (!skipType(f)) {
+                player = ExoPlayerFactory.newSimpleInstance(context, trackSelector);
+                DataSource.Factory dataSourceFactory = new DefaultDataSourceFactory(context, Util.getUserAgent(context, context.getString(R.string.app_name)));
+                ExtractorsFactory extractorsFactory = new DefaultExtractorsFactory();
+                MediaSource audioSource = new ExtractorMediaSource(f.uri, dataSourceFactory, extractorsFactory, null, null);
+                player.prepare(audioSource);
+            }
         }
         if (player == null) {
             next(i + 1);
             return false;
         }
-        player.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
+        player.addListener(new ExoPlayer.EventListener() {
             @Override
-            public void onCompletion(MediaPlayer mp) {
+            public void onTimelineChanged(Timeline timeline, Object manifest) {
+            }
+
+            @Override
+            public void onTracksChanged(TrackGroupArray trackGroups, TrackSelectionArray trackSelections) {
+            }
+
+            @Override
+            public void onLoadingChanged(boolean isLoading) {
+            }
+
+            @Override
+            public void onPlayerStateChanged(boolean playWhenReady, int playbackState) {
+                if(playbackState == ExoPlayer.STATE_READY) {
+                    getDuration();
+                }
+                if (playbackState == ExoPlayer.STATE_ENDED)
+                    next(i + 1);
+            }
+
+            @Override
+            public void onPlayerError(ExoPlaybackException error) {
                 next(i + 1);
             }
+
+            @Override
+            public void onPositionDiscontinuity() {
+            }
+
+            @Override
+            public void onPlaybackParametersChanged(PlaybackParameters playbackParameters) {
+            }
+
         });
         return true;
     }
 
     public void play(final int i) {
+        handler.removeCallbacks(next);
         PlayerFile f = get(i);
         if (!open(f))
             return;
@@ -586,21 +677,25 @@ public class TorrentPlayer {
 //            }
 //        }
         saveDelay();
-        player.start();
+        player.setPlayWhenReady(true);
         progress.run();
     }
 
-    public void play(SurfaceHolder holder) {
+    public void play(SimpleExoPlayerView view) {
+        view.setPlayer(player);
         video = true;
-        Integer seek = null;
+        Long seek = null;
         if (player != null) {
             seek = player.getCurrentPosition();
             player.release();
         }
-        player = MediaPlayer.create(context, playingUri, holder);
+        DataSource.Factory dataSourceFactory = new DefaultDataSourceFactory(context, Util.getUserAgent(context, context.getString(R.string.app_name)));
+        ExtractorsFactory extractorsFactory = new DefaultExtractorsFactory();
+        MediaSource videoSource = new ExtractorMediaSource(playingUri, dataSourceFactory, extractorsFactory, null, null);
+        player.prepare(videoSource);
         if (seek != null)
             player.seekTo(seek);
-        player.start();
+        player.setPlayWhenReady(true);
         progress.run();
         saveDelay();
     }
@@ -630,7 +725,7 @@ public class TorrentPlayer {
     public boolean isPlaying() { // actual sound
         if (player == null)
             return false;
-        return player.isPlaying();
+        return player.getPlayWhenReady();
     }
 
     public boolean isStop() {
@@ -643,8 +738,8 @@ public class TorrentPlayer {
                 stop(); // clear next
                 return;
             }
-            if (player.isPlaying()) {
-                player.pause();
+            if (isPlaying()) {
+                player.setPlayWhenReady(false);
                 notifyProgress();
                 handler.removeCallbacks(progress);
                 handler.removeCallbacks(saveDelay);
@@ -683,12 +778,19 @@ public class TorrentPlayer {
         return torrent.t;
     }
 
+    public long getDuration() {
+        long d = player.getDuration();
+        if (d == C.TIME_UNSET)
+            return 0;
+        return d;
+    }
+
     Intent notify(String a) {
         Intent intent = new Intent(a);
         intent.putExtra("t", torrent.t);
         if (player != null) {
             intent.putExtra("pos", player.getCurrentPosition());
-            intent.putExtra("dur", player.getDuration());
+            intent.putExtra("dur", getDuration());
         }
         return intent;
     }
@@ -702,7 +804,7 @@ public class TorrentPlayer {
     Intent notifyProgressIntent() {
         Intent intent = notify(PLAYER_PROGRESS);
         if (player != null)
-            intent.putExtra("play", player.isPlaying() || next != null);
+            intent.putExtra("play", isPlaying() || next != null);
         else
             intent.putExtra("play", false);
         return intent;
@@ -740,7 +842,7 @@ public class TorrentPlayer {
     public String formatHeader() {
         if (player == null)
             return "";
-        return formatHeader(context, player.getCurrentPosition(), player.getDuration());
+        return formatHeader(context, player.getCurrentPosition(), getDuration());
     }
 
     public void saveDelay() {

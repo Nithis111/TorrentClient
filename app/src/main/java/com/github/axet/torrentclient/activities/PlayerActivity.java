@@ -18,6 +18,7 @@ import android.widget.TextView;
 import com.github.axet.torrentclient.R;
 import com.github.axet.torrentclient.app.MainApplication;
 import com.github.axet.torrentclient.app.TorrentPlayer;
+import com.google.android.exoplayer2.ui.SimpleExoPlayerView;
 
 /**
  * An example full-screen activity that shows and hides the system UI (i.e.
@@ -44,7 +45,7 @@ public class PlayerActivity extends AppCompatActivity {
      */
     private static final int UI_ANIMATION_DELAY = 300;
     private final Handler mHideHandler = new Handler();
-    private SurfaceView mContentView;
+    private SimpleExoPlayerView mContentView;
     private final Runnable mHidePart2Runnable = new Runnable() {
         @SuppressLint("InlinedApi")
         @Override
@@ -174,22 +175,8 @@ public class PlayerActivity extends AppCompatActivity {
 
         mVisible = true;
         mControlsView = findViewById(R.id.fullscreen_content_controls);
-        mContentView = (SurfaceView) findViewById(R.id.fullscreen_content);
-        h = mContentView.getHolder();
-        h.addCallback(new SurfaceHolder.Callback() {
-            @Override
-            public void surfaceCreated(SurfaceHolder holder) {
-                app.player.play(holder);
-            }
-
-            @Override
-            public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
-            }
-
-            @Override
-            public void surfaceDestroyed(SurfaceHolder holder) {
-            }
-        });
+        mContentView = (SimpleExoPlayerView) findViewById(R.id.fullscreen_content);
+        app.player.play(mContentView);
 
         fab_play.setOnClickListener(new View.OnClickListener() {
             @Override

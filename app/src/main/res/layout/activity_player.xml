@@ -4,7 +4,7 @@
     android:layout_height="match_parent"
     tools:context="com.github.axet.torrentclient.activities.PlayerActivity">
 
-    <SurfaceView
+    <com.google.android.exoplayer2.ui.SimpleExoPlayerView
         android:id="@+id/fullscreen_content"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
