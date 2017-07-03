@@ -424,8 +424,8 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
                 if (a.equals(TorrentPlayer.PLAYER_PROGRESS)) {
                     fab_panel.setVisibility(View.VISIBLE);
                     playerTorrent = intent.getLongExtra("t", -1);
-                    int pos = intent.getIntExtra("pos", 0);
-                    int dur = intent.getIntExtra("dur", 0);
+                    long pos = intent.getLongExtra("pos", 0);
+                    long dur = intent.getLongExtra("dur", 0);
                     boolean play = intent.getBooleanExtra("play", false);
                     fab_status.setText(TorrentPlayer.formatHeader(MainActivity.this, pos, dur));
                     if (play)
@@ -436,8 +436,8 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
                 if (a.equals(TorrentPlayer.PLAYER_NEXT)) {
                     fab_panel.setVisibility(View.VISIBLE);
                     playerTorrent = intent.getLongExtra("t", -1);
-                    int pos = intent.getIntExtra("pos", 0);
-                    int dur = intent.getIntExtra("dur", 0);
+                    long pos = intent.getLongExtra("pos", 0);
+                    long dur = intent.getLongExtra("dur", 0);
                     boolean play = intent.getBooleanExtra("play", false);
                     if (play) {
                         fab_status.setText(TorrentPlayer.formatHeader(MainActivity.this, pos, dur));

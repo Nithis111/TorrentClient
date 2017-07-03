@@ -192,7 +192,12 @@ public class PlayerFragment extends Fragment implements MainActivity.TorrentFrag
             public void onClick(View v) {
                 if (player == null)
                     return; // not yet open, no metadata
-                int i = player.getPlaying() - 1;
+                int i = player.getPlaying();
+                if (i == -1) {
+                    i = 0;
+                } else {
+                    i = i - 1;
+                }
                 if (i < 0)
                     i = player.getSize() - 1;
                 play(i);
@@ -306,8 +311,8 @@ public class PlayerFragment extends Fragment implements MainActivity.TorrentFrag
                     files.notifyDataSetChanged();
                 }
                 if (a.equals(TorrentPlayer.PLAYER_PROGRESS)) {
-                    int pos = intent.getIntExtra("pos", 0);
-                    int dur = intent.getIntExtra("dur", 0);
+                    long pos = intent.getLongExtra("pos", 0);
+                    long dur = intent.getLongExtra("dur", 0);
                     boolean p = intent.getBooleanExtra("play", false);
                     playerPos.setText(MainApplication.formatDuration(context, pos));
                     playerDur.setText(MainApplication.formatDuration(context, dur));
@@ -315,8 +320,8 @@ public class PlayerFragment extends Fragment implements MainActivity.TorrentFrag
                         play.setImageResource(R.drawable.ic_pause_24dp);
                     else
                         play.setImageResource(R.drawable.play);
-                    seek.setMax(dur);
-                    seek.setProgress(pos);
+                    seek.setMax((int) dur);
+                    seek.setProgress((int) pos);
                 }
             }
         };

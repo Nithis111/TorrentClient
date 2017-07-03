@@ -17,6 +17,7 @@ import android.os.ParcelFileDescriptor;
 import android.provider.OpenableColumns;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.util.Log;
 import android.webkit.MimeTypeMap;
 
 import com.github.axet.androidlibrary.services.FileProvider;
@@ -50,6 +51,8 @@ import java.util.Map;
 // content://com.github.axet.torrentclient/778811221de5b06a33807f4c80832ad93b58016e/image.rar/123.mp3
 
 public class TorrentContentProvider extends ContentProvider {
+    public static String TAG = TorrentContentProvider.class.getSimpleName();
+
     protected static ProviderInfo info;
 
     public static String FILE_PREFIX = "player";
@@ -191,7 +194,7 @@ public class TorrentContentProvider extends ContentProvider {
         if (app.player == null)
             return null;
 
-        TorrentPlayer.PlayerFile f = app.player.find(uri);
+        final TorrentPlayer.PlayerFile f = app.player.find(uri);
         if (f == null)
             return null;
 
@@ -201,12 +204,36 @@ public class TorrentContentProvider extends ContentProvider {
 
         try {
             if (f.file != null) {
-                File tmp = getContext().getExternalCacheDir();
-                if (tmp == null)
-                    tmp = getContext().getCacheDir();
-                tmp = File.createTempFile(FILE_PREFIX, FILE_SUFFIX, tmp);
-                f.file.write(new FileOutputStream(tmp));
-                return ParcelFileDescriptor.open(tmp, fileMode);
+                if (mode.equals("r")) { // r
+                    final ParcelFileDescriptor[] ff = ParcelFileDescriptor.createPipe();
+                    Thread thread = new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+                            FileOutputStream os = new FileOutputStream(ff[1].getFileDescriptor());
+                            try {
+                                f.file.write(os);
+                            } catch (RuntimeException e) {
+                                Log.d(TAG, "Error reading archive", e);
+                            } finally {
+                                try {
+                                    os.flush();
+                                    os.close();
+                                } catch (IOException e) {
+                                    Log.d(TAG, "Error closing reading archive", e);
+                                }
+                            }
+                        }
+                    });
+                    thread.start();
+                    return ff[0];
+                } else { // rw - need File
+                    File tmp = getContext().getExternalCacheDir();
+                    if (tmp == null)
+                        tmp = getContext().getCacheDir();
+                    tmp = File.createTempFile(FILE_PREFIX, FILE_SUFFIX, tmp);
+                    f.file.write(new FileOutputStream(tmp));
+                    return ParcelFileDescriptor.open(tmp, fileMode);
+                }
             } else {
                 Uri u = f.getFile();
                 String s = u.getScheme();
