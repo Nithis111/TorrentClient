@@ -153,6 +153,10 @@ public class PlayerActivity extends AppCompatActivity {
         final MainApplication app = (MainApplication) getApplicationContext();
 
         player = app.player;
+
+        if (player == null) // playerr closed because io problem before activity starts
+            finish();
+
         playingIndex = player.getPlaying();
 
         exoplayer = (SimpleExoPlayerView) findViewById(R.id.fullscreen_content);
