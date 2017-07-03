@@ -201,14 +201,12 @@ public class TorrentContentProvider extends ContentProvider {
 
         try {
             if (f.file != null) {
-                InputStream is = f.file.open();
                 File tmp = getContext().getExternalCacheDir();
                 if (tmp == null)
                     tmp = getContext().getCacheDir();
                 tmp = File.createTempFile(FILE_PREFIX, FILE_SUFFIX, tmp);
-                IOUtils.copy(is, new FileOutputStream(tmp));
-                ParcelFileDescriptor fd = ParcelFileDescriptor.open(tmp, fileMode);
-                return fd;
+                f.file.write(new FileOutputStream(tmp));
+                return ParcelFileDescriptor.open(tmp, fileMode);
             } else {
                 Uri u = f.getFile();
                 String s = u.getScheme();

@@ -20,10 +20,13 @@ import com.github.axet.torrentclient.services.TorrentContentProvider;
 import net.lingala.zip4j.core.NativeStorage;
 import net.lingala.zip4j.core.ZipFile;
 
+import org.apache.commons.io.IOUtils;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
 import java.util.ArrayList;
@@ -34,6 +37,7 @@ import java.util.HashMap;
 import java.util.List;
 
 import de.innosystec.unrar.Archive;
+import de.innosystec.unrar.exception.RarException;
 import de.innosystec.unrar.rarfile.FileHeader;
 import libtorrent.Libtorrent;
 
@@ -159,6 +163,17 @@ public class TorrentPlayer {
                         }
 
                         @Override
+                        public void write(OutputStream os) {
+                            try {
+                                archive.extractFile(header, os);
+                                os.flush();
+                                os.close();
+                            } catch (IOException | RarException e) {
+                                throw new RuntimeException(e);
+                            }
+                        }
+
+                        @Override
                         public long getLength() {
                             return header.getFullUnpackSize();
                         }
@@ -222,6 +237,17 @@ public class TorrentPlayer {
                         public InputStream open() {
                             try {
                                 return zip.getInputStream(zipEntry);
+                            } catch (Exception e) {
+                                throw new RuntimeException(e);
+                            }
+                        }
+
+                        public void write(OutputStream os) {
+                            try {
+                                InputStream is = zip.getInputStream(zipEntry);
+                                IOUtils.copy(is, os);
+                                os.flush();
+                                os.close();
                             } catch (Exception e) {
                                 throw new RuntimeException(e);
                             }
@@ -381,6 +407,8 @@ public class TorrentPlayer {
         String getPath();
 
         InputStream open();
+
+        void write(OutputStream os);
 
         long getLength();
     }
