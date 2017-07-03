@@ -154,8 +154,10 @@ public class PlayerActivity extends AppCompatActivity {
 
         player = app.player;
 
-        if (player == null) // playerr closed because io problem before activity starts
+        if (player == null) { // playerr closed because io problem before activity starts
             finish();
+            return;
+        }
 
         playingIndex = player.getPlaying();
 
