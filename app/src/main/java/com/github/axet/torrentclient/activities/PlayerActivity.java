@@ -154,7 +154,7 @@ public class PlayerActivity extends AppCompatActivity {
 
         player = app.player;
 
-        if (player == null) { // playerr closed because io problem before activity starts
+        if (player == null) { // player closed before activity started
             finish();
             return;
         }
