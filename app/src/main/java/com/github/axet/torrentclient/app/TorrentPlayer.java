@@ -601,17 +601,56 @@ public class TorrentPlayer {
         playingFile = f;
         if (f.tor.file.getBytesCompleted() == f.tor.file.getLength()) {
             if (!skipType(f)) {
-                player = ExoPlayerFactory.newSimpleInstance(context, trackSelector);
-                DataSource.Factory dataSourceFactory = new DefaultDataSourceFactory(context, Util.getUserAgent(context, context.getString(R.string.app_name)));
-                ExtractorsFactory extractorsFactory = new DefaultExtractorsFactory();
-                MediaSource audioSource = new ExtractorMediaSource(f.uri, dataSourceFactory, extractorsFactory, null, null);
-                player.prepare(audioSource);
+                prepare(f.uri, i);
             }
         }
         if (player == null) {
             next(i + 1);
             return false;
         }
+        return true;
+    }
+
+    public void play(final int i) {
+        handler.removeCallbacks(next);
+        PlayerFile f = get(i);
+        if (!open(f))
+            return;
+        play();
+    }
+
+    public void play() {
+        if (!video) { // already playing video? just call start()
+            String type = TorrentContentProvider.getType(playingFile.getName());
+            if (type != null && type.startsWith("video")) {
+                PlayerActivity.startActivity(context);
+                return;
+            } else {
+                if (video) {
+                    PlayerActivity.closeActivity(context);
+                    video = false;
+                }
+            }
+        }
+        resume();
+    }
+
+    public void close(SimpleExoPlayerView view) {
+        if (isPlaying())
+            pause();
+        video = false; // do not close player, keep seek progress
+    }
+
+    public void hide(SimpleExoPlayerView view) {
+        video = false; // do not close player, keep seek progress
+    }
+
+    void prepare(Uri u, final int i) {
+        player = ExoPlayerFactory.newSimpleInstance(context, trackSelector);
+        DataSource.Factory dataSourceFactory = new DefaultDataSourceFactory(context, Util.getUserAgent(context, context.getString(R.string.app_name)));
+        ExtractorsFactory extractorsFactory = new DefaultExtractorsFactory();
+        MediaSource source = new ExtractorMediaSource(u, dataSourceFactory, extractorsFactory, null, null);
+        player.prepare(source);
         player.addListener(new ExoPlayer.EventListener() {
             @Override
             public void onTimelineChanged(Timeline timeline, Object manifest) {
@@ -648,49 +687,23 @@ public class TorrentPlayer {
             }
 
         });
-        return true;
-    }
-
-    public void play(final int i) {
-        handler.removeCallbacks(next);
-        PlayerFile f = get(i);
-        if (!open(f))
-            return;
-        play();
-    }
-
-    public void play() {
-        if (BuildConfig.DEBUG && !video) { // already playing video? just call start()
-            String type = TorrentContentProvider.getType(playingFile.getName());
-            if (type.startsWith("video")) {
-                PlayerActivity.startActivity(context);
-                return;
-            } else {
-                if (video) {
-                    PlayerActivity.closeActivity(context);
-                    video = false;
-                }
-            }
-        }
-        saveDelay();
-        player.setPlayWhenReady(true);
-        progress.run();
     }
 
     public void play(SimpleExoPlayerView view) {
-        view.setPlayer(player);
         video = true;
         Long seek = null;
         if (player != null) {
             seek = player.getCurrentPosition();
             player.release();
         }
-        DataSource.Factory dataSourceFactory = new DefaultDataSourceFactory(context, Util.getUserAgent(context, context.getString(R.string.app_name)));
-        ExtractorsFactory extractorsFactory = new DefaultExtractorsFactory();
-        MediaSource videoSource = new ExtractorMediaSource(playingUri, dataSourceFactory, extractorsFactory, null, null);
-        player.prepare(videoSource);
+        prepare(playingUri, playingIndex);
+        view.setPlayer(player);
         if (seek != null)
             player.seekTo(seek);
+        resume();
+    }
+
+    public void resume() {
         player.setPlayWhenReady(true);
         progress.run();
         saveDelay();
