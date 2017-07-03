@@ -99,7 +99,7 @@ public class TorrentPlayer {
         }
     };
     Handler handler;
-    boolean video;
+    int video; // index
 
     BroadcastReceiver receiver = new BroadcastReceiver() {
         @Override
@@ -620,15 +620,15 @@ public class TorrentPlayer {
     }
 
     public void play() {
-        if (!video) { // already playing video? just call start()
+        if (video != getPlaying()) { // already playing video? just call start()
             String type = TorrentContentProvider.getType(playingFile.getName());
             if (type != null && type.startsWith("video")) {
                 PlayerActivity.startActivity(context);
                 return;
             } else {
-                if (video) {
+                if (video >= 0) {
                     PlayerActivity.closeActivity(context);
-                    video = false;
+                    video = -1;
                 }
             }
         }
@@ -638,11 +638,11 @@ public class TorrentPlayer {
     public void close(SimpleExoPlayerView view) {
         if (isPlaying())
             pause();
-        video = false; // do not close player, keep seek progress
+        video = -1; // do not close player, keep seek progress
     }
 
     public void hide(SimpleExoPlayerView view) {
-        video = false; // do not close player, keep seek progress
+        video = -1; // do not close player, keep seek progress
     }
 
     void prepare(Uri u, final int i) {
@@ -690,7 +690,7 @@ public class TorrentPlayer {
     }
 
     public void play(SimpleExoPlayerView view) {
-        video = true;
+        video = playingIndex;
         Long seek = null;
         if (player != null) {
             seek = player.getCurrentPosition();
@@ -760,7 +760,7 @@ public class TorrentPlayer {
 
     public void stop() {
         if (player != null) {
-            player.stop();
+            player.setPlayWhenReady(false);
         }
         handler.removeCallbacks(progress);
         handler.removeCallbacks(next);

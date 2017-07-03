@@ -310,6 +310,8 @@ public class PlayerFragment extends Fragment implements MainActivity.TorrentFrag
                 }
                 if (a.equals(TorrentPlayer.PLAYER_STOP)) {
                     play.setImageResource(R.drawable.play);
+                    playerPos.setText(MainApplication.formatDuration(context, 0));
+                    playerDur.setText(MainApplication.formatDuration(context, 0));
                     files.notifyDataSetChanged();
                 }
                 if (a.equals(TorrentPlayer.PLAYER_PROGRESS)) {
