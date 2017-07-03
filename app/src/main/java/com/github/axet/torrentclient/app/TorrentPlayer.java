@@ -6,14 +6,13 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
-import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Handler;
 import android.support.v7.preference.PreferenceManager;
 import android.util.Log;
-import android.view.SurfaceHolder;
 
 import com.github.axet.androidlibrary.app.AlarmManager;
+import com.github.axet.torrentclient.BuildConfig;
 import com.github.axet.torrentclient.R;
 import com.github.axet.torrentclient.activities.PlayerActivity;
 import com.github.axet.torrentclient.services.TorrentContentProvider;
@@ -47,7 +46,6 @@ import net.lingala.zip4j.core.ZipFile;
 import org.apache.commons.io.IOUtils;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -56,8 +54,6 @@ import java.io.PipedOutputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.Enumeration;
-import java.util.HashMap;
 import java.util.List;
 
 import de.innosystec.unrar.Archive;
@@ -631,7 +627,7 @@ public class TorrentPlayer {
 
             @Override
             public void onPlayerStateChanged(boolean playWhenReady, int playbackState) {
-                if(playbackState == ExoPlayer.STATE_READY) {
+                if (playbackState == ExoPlayer.STATE_READY) {
                     getDuration();
                 }
                 if (playbackState == ExoPlayer.STATE_ENDED)
@@ -664,18 +660,18 @@ public class TorrentPlayer {
     }
 
     public void play() {
-//        if (!video) { // already playing video? just call start()
-//            String type = TorrentContentProvider.getType(playingFile.getName());
-//            if (type.startsWith("video")) {
-//                PlayerActivity.startActivity(context);
-//                return;
-//            } else {
-//                if (video) {
-//                    PlayerActivity.closeActivity(context);
-//                    video = false;
-//                }
-//            }
-//        }
+        if (BuildConfig.DEBUG && !video) { // already playing video? just call start()
+            String type = TorrentContentProvider.getType(playingFile.getName());
+            if (type.startsWith("video")) {
+                PlayerActivity.startActivity(context);
+                return;
+            } else {
+                if (video) {
+                    PlayerActivity.closeActivity(context);
+                    video = false;
+                }
+            }
+        }
         saveDelay();
         player.setPlayWhenReady(true);
         progress.run();
