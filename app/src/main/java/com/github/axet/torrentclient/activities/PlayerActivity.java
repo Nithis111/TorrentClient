@@ -154,8 +154,10 @@ public class PlayerActivity extends AppCompatActivity {
 
         player = app.player;
 
-        if (player == null) // playerr closed because io problem before activity starts
+        if (player == null) { // player closed before activity started
             finish();
+            return;
+        }
 
         playingIndex = player.getPlaying();
 
@@ -244,6 +246,8 @@ public class PlayerActivity extends AppCompatActivity {
                     playerTorrent = intent.getLongExtra("t", -1);
                     playerPos.setText(MainApplication.formatDuration(context, 0));
                     playerDur.setText(MainApplication.formatDuration(context, 0));
+                    seek.setMax(0);
+                    seek.setProgress(0);
                     fab_play.setImageResource(R.drawable.ic_pause_24dp);
                 }
                 if (a.equals(TorrentPlayer.PLAYER_STOP)) {
