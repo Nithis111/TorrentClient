@@ -273,12 +273,9 @@ public class Storage extends com.github.axet.androidlibrary.app.Storage implemen
                     final int takeFlags = Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION;
                     ContentResolver resolver = context.getContentResolver();
                     resolver.takePersistableUriPermission(path, takeFlags);
-                    if (Libtorrent.metaTorrent(t)) {
-                        String name = Libtorrent.torrentName(t);
-                        Uri u = storage.child(path, name);
-                        if (!storage.exists(u))
-                            return true;
-                    }
+                    Uri u = DocumentsContract.buildDocumentUriUsingTree(path, DocumentsContract.getTreeDocumentId(path));
+                    if (!storage.exists(u))
+                        return true;
                     return false;
                 } catch (Exception e) {
                     return true;

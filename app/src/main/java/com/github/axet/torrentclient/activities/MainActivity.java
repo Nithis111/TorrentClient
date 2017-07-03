@@ -1253,7 +1253,14 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
                     boolean show = shared.getBoolean(MainApplication.PREFERENCE_DIALOG, false);
                     if (!f.canWrite())
                         show = true;
-                    addTorrentFromBytes(Uri.fromFile(p.getParentFile()), buf, show);
+                    File pp = p.getParentFile();
+                    Uri u;
+                    if (!pp.canWrite()) { // we adding file from folder with readonly access, use storage as default storage
+                        u = storage.getStoragePath();
+                    } else {
+                        u = Uri.fromFile(pp);
+                    }
+                    addTorrentFromBytes(u, buf, show);
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }

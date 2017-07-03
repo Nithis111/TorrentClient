@@ -126,5 +126,5 @@
     <string name="start">Start Torrent</string>
     <string name="new_version">New version available:</string>
     <string name="torrent_altered">Files altered, force recheck</string>
-    <string name="torrent_notfound">Not found, force recheck</string>
+    <string name="torrent_notfound">Not found, ejected</string>
 </resources>
