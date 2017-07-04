@@ -308,7 +308,7 @@ public class Storage extends com.github.axet.androidlibrary.app.Storage implemen
                 else
                     return true;
             }
-            return p.canRead();
+            return !p.canRead();
         }
 
         public long left() {
