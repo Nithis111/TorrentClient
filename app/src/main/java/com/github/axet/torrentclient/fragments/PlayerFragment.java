@@ -130,7 +130,13 @@ public class PlayerFragment extends Fragment implements MainActivity.TorrentFrag
                 file.setText("./" + s);
             } else {
                 if (i == 0) {
-                    folder.setVisibility(View.GONE);
+                    File p1 = new File(makePath(ss)).getParentFile();
+                    if (p1 != null) {
+                        folder.setText("./" + p1.getPath());
+                        folder.setVisibility(View.VISIBLE);
+                    } else {
+                        folder.setVisibility(View.GONE);
+                    }
                 } else {
                     File p1 = new File(makePath(ss)).getParentFile();
                     File p2 = new File(makePath(splitPathFilter(getItem(i - 1).getPath()))).getParentFile();
