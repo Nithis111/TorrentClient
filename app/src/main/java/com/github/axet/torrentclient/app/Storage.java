@@ -251,6 +251,13 @@ public class Storage extends com.github.axet.androidlibrary.app.Storage implemen
                     return false;  // ignore, readonly we fully downloaded
                 }
                 File p = new File(path.getPath());
+                if (!p.exists()) {
+                    while (!p.exists()) {
+                        p = p.getParentFile();
+                    }
+                    if (p.canWrite())
+                        return false; // torrent parent folder not exist, but we have write access, ignore eject check
+                }
                 if (!p.canWrite())
                     return true;
                 for (int k = 0; k < Libtorrent.torrentFilesCount(t); k++) {
@@ -282,6 +289,13 @@ public class Storage extends com.github.axet.androidlibrary.app.Storage implemen
                 }
             } else if (s.startsWith(ContentResolver.SCHEME_FILE)) {
                 File p = new File(path.getPath());
+                if (!p.exists()) {
+                    while (!p.exists()) {
+                        p = p.getParentFile();
+                    }
+                    if (p.canWrite())
+                        return false; // torrent parent folder not exist, but we have write access, ignore eject check
+                }
                 if (!p.canRead())
                     return true;
             }
@@ -429,18 +443,7 @@ public class Storage extends com.github.axet.androidlibrary.app.Storage implemen
 
                     tt.done = o.optBoolean("done", false);
 
-                    boolean ejectcheck = true;
-                    String s = u.getScheme();
-                    if (s.equals(ContentResolver.SCHEME_FILE)) {
-                        File p = new File(u.getPath());
-                        while (!p.exists()) {
-                            p = p.getParentFile();
-                        }
-                        if (p.canWrite())
-                            ejectcheck = false; // torrent parent folder not created, but we have write access, ignore eject check
-                    }
-
-                    if (ejectcheck && tt.ejected(this)) {
+                    if (tt.ejected(this)) {
                         tt.ejected = true;
                     } else {
                         if (tt.altered(this)) {
@@ -1177,6 +1180,13 @@ public class Storage extends com.github.axet.androidlibrary.app.Storage implemen
                     throw new RuntimeException("unable to write l!=k " + l + "!=" + k);
                 return l;
             } catch (IOException e) {
+                File f = p;
+                if (!f.exists()) {
+                    while (!f.exists())
+                        f = f.getParentFile();
+                    if (f.canWrite())
+                        throw e; // torrent folder does not exists but we have write access, return
+                }
                 if (!p.canRead()) {
                     t.ejected = true;
                     t.stop();
