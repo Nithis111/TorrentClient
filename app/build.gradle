@@ -10,8 +10,8 @@ android {
         applicationId "com.github.axet.torrentclient"
         minSdkVersion 15
         targetSdkVersion 23 // 24+ unable to share 'resource/folder'
-        versionCode 411
-        versionName "3.1.33"
+        versionCode 412
+        versionName "3.1.34"
     }
     signingConfigs {
         release {
@@ -59,7 +59,7 @@ dependencies {
     compile('com.github.axet:wget:1.4.2') {
         exclude group: 'com.thoughtworks.xstream', module: 'xstream'
     }
-    compile 'com.github.axet:android-library:1.14.10' // compile project(':android-library')
+    compile 'com.github.axet:android-library:1.14.15' // compile project(':android-library')
     compile 'com.github.axet:libtorrent:0.9.1@aar' // compile project(":libtorrent") // API 15+
     compile('com.github.axet:java-unrar:1.7.0-3') {
         exclude group: 'commons-logging', module: 'commons-logging'

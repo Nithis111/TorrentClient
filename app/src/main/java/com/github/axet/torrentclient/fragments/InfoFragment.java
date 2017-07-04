@@ -229,7 +229,7 @@ public class InfoFragment extends Fragment implements MainActivity.TorrentFragme
                     return;
 
                 AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
-                builder.setTitle(R.string.open_url);
+                builder.setTitle(R.string.open_browser);
 
                 builder.setMessage(c + "\n\n" + getContext().getString(R.string.are_you_sure));
                 builder.setPositiveButton(R.string.yes, new DialogInterface.OnClickListener() {

@@ -251,14 +251,7 @@ public class Storage extends com.github.axet.androidlibrary.app.Storage implemen
                     return false;  // ignore, readonly we fully downloaded
                 }
                 File p = new File(path.getPath());
-                if (!p.exists()) {
-                    while (!p.exists()) {
-                        p = p.getParentFile();
-                    }
-                    if (p.canWrite())
-                        return false; // torrent parent folder not exist, but we have write access, ignore eject check
-                }
-                if (!p.canWrite())
+                if (readonly(p))
                     return true;
                 for (int k = 0; k < Libtorrent.torrentFilesCount(t); k++) {
                     libtorrent.File f = Libtorrent.torrentFiles(t, k);
@@ -271,6 +264,17 @@ public class Storage extends com.github.axet.androidlibrary.app.Storage implemen
                 }
             }
             return false;
+        }
+
+        public static boolean readonly(File p) {
+            if (!p.exists()) {
+                while (!p.exists()) {
+                    p = p.getParentFile();
+                }
+                if (p.canWrite())
+                    return false; // torrent parent folder not exist, but we have write access, ignore eject check
+            }
+            return !p.canWrite();
         }
 
         public boolean ejected(Storage storage) {
@@ -289,17 +293,22 @@ public class Storage extends com.github.axet.androidlibrary.app.Storage implemen
                 }
             } else if (s.startsWith(ContentResolver.SCHEME_FILE)) {
                 File p = new File(path.getPath());
-                if (!p.exists()) {
-                    while (!p.exists()) {
-                        p = p.getParentFile();
-                    }
-                    if (p.canWrite())
-                        return false; // torrent parent folder not exist, but we have write access, ignore eject check
-                }
-                if (!p.canRead())
-                    return true;
+                return ejected(p);
             }
             return false;
+        }
+
+        public static boolean ejected(File p) {
+            if (!p.exists()) {
+                while (!p.exists()) {
+                    p = p.getParentFile();
+                }
+                if (p.canWrite())
+                    return false; // torrent parent folder not exist, but we have write access
+                else
+                    return true;
+            }
+            return p.canRead();
         }
 
         public long left() {
@@ -1182,14 +1191,7 @@ public class Storage extends com.github.axet.androidlibrary.app.Storage implemen
                     throw new RuntimeException("unable to write l!=k " + l + "!=" + k);
                 return l;
             } catch (IOException e) {
-                File f = p;
-                if (!f.exists()) {
-                    while (!f.exists())
-                        f = f.getParentFile();
-                    if (f.canWrite())
-                        throw e; // torrent folder does not exists but we have write access, return
-                }
-                if (!p.canRead()) {
+                if (Torrent.ejected(p)) {
                     t.ejected = true;
                     t.stop();
                 }

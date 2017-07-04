@@ -190,8 +190,7 @@ public class Drawer implements com.mikepenz.materialdrawer.Drawer.OnDrawerItemCl
             IDrawerItem item = list.get(i);
             if (item.getIdentifier() == counter) {
                 counter++;
-                // save to set < 0x00ffffff. check View.generateViewId()
-                if (counter >= 0x00ffffff)
+                if (counter >= 0x00ffffff) // save to set < 0x00ffffff. check View.generateViewId()
                     counter = 1;
                 i = -1; // restart search
             }
@@ -334,8 +333,8 @@ public class Drawer implements com.mikepenz.materialdrawer.Drawer.OnDrawerItemCl
         updateProxies(list);
 
         list.add(new SectionDrawerItem()
-                .withIdentifier(R.string.action_settings)
-                .withName(R.string.action_settings));
+                .withIdentifier(R.string.menu_settings)
+                .withName(R.string.menu_settings));
 
         AddDrawerItem item = new AddDrawerItem() {
             @Override

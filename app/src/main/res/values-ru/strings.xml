@@ -6,8 +6,6 @@
         <item>Тема Темная</item>
     </string-array>
 
-    <string name="action_settings">Настройки</string>
-
     <string name="navigation_drawer_open">Открыть навигационную панель</string>
     <string name="navigation_drawer_close">Закрыть навигационную панель</string>
     <string name="not_permitted">Доступ запрещен</string>
@@ -19,8 +17,6 @@
     <string name="create_torrent">Создать Торрент</string>
     <string name="close">Закрыть</string>
     <string name="hash_copied">Хеш скопирован!</string>
-    <string name="open_url">Открыть URL в Браузере</string>
-    <string name="are_you_sure">Вы уверены?</string>
     <string name="yes">Да</string>
     <string name="no">Нет</string>
     <string name="status_queue">В очереди</string>
@@ -105,7 +101,7 @@
     <string name="delete_search">Удалить Поисковый Сервис</string>
     <string name="engine_updated">" обновлен до версии: "</string>
     <string name="add_search_engine">Добавить сервис</string>
-    <string name="added">"Добавлено:"</string>
+    <string name="added">Добавлено:</string>
     <string name="clear_cookies">Очистить cookies</string>
     <string name="browser">Браузер</string>
     <string name="password">Пароль:</string>
