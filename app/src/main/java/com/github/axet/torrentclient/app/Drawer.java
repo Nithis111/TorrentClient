@@ -484,8 +484,8 @@ public class Drawer implements com.mikepenz.materialdrawer.Drawer.OnDrawerItemCl
     void versionCheck() {
         PackageManager pm = context.getPackageManager();
         String installer = pm.getInstallerPackageName(context.getPackageName());
-        boolean apk = installer == null; // apk installed
-        boolean store = installer != null; // google play or amazon store
+        boolean apk = installer == null || installer.startsWith("com.android.packageinstaller"); // apk installed
+        boolean store = installer != null && installer.startsWith("com.android.vending"); // google play or amazon store
 
         if (store) // no version check for play store
             return;
