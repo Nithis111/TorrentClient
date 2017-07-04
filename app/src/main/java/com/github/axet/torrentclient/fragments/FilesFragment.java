@@ -144,10 +144,12 @@ public class FilesFragment extends Fragment implements MainActivity.TorrentFragm
             } else {
                 if (i == 0) {
                     File p1 = new File(makePath(ss)).getParentFile();
-                    if (p1 != null)
+                    if (p1 != null) {
                         folder.setText("./" + p1.getPath());
-                    else
+                        folder.setVisibility(View.VISIBLE);
+                    } else {
                         folder.setVisibility(View.GONE);
+                    }
                 } else {
                     File p1 = new File(makePath(ss)).getParentFile();
                     TorFile t2 = getItem(i - 1);
