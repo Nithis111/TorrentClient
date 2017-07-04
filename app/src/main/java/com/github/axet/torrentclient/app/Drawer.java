@@ -507,7 +507,7 @@ public class Drawer implements com.mikepenz.materialdrawer.Drawer.OnDrawerItemCl
 
         final View b = navigationHeader.findViewById(R.id.search_engine_new);
         String url = VERSION_CHECK;
-        if (url != null && url.isEmpty()) {
+        if (url != null && !url.isEmpty()) {
             HttpClient client = new HttpClient();
             HttpClient.DownloadResponse w = client.getResponse(null, url);
             w.download();
