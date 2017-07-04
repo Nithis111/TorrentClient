@@ -80,14 +80,14 @@ public class LoginDialogFragment extends BrowserDialogFragment {
                     public void onClick(DialogInterface dialog, int which) {
                     }
                 })
-                .setNegativeButton(getContext().getString(R.string.cancel),
+                .setNegativeButton(getContext().getString(android.R.string.cancel),
                         new DialogInterface.OnClickListener() {
                             public void onClick(DialogInterface dialog, int whichButton) {
                                 dialog.dismiss();
                             }
                         }
                 )
-                .setPositiveButton(getContext().getString(R.string.ok),
+                .setPositiveButton(getContext().getString(android.R.string.ok),
                         new DialogInterface.OnClickListener() {
                             public void onClick(DialogInterface dialog, int whichButton) {
                                 ok();
