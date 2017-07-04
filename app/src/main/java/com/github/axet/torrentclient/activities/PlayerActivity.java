@@ -62,18 +62,6 @@ public class PlayerActivity extends AppCompatActivity {
                     | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
                     | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
                     | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION);
-            handler.postDelayed(new Runnable() {
-                @Override
-                public void run() {
-                    controls.setBackgroundColor(Color.BLACK);
-                    handler.post(new Runnable() {
-                        @Override
-                        public void run() {
-                            controls.setBackgroundColor(Color.TRANSPARENT);
-                        }
-                    });
-                }
-            }, 1000);
         }
     };
     private final Runnable mShowPart2Runnable = new Runnable() {
@@ -84,7 +72,7 @@ public class PlayerActivity extends AppCompatActivity {
             if (actionBar != null) {
                 actionBar.show();
             }
-            controls2.setVisibility(View.VISIBLE);
+            controls.setVisibility(View.VISIBLE);
         }
     };
     private boolean mVisible;
@@ -98,7 +86,6 @@ public class PlayerActivity extends AppCompatActivity {
     long playerTorrent;
     View close;
     View controls;
-    View controls2;
     View frame;
     TorrentPlayer player;
     int playingIndex;
@@ -161,10 +148,10 @@ public class PlayerActivity extends AppCompatActivity {
 
         playingIndex = player.getPlaying();
 
+        frame = findViewById(R.id.player_frame);
         exoplayer = (SimpleExoPlayerView) findViewById(R.id.fullscreen_content);
         close = findViewById(R.id.player_close);
         controls = findViewById(R.id.player_controls);
-        controls2 = findViewById(R.id.player_controls2);
 
         final TextView playerPos = (TextView) findViewById(R.id.player_pos);
         final TextView playerDur = (TextView) findViewById(R.id.player_dur);
@@ -172,6 +159,8 @@ public class PlayerActivity extends AppCompatActivity {
         final ImageView fab_next = (ImageView) findViewById(R.id.player_next);
         final ImageView fab_play = (ImageView) findViewById(R.id.player_play);
         final SeekBar seek = (SeekBar) findViewById(R.id.player_seek);
+
+        frame.setBackgroundColor(Color.BLACK);
 
         close.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -270,7 +259,6 @@ public class PlayerActivity extends AppCompatActivity {
             }
         });
 
-        frame = findViewById(R.id.player_frame);
         frame.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -305,7 +293,7 @@ public class PlayerActivity extends AppCompatActivity {
         if (actionBar != null) {
             actionBar.hide();
         }
-        controls2.setVisibility(View.GONE);
+        controls.setVisibility(View.GONE);
         mVisible = false;
         // Schedule a runnable to remove the status and navigation bar after a delay
         handler.removeCallbacks(mShowPart2Runnable);
