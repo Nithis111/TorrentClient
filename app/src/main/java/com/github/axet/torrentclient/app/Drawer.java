@@ -334,8 +334,8 @@ public class Drawer implements com.mikepenz.materialdrawer.Drawer.OnDrawerItemCl
         updateProxies(list);
 
         list.add(new SectionDrawerItem()
-                .withIdentifier(R.string.action_settings)
-                .withName(R.string.action_settings));
+                .withIdentifier(R.string.menu_settings)
+                .withName(R.string.menu_settings));
 
         AddDrawerItem item = new AddDrawerItem() {
             @Override
