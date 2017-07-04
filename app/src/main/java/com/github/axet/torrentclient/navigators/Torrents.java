@@ -2,6 +2,7 @@ package com.github.axet.torrentclient.navigators;
 
 import android.app.KeyguardManager;
 import android.content.BroadcastReceiver;
+import android.content.ContentResolver;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -11,6 +12,8 @@ import android.graphics.PorterDuff;
 import android.graphics.PorterDuffColorFilter;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
+import android.os.Build;
+import android.provider.DocumentsContract;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.widget.PopupMenu;
@@ -558,6 +561,16 @@ public class Torrents extends BaseAdapter implements DialogInterface.OnDismissLi
     }
 
     void start(Storage.Torrent t) {
+        String s = t.path.getScheme();
+        if (s.startsWith(ContentResolver.SCHEME_FILE)) {
+            File p = new File(t.path.getPath());
+            if(!p.exists() && !p.mkdirs()) {
+                Toast.makeText(main, R.string.torrent_notfound, Toast.LENGTH_LONG).show();
+                t.ejected = true;
+                return;
+            }
+        }
+
         if (t.ejected(storage)) {
             Toast.makeText(main, R.string.torrent_notfound, Toast.LENGTH_LONG).show();
             t.ejected = true;
