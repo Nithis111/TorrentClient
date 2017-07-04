@@ -633,6 +633,8 @@ public class Storage extends com.github.axet.androidlibrary.app.Storage implemen
 
     void updateDone() {
         for (Torrent t : torrents) {
+            if (Libtorrent.torrentStatus(t.t) == Libtorrent.StatusChecking)
+                continue;
             if (Libtorrent.metaTorrent(t.t)) {
                 if (t.completed()) {
                     if (!t.done) {
