@@ -1151,6 +1151,7 @@ public class MainActivity extends AppCompatActivity implements AbsListView.OnScr
             Error(Libtorrent.error());
             return;
         }
+        tt.done = true;
         if (shared.getBoolean(MainApplication.PREFERENCE_DIALOG, false)) {
             createTorrentDialog(tt.t, pp, tt.hash);
         } else {
