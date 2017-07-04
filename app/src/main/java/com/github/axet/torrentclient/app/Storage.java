@@ -428,7 +428,19 @@ public class Storage extends com.github.axet.androidlibrary.app.Storage implemen
                     hashs.put(tt.hash, tt);
 
                     tt.done = o.optBoolean("done", false);
-                    if (tt.ejected(this)) {
+
+                    boolean ejectcheck = true;
+                    String s = u.getScheme();
+                    if (s.equals(ContentResolver.SCHEME_FILE)) {
+                        File p = new File(u.getPath());
+                        while (!p.exists()) {
+                            p = p.getParentFile();
+                        }
+                        if (p.canWrite())
+                            ejectcheck = false; // torrent parent folder not created, but we have write access, ignore eject check
+                    }
+
+                    if (ejectcheck && tt.ejected(this)) {
                         tt.ejected = true;
                     } else {
                         if (tt.altered(this)) {
