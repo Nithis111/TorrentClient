@@ -100,7 +100,9 @@ public class FilesFragment extends Fragment implements MainActivity.TorrentFragm
 
             final long t = getArguments().getLong("torrent");
 
-            final TorFile f = getItem(i);
+            TorFile old = getItem(i);
+            final TorFile f = new TorFile(old.index, Libtorrent.torrentFiles(t, old.index));
+            ff.set(i, f);
 
             final CheckBox check = (CheckBox) view.findViewById(R.id.torrent_files_check);
             check.setChecked(f.file.getCheck());
@@ -132,19 +134,25 @@ public class FilesFragment extends Fragment implements MainActivity.TorrentFragm
                 }
             });
 
-            String s = f.file.getPath();
+            String s1 = f.file.getPath();
 
-            List<String> ss = splitPathFilter(s);
+            List<String> ss = splitPathFilter(s1);
 
             if (ss.size() == 0) {
                 folder.setVisibility(View.GONE);
-                file.setText("./" + s);
+                file.setText("./" + s1);
             } else {
                 if (i == 0) {
-                    folder.setVisibility(View.GONE);
+                    File p1 = new File(makePath(ss)).getParentFile();
+                    if (p1 != null)
+                        folder.setText("./" + p1.getPath());
+                    else
+                        folder.setVisibility(View.GONE);
                 } else {
                     File p1 = new File(makePath(ss)).getParentFile();
-                    File p2 = new File(makePath(splitPathFilter(getItem(i - 1).file.getPath()))).getParentFile();
+                    TorFile t2 = getItem(i - 1);
+                    String s2 = t2.file.getPath();
+                    File p2 = new File(makePath(splitPathFilter(s2))).getParentFile();
                     if (p1 == null || p1.equals(p2)) {
                         folder.setVisibility(View.GONE);
                     } else {
@@ -235,11 +243,13 @@ public class FilesFragment extends Fragment implements MainActivity.TorrentFragm
 
         long l = Libtorrent.torrentFilesCount(t);
 
-        ff.clear();
-        for (long i = 0; i < l; i++) {
-            ff.add(new TorFile(i, Libtorrent.torrentFiles(t, i)));
+        if (ff.size() != l) {
+            ff.clear();
+            for (long i = 0; i < l; i++) {
+                ff.add(new TorFile(i, Libtorrent.torrentFiles(t, i)));
+            }
+            Collections.sort(ff, new SortFiles());
         }
-        Collections.sort(ff, new SortFiles());
         files.notifyDataSetChanged();
     }
 
