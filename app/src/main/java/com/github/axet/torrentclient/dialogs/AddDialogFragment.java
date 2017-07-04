@@ -252,7 +252,7 @@ public class AddDialogFragment extends DialogFragment implements MainActivity.To
         storage = getApp().getStorage();
 
         AlertDialog.Builder b = new AlertDialog.Builder(getActivity())
-                .setPositiveButton(R.string.ok,
+                .setPositiveButton(android.R.string.ok,
                         new DialogInterface.OnClickListener() {
                             public void onClick(DialogInterface dialog, int whichButton) {
                                 long t = getArguments().getLong("torrent");
@@ -266,7 +266,7 @@ public class AddDialogFragment extends DialogFragment implements MainActivity.To
                             }
                         }
                 )
-                .setNegativeButton(R.string.cancel,
+                .setNegativeButton(android.R.string.cancel,
                         new DialogInterface.OnClickListener() {
                             public void onClick(DialogInterface dialog, int whichButton) {
                                 result.hash = getArguments().getString("hash");

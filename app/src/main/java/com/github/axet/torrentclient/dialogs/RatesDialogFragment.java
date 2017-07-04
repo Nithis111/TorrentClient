@@ -45,14 +45,14 @@ public class RatesDialogFragment extends DialogFragment {
     @Override
     public Dialog onCreateDialog(final Bundle savedInstanceState) {
         final AlertDialog d = new AlertDialog.Builder(getActivity())
-                .setNegativeButton(getContext().getString(R.string.cancel),
+                .setNegativeButton(getContext().getString(android.R.string.cancel),
                         new DialogInterface.OnClickListener() {
                             public void onClick(DialogInterface dialog, int whichButton) {
                                 dialog.dismiss();
                             }
                         }
                 )
-                .setPositiveButton(getContext().getString(R.string.ok),
+                .setPositiveButton(getContext().getString(android.R.string.ok),
                         new DialogInterface.OnClickListener() {
                             public void onClick(DialogInterface dialog, int whichButton) {
                                 dialog.dismiss();
