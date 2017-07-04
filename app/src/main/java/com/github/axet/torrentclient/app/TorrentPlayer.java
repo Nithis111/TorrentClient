@@ -12,7 +12,6 @@ import android.support.v7.preference.PreferenceManager;
 import android.util.Log;
 
 import com.github.axet.androidlibrary.app.AlarmManager;
-import com.github.axet.torrentclient.BuildConfig;
 import com.github.axet.torrentclient.R;
 import com.github.axet.torrentclient.activities.PlayerActivity;
 import com.github.axet.torrentclient.services.TorrentContentProvider;
@@ -71,7 +70,7 @@ public class TorrentPlayer {
 
     Context context;
     Storage.Torrent torrent;
-    ArrayList<PlayerFile> ff = new ArrayList<>();
+    ArrayList<PlayerFile> files = new ArrayList<>();
     public String torrentHash;
     public String torrentName;
     Storage storage;
@@ -535,15 +534,17 @@ public class TorrentPlayer {
 
         long l = Libtorrent.torrentFilesCount(torrent.t);
 
-        ff.clear();
+        files.clear();
         ArrayList<PlayerFile> ff = new ArrayList<>();
         for (long i = 0; i < l; i++) {
             TorFile f = new TorFile(i, Libtorrent.torrentFiles(torrent.t, i));
-            ff.add(new PlayerFile(f).index((int) i, (int) l));
+            if (f.file.getCheck())
+                ff.add(new PlayerFile(f).index((int) i, (int) l));
         }
         Collections.sort(ff, new SortPlayerFiles());
+
         for (PlayerFile f : ff) {
-            this.ff.add(f);
+            files.add(f);
             if (f.tor.file.getBytesCompleted() == f.tor.file.getLength()) {
                 Decoder d = getDecoder(f.tor);
                 if (d != null) {
@@ -552,7 +553,7 @@ public class TorrentPlayer {
                         Collections.sort(list, new SortArchiveFiles());
                         int q = 0;
                         for (ArchiveFile a : list) {
-                            this.ff.add(new PlayerFile(f.tor, a).index(q++, list.size()));
+                            files.add(new PlayerFile(f.tor, a).index(q++, list.size()));
                         }
                     } catch (RuntimeException e) {
                         Log.d(TAG, "Unable to unpack zip", e);
@@ -563,7 +564,7 @@ public class TorrentPlayer {
     }
 
     public int getSize() {
-        return ff.size();
+        return files.size();
     }
 
     public int getPlaying() {
@@ -571,11 +572,11 @@ public class TorrentPlayer {
     }
 
     public PlayerFile get(int i) {
-        return ff.get(i);
+        return files.get(i);
     }
 
     public PlayerFile find(Uri uri) {
-        for (PlayerFile f : ff) {
+        for (PlayerFile f : files) {
             if (f.uri.equals(uri)) {
                 return f;
             }
@@ -591,7 +592,7 @@ public class TorrentPlayer {
     }
 
     public boolean open(PlayerFile f) {
-        final int i = ff.indexOf(f);
+        final int i = files.indexOf(f);
         if (player != null) {
             player.release();
             player = null;
@@ -717,7 +718,7 @@ public class TorrentPlayer {
             @Override
             public void run() {
                 TorrentPlayer.this.next = null;
-                if (next >= ff.size()) {
+                if (next >= files.size()) {
                     stop();
                     notifyStop();
                     return; // n = 0;
