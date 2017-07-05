@@ -254,7 +254,8 @@ public class Storage extends com.github.axet.androidlibrary.app.Storage implemen
                 File p = new File(path.getPath());
                 if (readonly(p))
                     return true;
-                for (int k = 0; k < Libtorrent.torrentFilesCount(t); k++) {
+                long l = Libtorrent.torrentFilesCount(t);
+                for (int k = 0; k < l; k++) {
                     libtorrent.File f = Libtorrent.torrentFiles(t, k);
                     if (f.getBytesCompleted() != 0) {
                         File file = new File(p, f.getPath());
