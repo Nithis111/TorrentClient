@@ -316,7 +316,9 @@ public class Storage extends com.github.axet.androidlibrary.app.Storage implemen
         }
 
         public boolean completed() {
-            return left() == 0;
+            long l = Libtorrent.torrentPendingBytesLength(t);
+            long c = Libtorrent.torrentPendingBytesCompleted(t);
+            return l > 0 && l == c;
         }
 
         public boolean fail() {
