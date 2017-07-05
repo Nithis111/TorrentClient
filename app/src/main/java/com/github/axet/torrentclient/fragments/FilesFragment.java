@@ -33,6 +33,7 @@ public class FilesFragment extends Fragment implements MainActivity.TorrentFragm
     View toolbar;
     View download;
 
+    HashMap<String, TorFolder> folders = new HashMap<>();
     ArrayList<TorName> files = new ArrayList<>();
     Files adapter;
     TextView size;
@@ -254,17 +255,18 @@ public class FilesFragment extends Fragment implements MainActivity.TorrentFragm
         none.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                Libtorrent.torrentFilesCheckAll(t, false);
                 for (TorName f : files) {
                     if (f instanceof TorFolder) {
                         TorFolder n = (TorFolder) f;
                         for (TorName k : n.files) {
                             TorFile m = (TorFile) k;
-                            m.setCheck(false);
+                            m.file.setCheck(false);
                         }
                     }
                     if (f instanceof TorFile) {
                         TorFile n = (TorFile) f;
-                        n.setCheck(false);
+                        n.file.setCheck(false);
                     }
                 }
                 updateTotal();
@@ -276,17 +278,18 @@ public class FilesFragment extends Fragment implements MainActivity.TorrentFragm
         all.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                Libtorrent.torrentFilesCheckAll(t, true);
                 for (TorName f : files) {
                     if (f instanceof TorFolder) {
                         TorFolder n = (TorFolder) f;
                         for (TorName k : n.files) {
                             TorFile m = (TorFile) k;
-                            m.setCheck(true);
+                            m.file.setCheck(true);
                         }
                     }
                     if (f instanceof TorFile) {
                         TorFile n = (TorFile) f;
-                        n.setCheck(true);
+                        n.file.setCheck(true);
                     }
                 }
                 updateTotal();
@@ -334,9 +337,9 @@ public class FilesFragment extends Fragment implements MainActivity.TorrentFragm
 
         long l = Libtorrent.torrentFilesCount(t);
 
-        if (files.size() == 0) {
+        if (files.size() == 0 && l > 0) {
             files.clear();
-            TorFolder folder = null;
+            folders.clear();
             if (l == 1) {
                 TorFile f = new TorFile(t, 0);
                 f.name = "./" + f.path;
@@ -353,15 +356,14 @@ public class FilesFragment extends Fragment implements MainActivity.TorrentFragm
                     f.name = "./" + file.getName();
 
                     if (parent != null) {
-                        if (folder == null || !folder.path.equals(parent)) {
-                            if (folder != null) {
-                                Collections.sort(folder.files, new SortFiles());
-                            }
+                        TorFolder folder = folders.get(parent);
+                        if (folder == null) {
                             folder = new TorFolder();
                             folder.path = parent;
                             folder.name = folder.path;
                             folder.expand = false;
                             files.add(folder);
+                            folders.put(parent, folder);
                         }
                         folder.size += f.size;
                         folder.files.add(f);
@@ -369,6 +371,12 @@ public class FilesFragment extends Fragment implements MainActivity.TorrentFragm
                     }
                     if (f.folder == null)
                         files.add(f);
+                }
+                for (TorName n : files) {
+                    if (n instanceof TorFolder) {
+                        TorFolder m = (TorFolder) n;
+                        Collections.sort(m.files, new SortFiles());
+                    }
                 }
                 Collections.sort(files, new SortFiles());
             }
