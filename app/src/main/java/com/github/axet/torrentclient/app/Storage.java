@@ -1242,6 +1242,31 @@ public class Storage extends com.github.axet.androidlibrary.app.Storage implemen
         }
     }
 
+    @Override
+    public void remove(String hash, String path) throws Exception {
+        Log.d(TAG, "remove " + path);
+        Torrent t;
+        synchronized (hashs) {
+            t = hashs.get(hash);
+        }
+        try {
+            String s = t.path.getScheme();
+            if (Build.VERSION.SDK_INT >= 21 && s.startsWith(ContentResolver.SCHEME_CONTENT)) {
+                Uri u = createFile(t.path, path);
+                delete(u);
+            } else if (s.startsWith(ContentResolver.SCHEME_FILE)) {
+                File f = new File(t.path.getPath(), path);
+                delete(f);
+            } else {
+                throw new RuntimeException("unknown uri");
+            }
+        } catch (IllegalArgumentException e) {
+            t.ejected = true;
+            t.stop();
+            throw e;
+        }
+    }
+
     public Torrent prepareTorrentFromBuilder(Uri pp) {
         synchronized (hashs) {
             final long t = Libtorrent.createTorrentFromMetaInfo();

@@ -139,7 +139,9 @@ public class PlayerFragment extends Fragment implements MainActivity.TorrentFrag
                     }
                 } else {
                     File p1 = new File(makePath(ss)).getParentFile();
-                    File p2 = new File(makePath(splitPathFilter(getItem(i - 1).getPath()))).getParentFile();
+                    String s2 = getItem(i - 1).getPath();
+                    List<String> ss2 = splitPathFilter(s2);
+                    File p2 = new File(makePath(ss2)).getParentFile();
                     if (p1 == null || p1.equals(p2)) {
                         folder.setVisibility(View.GONE);
                     } else {
