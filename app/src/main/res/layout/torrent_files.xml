@@ -20,26 +20,97 @@
         android:layout_centerHorizontal="true">
 
         <TextView
+            android:id="@+id/torrent_files_size"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:text="30 Gb"
+            android:textAllCaps="true"
+            android:textStyle="bold" />
+
+        <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
             android:id="@+id/torrent_files_all"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_centerHorizontal="true"
-            android:layout_marginRight="10dp"
-            android:text="@string/select_all"
-            android:textAllCaps="true"
-            android:textColor="?attr/colorAccent"
-            android:textStyle="bold" />
+            android:layout_gravity="center"
+            android:layout_marginLeft="10dp"
+            android:clipChildren="false"
+            android:clipToPadding="false">
 
-        <TextView
+            <ImageButton
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:background="?attr/search_rating_bg"
+                android:button="@android:color/transparent"
+                android:clickable="false"
+                android:gravity="center"
+                android:src="@drawable/ic_select_all_black_24dp"
+                android:tint="?attr/colorAccent" />
+
+            <TextView
+                style="@style/tops_style_light"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:text="@string/select_all" />
+        </FrameLayout>
+
+        <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
             android:id="@+id/torrent_files_none"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_centerHorizontal="true"
+            android:layout_gravity="center"
             android:layout_marginLeft="10dp"
-            android:text="@string/select_none"
-            android:textAllCaps="true"
-            android:textColor="?attr/colorAccent"
-            android:textStyle="bold" />
+            android:clipChildren="false"
+            android:clipToPadding="false">
+
+            <ImageButton
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:background="?attr/search_rating_bg"
+                android:button="@android:color/transparent"
+                android:clickable="false"
+                android:gravity="center"
+                android:src="@drawable/ic_select_all_black_24dp"
+                android:tint="?attr/colorAccent" />
+
+            <TextView
+                style="@style/tops_style_light"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:text="@string/select_none" />
+        </FrameLayout>
+
+        <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+            android:id="@+id/torrent_files_delete"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_marginLeft="10dp"
+            android:clipChildren="false"
+            android:clipToPadding="false">
+
+            <ImageButton
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:background="?attr/search_rating_bg"
+                android:button="@android:color/transparent"
+                android:clickable="false"
+                android:gravity="center"
+                android:src="@drawable/ic_delete_black_24dp"
+                android:tint="?attr/colorAccent" />
+
+            <TextView
+                style="@style/tops_style_light"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:text="Delete Old" />
+        </FrameLayout>
 
     </LinearLayout>
 

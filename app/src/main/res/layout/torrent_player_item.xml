@@ -16,15 +16,16 @@
             android:layout_height="wrap_content"
             android:background="#38a738"
             android:gravity="center"
-            android:textSize="12sp"
-            android:text=".rar" />
+            android:text=".rar"
+            android:textSize="12sp" />
 
         <TextView
             android:id="@+id/torrent_files_folder"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:padding="5dp"
-            android:text="./metadata" />
+            android:text="./metadata"
+            android:textSize="12sp" />
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -52,26 +53,28 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center"
-                    android:text="Size: 3Gb" />
+                    android:text="Size: 3Gb"
+                    android:textSize="12sp" />
 
                 <TextView
                     android:id="@+id/torrent_files_percent"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center"
-                    android:text="80%" />
+                    android:text="80%"
+                    android:textSize="12sp" />
             </LinearLayout>
         </LinearLayout>
 
         <TextView
-            android:layout_marginTop="5dp"
             android:id="@+id/torrent_files_archive_end"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_marginTop="5dp"
             android:background="#38a738"
             android:gravity="center"
-            android:textSize="12sp"
-            android:text=".rar" />
+            android:text=".rar"
+            android:textSize="12sp" />
     </LinearLayout>
 
 </LinearLayout>
