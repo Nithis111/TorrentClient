@@ -37,6 +37,7 @@ public class PlayerFragment extends Fragment implements MainActivity.TorrentFrag
     Files files;
     String torrentName;
     long pendindBytesUpdate; // update every new byte
+    long pendindBytesLengthUpdate;
     TorrentPlayer player;
     TorrentPlayer.Receiver playerReceiver;
     ImageView play;
@@ -400,9 +401,11 @@ public class PlayerFragment extends Fragment implements MainActivity.TorrentFrag
                 openPlayer(t);
             } else {
                 long p = Libtorrent.torrentPendingBytesCompleted(t);
-                if (pendindBytesUpdate != p) {
+                long pp = Libtorrent.torrentPendingBytesLength(t);
+                if (pendindBytesUpdate != p || pendindBytesLengthUpdate != pp) {
                     player.update();
                     pendindBytesUpdate = p;
+                    pendindBytesLengthUpdate = pp;
                 }
             }
         }
