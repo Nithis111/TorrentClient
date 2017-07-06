@@ -122,4 +122,5 @@
     <string name="torrent_altered">Files altered, force recheck</string>
     <string name="torrent_notfound">Not found, ejected</string>
     <string name="delete_unselected">Delete Unselected Files</string>
+    <string name="delete_old">Delete Old</string>
 </resources>

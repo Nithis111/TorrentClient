@@ -118,7 +118,8 @@
     <string name="stop">Стоп Торрент</string>
     <string name="start">Старт Торрент</string>
     <string name="new_version">Доступна новая версия:</string>
-    <string name="torrent_altered">Files altered, force recheck</string>
-    <string name="torrent_notfound">Not found, ejected</string>
-    <string name="delete_unselected">Delete Unselected Files</string>
+    <string name="torrent_altered">Файлы изменены, требуется проверка</string>
+    <string name="torrent_notfound">Не найдено, размонтировано</string>
+    <string name="delete_unselected">Удалить не выбранные файлы</string>
+    <string name="delete_old">Удалить старые</string>
 </resources>
