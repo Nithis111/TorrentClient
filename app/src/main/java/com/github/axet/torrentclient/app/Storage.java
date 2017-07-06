@@ -313,14 +313,19 @@ public class Storage extends com.github.axet.androidlibrary.app.Storage implemen
             return !p.canRead();
         }
 
-        public long left() {
-            return Libtorrent.torrentPendingBytesLength(t) - Libtorrent.torrentPendingBytesCompleted(t);
+        public long left() { // call metaTorrent!!!
+            long p = Libtorrent.torrentPendingBytesLength(t);
+            return p - Libtorrent.torrentPendingBytesCompleted(t);
         }
 
         public boolean completed() {
-            long l = Libtorrent.torrentPendingBytesLength(t);
-            long c = Libtorrent.torrentPendingBytesCompleted(t);
-            return l > 0 && l == c;
+            if (Libtorrent.metaTorrent(t)) {
+                long l = Libtorrent.torrentPendingBytesLength(t);
+                long c = Libtorrent.torrentPendingBytesCompleted(t);
+                return l > 0 && l == c;
+            } else {
+                return false;
+            }
         }
 
         public boolean fail() {

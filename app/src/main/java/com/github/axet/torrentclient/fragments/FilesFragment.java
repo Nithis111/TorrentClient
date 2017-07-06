@@ -311,13 +311,17 @@ public class FilesFragment extends Fragment implements MainActivity.TorrentFragm
             notifyDataSetChanged();
         }
 
-       public void updateTotal() {
+        public void updateTotal() {
 
         }
     }
 
     void updateTotal() {
-        size.setText(MainApplication.formatSize(getContext(), Libtorrent.torrentPendingBytesLength(t)));
+        String p = "";
+        if (Libtorrent.metaTorrent(t)) {
+            p = MainApplication.formatSize(getContext(), Libtorrent.torrentPendingBytesLength(t));
+        }
+        MainApplication.setTextNA(size, p);
     }
 
     @Override
