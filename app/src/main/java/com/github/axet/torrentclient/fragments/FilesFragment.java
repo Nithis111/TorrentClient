@@ -230,7 +230,7 @@ public class FilesFragment extends Fragment implements MainActivity.TorrentFragm
                 folders.clear();
                 if (l == 1) {
                     TorFile f = new TorFile(t, 0);
-                    f.name = "./" + f.path;
+                    f.name = "./" + f.file.getPath();
                     files.add(f);
                 } else {
                     for (long i = 0; i < l; i++) {
