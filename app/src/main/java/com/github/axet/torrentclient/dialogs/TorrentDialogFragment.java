@@ -221,9 +221,12 @@ public class TorrentDialogFragment extends DialogFragment implements MainActivit
 
         int sel = 1;
         if (Libtorrent.metaTorrent(t)) {
-            long c = Libtorrent.torrentPendingBytesLength(t) - Libtorrent.torrentPendingBytesCompleted(t);
-            if (c == 0)
-                sel = 0;
+            long p = Libtorrent.torrentPendingBytesLength(t);
+            if (p > 0) {
+                long c = p - Libtorrent.torrentPendingBytesCompleted(t);
+                if (c == 0)
+                    sel = 0;
+            }
         }
         pager.setCurrentItem(sel);
 
