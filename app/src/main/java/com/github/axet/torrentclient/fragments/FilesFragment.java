@@ -1,10 +1,10 @@
 package com.github.axet.torrentclient.fragments;
 
+import android.content.Context;
 import android.content.DialogInterface;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v7.app.AlertDialog;
-import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -23,7 +23,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.List;
 
 import libtorrent.Libtorrent;
 
@@ -33,15 +32,11 @@ public class FilesFragment extends Fragment implements MainActivity.TorrentFragm
     View toolbar;
     View download;
 
-    HashMap<String, TorFolder> folders = new HashMap<>();
-    ArrayList<TorName> files = new ArrayList<>();
     Files adapter;
     TextView size;
     long t;
 
-    String torrentName;
-
-    static class TorName {
+    public static class TorName {
         public String path; // sort by value
         public String name;
         public long size;
@@ -51,7 +46,7 @@ public class FilesFragment extends Fragment implements MainActivity.TorrentFragm
         }
     }
 
-    static class TorFolder extends TorName {
+    public static class TorFolder extends TorName {
         public boolean expand;
         public ArrayList<TorName> files = new ArrayList<>();
 
@@ -66,7 +61,7 @@ public class FilesFragment extends Fragment implements MainActivity.TorrentFragm
         }
     }
 
-    static class TorFile extends TorName {
+    public static class TorFile extends TorName {
         public TorFolder folder;
         public long index;
         public libtorrent.File file;
@@ -89,14 +84,23 @@ public class FilesFragment extends Fragment implements MainActivity.TorrentFragm
         }
     }
 
-    static class SortFiles implements Comparator<TorName> {
+    public static class SortFiles implements Comparator<TorName> {
         @Override
         public int compare(TorName file, TorName file2) {
             return file.path.compareTo(file2.path);
         }
     }
 
-    class Files extends BaseAdapter {
+    public static class Files extends BaseAdapter {
+        Context context;
+        long t;
+        ArrayList<TorName> files = new ArrayList<>();
+        HashMap<String, TorFolder> folders = new HashMap<>();
+
+        public Files(Context context, long t) {
+            this.context = context;
+            this.t = t;
+        }
 
         @Override
         public int getCount() {
@@ -115,7 +119,7 @@ public class FilesFragment extends Fragment implements MainActivity.TorrentFragm
 
         @Override
         public View getView(final int i, View view, ViewGroup viewGroup) {
-            LayoutInflater inflater = LayoutInflater.from(getContext());
+            LayoutInflater inflater = LayoutInflater.from(context);
 
             if (view == null) {
                 view = inflater.inflate(R.layout.torrent_files_item, viewGroup, false);
@@ -126,8 +130,6 @@ public class FilesFragment extends Fragment implements MainActivity.TorrentFragm
             View fc = view.findViewById(R.id.torrent_files_file);
             TextView folderName = (TextView) view.findViewById(R.id.torrent_files_folder_name);
             TextView file = (TextView) view.findViewById(R.id.torrent_files_name);
-
-            final long t = getArguments().getLong("torrent");
 
             TorName item = getItem(i);
 
@@ -153,7 +155,7 @@ public class FilesFragment extends Fragment implements MainActivity.TorrentFragm
                 });
 
                 TextView size = (TextView) view.findViewById(R.id.torrent_files_folder_size);
-                size.setText(MainApplication.formatSize(getContext(), item.size));
+                size.setText(MainApplication.formatSize(context, item.size));
 
                 final ImageView expand = (ImageView) view.findViewById(R.id.torrent_files_folder_expand);
                 folder.setOnClickListener(new View.OnClickListener() {
@@ -212,10 +214,105 @@ public class FilesFragment extends Fragment implements MainActivity.TorrentFragm
                 file.setText(f.name);
 
                 TextView size = (TextView) view.findViewById(R.id.torrent_files_size);
-                size.setText(MainApplication.formatSize(getContext(), item.size));
+                size.setText(MainApplication.formatSize(context, item.size));
             }
 
             return view;
+        }
+
+        public void update() {
+            long l = Libtorrent.torrentFilesCount(t);
+
+            String torrentName = Libtorrent.torrentName(t);
+
+            if (files.size() == 0 && l > 0) {
+                files.clear();
+                folders.clear();
+                if (l == 1) {
+                    TorFile f = new TorFile(t, 0);
+                    f.name = "./" + f.path;
+                    files.add(f);
+                } else {
+                    for (long i = 0; i < l; i++) {
+                        TorFile f = new TorFile(t, i);
+
+                        String p = f.file.getPath();
+                        p = p.substring(torrentName.length() + 1);
+                        f.path = p;
+                        File file = new File(p);
+                        String parent = file.getParent();
+                        f.name = "./" + file.getName();
+
+                        if (parent != null) {
+                            TorFolder folder = folders.get(parent);
+                            if (folder == null) {
+                                folder = new TorFolder();
+                                folder.path = parent;
+                                folder.name = folder.path;
+                                folder.expand = false;
+                                files.add(folder);
+                                folders.put(parent, folder);
+                            }
+                            folder.size += f.size;
+                            folder.files.add(f);
+                            f.folder = folder;
+                        }
+                        if (f.folder == null)
+                            files.add(f);
+                    }
+                    for (TorName n : files) {
+                        if (n instanceof TorFolder) {
+                            TorFolder m = (TorFolder) n;
+                            Collections.sort(m.files, new SortFiles());
+                        }
+                    }
+                    Collections.sort(files, new SortFiles());
+                }
+            }
+
+            notifyDataSetChanged();
+        }
+
+        public void checkAll() {
+            Libtorrent.torrentFilesCheckAll(t, true);
+            for (TorName f : files) {
+                if (f instanceof TorFolder) {
+                    TorFolder n = (TorFolder) f;
+                    for (TorName k : n.files) {
+                        TorFile m = (TorFile) k;
+                        m.file.setCheck(true);
+                    }
+                }
+                if (f instanceof TorFile) {
+                    TorFile n = (TorFile) f;
+                    n.file.setCheck(true);
+                }
+            }
+            updateTotal();
+            notifyDataSetChanged();
+        }
+
+        public void checkNone() {
+            Libtorrent.torrentFilesCheckAll(t, false);
+            for (TorName f : files) {
+                if (f instanceof TorFolder) {
+                    TorFolder n = (TorFolder) f;
+                    for (TorName k : n.files) {
+                        TorFile m = (TorFile) k;
+                        m.file.setCheck(false);
+                    }
+                }
+                if (f instanceof TorFile) {
+                    TorFile n = (TorFile) f;
+                    n.file.setCheck(false);
+                }
+            }
+            updateTotal();
+            notifyDataSetChanged();
+        }
+
+       public void updateTotal() {
+
         }
     }
 
@@ -245,7 +342,12 @@ public class FilesFragment extends Fragment implements MainActivity.TorrentFragm
 
         toolbar = v.findViewById(R.id.torrent_files_toolbar);
 
-        adapter = new Files();
+        adapter = new Files(getContext(), t) {
+            @Override
+            public void updateTotal() {
+                FilesFragment.this.updateTotal();
+            }
+        };
 
         list.setAdapter(adapter);
 
@@ -255,22 +357,7 @@ public class FilesFragment extends Fragment implements MainActivity.TorrentFragm
         none.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Libtorrent.torrentFilesCheckAll(t, false);
-                for (TorName f : files) {
-                    if (f instanceof TorFolder) {
-                        TorFolder n = (TorFolder) f;
-                        for (TorName k : n.files) {
-                            TorFile m = (TorFile) k;
-                            m.file.setCheck(false);
-                        }
-                    }
-                    if (f instanceof TorFile) {
-                        TorFile n = (TorFile) f;
-                        n.file.setCheck(false);
-                    }
-                }
-                updateTotal();
-                adapter.notifyDataSetChanged();
+                adapter.checkNone();
             }
         });
 
@@ -278,22 +365,7 @@ public class FilesFragment extends Fragment implements MainActivity.TorrentFragm
         all.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Libtorrent.torrentFilesCheckAll(t, true);
-                for (TorName f : files) {
-                    if (f instanceof TorFolder) {
-                        TorFolder n = (TorFolder) f;
-                        for (TorName k : n.files) {
-                            TorFile m = (TorFile) k;
-                            m.file.setCheck(true);
-                        }
-                    }
-                    if (f instanceof TorFile) {
-                        TorFile n = (TorFile) f;
-                        n.file.setCheck(true);
-                    }
-                }
-                updateTotal();
-                adapter.notifyDataSetChanged();
+                adapter.checkAll();
             }
         });
 
@@ -302,7 +374,7 @@ public class FilesFragment extends Fragment implements MainActivity.TorrentFragm
             @Override
             public void onClick(View v) {
                 AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
-                builder.setTitle("Delete Unselected Files");
+                builder.setTitle(R.string.delete_unselected);
                 builder.setMessage(R.string.are_you_sure);
                 builder.setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
                     @Override
@@ -333,58 +405,8 @@ public class FilesFragment extends Fragment implements MainActivity.TorrentFragm
         download.setVisibility(Libtorrent.metaTorrent(t) ? View.GONE : View.VISIBLE);
         toolbar.setVisibility(Libtorrent.metaTorrent(t) ? View.VISIBLE : View.GONE);
 
-        torrentName = Libtorrent.torrentName(t);
-
-        long l = Libtorrent.torrentFilesCount(t);
-
-        if (files.size() == 0 && l > 0) {
-            files.clear();
-            folders.clear();
-            if (l == 1) {
-                TorFile f = new TorFile(t, 0);
-                f.name = "./" + f.path;
-                files.add(f);
-            } else {
-                for (long i = 0; i < l; i++) {
-                    TorFile f = new TorFile(t, i);
-
-                    String p = f.file.getPath();
-                    p = p.substring(torrentName.length() + 1);
-                    f.path = p;
-                    File file = new File(p);
-                    String parent = file.getParent();
-                    f.name = "./" + file.getName();
-
-                    if (parent != null) {
-                        TorFolder folder = folders.get(parent);
-                        if (folder == null) {
-                            folder = new TorFolder();
-                            folder.path = parent;
-                            folder.name = folder.path;
-                            folder.expand = false;
-                            files.add(folder);
-                            folders.put(parent, folder);
-                        }
-                        folder.size += f.size;
-                        folder.files.add(f);
-                        f.folder = folder;
-                    }
-                    if (f.folder == null)
-                        files.add(f);
-                }
-                for (TorName n : files) {
-                    if (n instanceof TorFolder) {
-                        TorFolder m = (TorFolder) n;
-                        Collections.sort(m.files, new SortFiles());
-                    }
-                }
-                Collections.sort(files, new SortFiles());
-            }
-
-            updateTotal();
-        }
-
-        adapter.notifyDataSetChanged();
+        adapter.update();
+        updateTotal();
     }
 
     @Override
