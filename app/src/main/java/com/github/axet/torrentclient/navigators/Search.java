@@ -1031,6 +1031,7 @@ public class Search extends BaseAdapter implements DialogInterface.OnDismissList
                                 @Override
                                 public void run() {
                                     requestCancel(); // destory looper thread
+                                    main.getEngines().save();
                                 }
                             });
                         } catch (IOException e) {

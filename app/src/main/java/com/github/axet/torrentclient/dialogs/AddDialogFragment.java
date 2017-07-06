@@ -401,7 +401,11 @@ public class AddDialogFragment extends DialogFragment implements MainActivity.To
 
     void updateTotal() {
         long t = getArguments().getLong("torrent");
-        total.setText(MainApplication.formatSize(getContext(), Libtorrent.torrentPendingBytesLength(t)));
+        String p = "";
+        if (Libtorrent.metaTorrent(t)) {
+            p = MainApplication.formatSize(getContext(), Libtorrent.torrentPendingBytesLength(t));
+        }
+        MainApplication.setTextNA(total, p);
     }
 
     @Override
