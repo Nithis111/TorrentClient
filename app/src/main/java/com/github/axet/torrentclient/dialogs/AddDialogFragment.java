@@ -29,6 +29,7 @@ import com.github.axet.torrentclient.R;
 import com.github.axet.torrentclient.activities.MainActivity;
 import com.github.axet.torrentclient.app.MainApplication;
 import com.github.axet.torrentclient.app.Storage;
+import com.github.axet.torrentclient.fragments.FilesFragment;
 import com.github.axet.torrentclient.widgets.Pieces;
 
 import java.io.File;
@@ -49,6 +50,7 @@ public class AddDialogFragment extends DialogFragment implements MainActivity.To
     View download;
     TextView name;
     TextView size;
+    TextView total;
     View info;
     TextView pieces;
     TextView path;
@@ -57,10 +59,8 @@ public class AddDialogFragment extends DialogFragment implements MainActivity.To
     View renameButton;
     View browse;
 
-    ArrayList<TorFile> files = new ArrayList<>();
-    Files adapter;
-
-    String torrentName;
+    ArrayList<FilesFragment.TorFile> files = new ArrayList<>();
+    FilesFragment.Files adapter;
 
     Button positive;
 
@@ -83,159 +83,7 @@ public class AddDialogFragment extends DialogFragment implements MainActivity.To
         }
     }
 
-    static class TorFile {
-        public long t;
-        public long index;
-        public libtorrent.File file;
-
-        public TorFile(long t, long i) {
-            this.t = t;
-            this.index = i;
-            update();
-        }
-
-        public void update() {
-            file = Libtorrent.torrentFiles(t, index);
-        }
-    }
-
-    static class SortFiles implements Comparator<TorFile> {
-        @Override
-        public int compare(TorFile file, TorFile file2) {
-            List<String> s1 = splitPath(file.file.getPath());
-            List<String> s2 = splitPath(file2.file.getPath());
-
-            int c = new Integer(s1.size()).compareTo(s2.size());
-            if (c != 0)
-                return c;
-
-            for (int i = 0; i < s1.size(); i++) {
-                String p1 = s1.get(i);
-                String p2 = s2.get(i);
-                c = p1.compareTo(p2);
-                if (c != 0)
-                    return c;
-            }
-
-            return 0;
-        }
-    }
-
-    class Files extends BaseAdapter {
-
-        @Override
-        public int getCount() {
-            return files.size();
-        }
-
-        @Override
-        public TorFile getItem(int i) {
-            return files.get(i);
-        }
-
-        @Override
-        public long getItemId(int i) {
-            return i;
-        }
-
-        boolean single(File path) {
-            return path.getName().equals(path);
-        }
-
-        @Override
-        public View getView(int i, View view, ViewGroup viewGroup) {
-            LayoutInflater inflater = LayoutInflater.from(getContext());
-
-            if (view == null) {
-                view = inflater.inflate(R.layout.torrent_add_item, viewGroup, false);
-            }
-
-            final long t = getArguments().getLong("torrent");
-
-            final TorFile f = getItem(i);
-            f.update();
-
-            final CheckBox check = (CheckBox) view.findViewById(R.id.torrent_files_check);
-            check.setChecked(f.file.getCheck());
-            check.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    Libtorrent.torrentFilesCheck(t, f.index, check.isChecked());
-                }
-            });
-
-            TextView percent = (TextView) view.findViewById(R.id.torrent_files_percent);
-            percent.setEnabled(false);
-            MainApplication.setTextNA(percent, (f.file.getBytesCompleted() * 100 / f.file.getLength()) + "%");
-
-            TextView size = (TextView) view.findViewById(R.id.torrent_files_size);
-            size.setText(MainApplication.formatSize(getContext(), f.file.getLength()));
-
-            View folder = view.findViewById(R.id.torrent_files_folder);
-            TextView folderName = (TextView) view.findViewById(R.id.torrent_files_folder_name);
-            TextView file = (TextView) view.findViewById(R.id.torrent_files_name);
-
-            View fc = view.findViewById(R.id.torrent_files_file);
-            fc.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    Libtorrent.torrentFilesCheck(t, f.index, check.isChecked());
-                }
-            });
-
-            String s = f.file.getPath();
-
-            List<String> ss = splitPathFilter(s);
-
-            if (ss.size() == 0) {
-                folder.setVisibility(View.GONE);
-                file.setText("./" + s);
-            } else {
-                if (i == 0) {
-                    File p1 = new File(makePath(ss)).getParentFile();
-                    if (p1 != null) {
-                        folderName.setText("./" + p1.getPath());
-                        folder.setVisibility(View.VISIBLE);
-                    } else {
-                        folder.setVisibility(View.GONE);
-                    }
-                } else {
-                    File p1 = new File(makePath(ss)).getParentFile();
-                    File p2 = new File(makePath(splitPathFilter(getItem(i - 1).file.getPath()))).getParentFile();
-                    if (p1 == null || p1.equals(p2)) {
-                        folder.setVisibility(View.GONE);
-                    } else {
-                        folderName.setText("./" + p1.getPath());
-                        folder.setVisibility(View.VISIBLE);
-                    }
-                }
-                file.setText("./" + ss.get(ss.size() - 1));
-            }
-
-            updateView(view);
-
-            return view;
-        }
-    }
-
     public void updateView(View view) {
-    }
-
-    public static String makePath(List<String> ss) {
-        if (ss.size() == 0)
-            return "/";
-        return TextUtils.join(File.separator, ss);
-    }
-
-    public List<String> splitPathFilter(String s) {
-        List<String> ss = splitPath(s);
-        if (ss.get(0).equals(torrentName))
-            ss.remove(0);
-        return ss;
-    }
-
-    public static List<String> splitPath(String s) {
-        return new ArrayList<String>(Arrays.asList(s.split(Pattern.quote(File.separator))));
     }
 
     MainApplication getApp() {
@@ -342,7 +190,12 @@ public class AddDialogFragment extends DialogFragment implements MainActivity.To
 
         toolbar = header.findViewById(R.id.torrent_files_toolbar);
 
-        adapter = new Files();
+        adapter = new FilesFragment.Files(getContext(), t) {
+            @Override
+            public void updateTotal() {
+                AddDialogFragment.this.updateTotal();
+            }
+        };
 
         list.setAdapter(adapter);
 
@@ -350,12 +203,7 @@ public class AddDialogFragment extends DialogFragment implements MainActivity.To
         none.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                long t = getArguments().getLong("torrent");
-                Libtorrent.torrentFilesCheckAll(t, false);
-                for (TorFile f : files) {
-                    f.file.setCheck(false);
-                }
-                adapter.notifyDataSetChanged();
+                adapter.checkNone();
             }
         });
 
@@ -363,12 +211,7 @@ public class AddDialogFragment extends DialogFragment implements MainActivity.To
         all.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                long t = getArguments().getLong("torrent");
-                Libtorrent.torrentFilesCheckAll(t, true);
-                for (TorFile f : files) {
-                    f.file.setCheck(true);
-                }
-                adapter.notifyDataSetChanged();
+                adapter.checkAll();
             }
         });
 
@@ -416,6 +259,7 @@ public class AddDialogFragment extends DialogFragment implements MainActivity.To
         final TextView hash = (TextView) header.findViewById(R.id.torrent_hash);
         hash.setText(h);
 
+        total = (TextView) header.findViewById(R.id.torrent_files_size);
         size = (TextView) header.findViewById(R.id.torrent_size);
         name = (TextView) v.findViewById(R.id.torrent_name);
         info = header.findViewById(R.id.torrent_add_info_section);
@@ -450,6 +294,9 @@ public class AddDialogFragment extends DialogFragment implements MainActivity.To
                 e.show();
             }
         });
+
+        View delete = v.findViewById(R.id.torrent_files_delete);
+        delete.setVisibility(View.GONE);
 
         update();
 
@@ -511,17 +358,9 @@ public class AddDialogFragment extends DialogFragment implements MainActivity.To
         download.setVisibility(Libtorrent.metaTorrent(t) ? View.GONE : View.VISIBLE);
         toolbar.setVisibility(Libtorrent.metaTorrent(t) ? View.VISIBLE : View.GONE);
 
-        torrentName = Libtorrent.torrentName(t);
+        adapter.update();
 
-        long l = Libtorrent.torrentFilesCount(t);
-        if (files.size() != l) {
-            files.clear();
-            for (long i = 0; i < l; i++) {
-                files.add(new TorFile(t, i));
-            }
-            Collections.sort(files, new SortFiles());
-        }
-        adapter.notifyDataSetChanged();
+        updateTotal();
 
         if (Libtorrent.metaTorrent(t)) {
             String n = "./" + Libtorrent.torrentName(t);
@@ -558,6 +397,11 @@ public class AddDialogFragment extends DialogFragment implements MainActivity.To
         }
 
         update();
+    }
+
+    void updateTotal() {
+        long t = getArguments().getLong("torrent");
+        total.setText(MainApplication.formatSize(getContext(), Libtorrent.torrentPendingBytesLength(t)));
     }
 
     @Override
