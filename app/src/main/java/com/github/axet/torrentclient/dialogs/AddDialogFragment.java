@@ -5,7 +5,6 @@ import android.app.Dialog;
 import android.content.ContentResolver;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.pm.ActivityInfo;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -58,7 +57,8 @@ public class AddDialogFragment extends DialogFragment implements MainActivity.To
     View renameButton;
     View browse;
 
-    Files files;
+    ArrayList<TorFile> files = new ArrayList<>();
+    Files adapter;
 
     String torrentName;
 
@@ -84,12 +84,18 @@ public class AddDialogFragment extends DialogFragment implements MainActivity.To
     }
 
     static class TorFile {
+        public long t;
         public long index;
         public libtorrent.File file;
 
-        public TorFile(long i, libtorrent.File f) {
-            this.file = f;
+        public TorFile(long t, long i) {
+            this.t = t;
             this.index = i;
+            update();
+        }
+
+        public void update() {
+            file = Libtorrent.torrentFiles(t, index);
         }
     }
 
@@ -115,18 +121,16 @@ public class AddDialogFragment extends DialogFragment implements MainActivity.To
         }
     }
 
-    ArrayList<TorFile> ff = new ArrayList<>();
-
     class Files extends BaseAdapter {
 
         @Override
         public int getCount() {
-            return ff.size();
+            return files.size();
         }
 
         @Override
         public TorFile getItem(int i) {
-            return ff.get(i);
+            return files.get(i);
         }
 
         @Override
@@ -143,12 +147,13 @@ public class AddDialogFragment extends DialogFragment implements MainActivity.To
             LayoutInflater inflater = LayoutInflater.from(getContext());
 
             if (view == null) {
-                view = inflater.inflate(R.layout.torrent_files_item, viewGroup, false);
+                view = inflater.inflate(R.layout.torrent_add_item, viewGroup, false);
             }
 
             final long t = getArguments().getLong("torrent");
 
             final TorFile f = getItem(i);
+            f.update();
 
             final CheckBox check = (CheckBox) view.findViewById(R.id.torrent_files_check);
             check.setChecked(f.file.getCheck());
@@ -164,9 +169,10 @@ public class AddDialogFragment extends DialogFragment implements MainActivity.To
             MainApplication.setTextNA(percent, (f.file.getBytesCompleted() * 100 / f.file.getLength()) + "%");
 
             TextView size = (TextView) view.findViewById(R.id.torrent_files_size);
-            size.setText(getContext().getString(R.string.size_tab) + " " + MainApplication.formatSize(getContext(), f.file.getLength()));
+            size.setText(MainApplication.formatSize(getContext(), f.file.getLength()));
 
-            TextView folder = (TextView) view.findViewById(R.id.torrent_files_folder);
+            View folder = view.findViewById(R.id.torrent_files_folder);
+            TextView folderName = (TextView) view.findViewById(R.id.torrent_files_folder_name);
             TextView file = (TextView) view.findViewById(R.id.torrent_files_name);
 
             View fc = view.findViewById(R.id.torrent_files_file);
@@ -186,14 +192,20 @@ public class AddDialogFragment extends DialogFragment implements MainActivity.To
                 file.setText("./" + s);
             } else {
                 if (i == 0) {
-                    folder.setVisibility(View.GONE);
+                    File p1 = new File(makePath(ss)).getParentFile();
+                    if (p1 != null) {
+                        folderName.setText("./" + p1.getPath());
+                        folder.setVisibility(View.VISIBLE);
+                    } else {
+                        folder.setVisibility(View.GONE);
+                    }
                 } else {
                     File p1 = new File(makePath(ss)).getParentFile();
                     File p2 = new File(makePath(splitPathFilter(getItem(i - 1).file.getPath()))).getParentFile();
                     if (p1 == null || p1.equals(p2)) {
                         folder.setVisibility(View.GONE);
                     } else {
-                        folder.setText("./" + p1.getPath());
+                        folderName.setText("./" + p1.getPath());
                         folder.setVisibility(View.VISIBLE);
                     }
                 }
@@ -330,19 +342,20 @@ public class AddDialogFragment extends DialogFragment implements MainActivity.To
 
         toolbar = header.findViewById(R.id.torrent_files_toolbar);
 
-        files = new Files();
+        adapter = new Files();
 
-        list.setAdapter(files);
+        list.setAdapter(adapter);
 
         View none = header.findViewById(R.id.torrent_files_none);
         none.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 long t = getArguments().getLong("torrent");
-                for (TorFile f : ff) {
-                    Libtorrent.torrentFilesCheck(t, f.index, false);
+                Libtorrent.torrentFilesCheckAll(t, false);
+                for (TorFile f : files) {
+                    f.file.setCheck(false);
                 }
-                files.notifyDataSetChanged();
+                adapter.notifyDataSetChanged();
             }
         });
 
@@ -351,10 +364,11 @@ public class AddDialogFragment extends DialogFragment implements MainActivity.To
             @Override
             public void onClick(View v) {
                 long t = getArguments().getLong("torrent");
-                for (TorFile f : ff) {
-                    Libtorrent.torrentFilesCheck(t, f.index, true);
+                Libtorrent.torrentFilesCheckAll(t, true);
+                for (TorFile f : files) {
+                    f.file.setCheck(true);
                 }
-                files.notifyDataSetChanged();
+                adapter.notifyDataSetChanged();
             }
         });
 
@@ -500,16 +514,18 @@ public class AddDialogFragment extends DialogFragment implements MainActivity.To
         torrentName = Libtorrent.torrentName(t);
 
         long l = Libtorrent.torrentFilesCount(t);
-        ff.clear();
-        for (long i = 0; i < l; i++) {
-            ff.add(new TorFile(i, Libtorrent.torrentFiles(t, i)));
+        if (files.size() != l) {
+            files.clear();
+            for (long i = 0; i < l; i++) {
+                files.add(new TorFile(t, i));
+            }
+            Collections.sort(files, new SortFiles());
         }
-        Collections.sort(ff, new SortFiles());
-        files.notifyDataSetChanged();
+        adapter.notifyDataSetChanged();
 
         if (Libtorrent.metaTorrent(t)) {
             String n = "./" + Libtorrent.torrentName(t);
-            if (ff.size() > 1)
+            if (files.size() > 1)
                 n += "/";
             name.setText(n);
         } else {
